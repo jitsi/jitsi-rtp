@@ -44,33 +44,33 @@ import java.nio.ByteBuffer
  * |                             ....                              |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-open class RtpHeader : Serializable {
+open class RtpHeader(
+    var version: Int = 2,
+    var hasPadding: Boolean = false,
+    var csrcCount: Int = 0,
+    var marker: Boolean = false,
+    var payloadType: Int = 0,
+    var sequenceNumber: Int = 0,
+    var timestamp: Long = 0,
+    var ssrc: Long = 0,
+    var csrcs: MutableList<Long> = mutableListOf(),
+    var extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+    buf: ByteBuffer? = null
+) : Serializable {
     private var buf: ByteBuffer? = null
-    var version: Int
-    var hasPadding: Boolean
-    var hasExtension: Boolean
-    var csrcCount: Int
-    var marker: Boolean
-    var payloadType: Int
-    var sequenceNumber: Int
-    var timestamp: Long
-    var ssrc: Long
-    var csrcs: MutableList<Long>
-    var extensions: RtpHeaderExtensions
+
+    init {
+        if (buf != null) {
+            this.buf = buf.subBuffer(0, this.size)
+        }
+    }
     val size: Int
         get() = RtpHeader.FIXED_SIZE_BYTES +
                 (csrcCount * RtpHeader.CSRC_SIZE_BYTES) +
                 extensions.size
 
-    /**
-     * The offset at which the generic extension header should be placed
-     */
-    private fun getExtensionsHeaderOffset(): Int = RtpHeader.FIXED_SIZE_BYTES + (csrcCount * RtpHeader.CSRC_SIZE_BYTES)
-    /**
-     * Gives the offset into the buffer the extensions themselves should appear at.  NOTE that this is AFTER
-     * the extension header
-     */
-    private fun getExtensionsOffset(): Int = getExtensionsHeaderOffset() + RtpHeaderExtensions.EXTENSIONS_HEADER_SIZE
+    val hasExtension: Boolean
+        get() = extensions.isNotEmpty()
 
     companion object {
         const val FIXED_SIZE_BYTES = 12
@@ -127,6 +127,11 @@ open class RtpHeader : Serializable {
         }
 
         /**
+         * The offset at which the generic extension header should be placed
+         */
+        fun getExtensionsHeaderOffset(csrcCount: Int): Int = RtpHeader.FIXED_SIZE_BYTES + (csrcCount * RtpHeader.CSRC_SIZE_BYTES)
+
+        /**
          * Note that the buffer passed to these two methods, unlike in most other helpers, must already
          * begin at the start of the extensions portion of the header.  This method also
          * assumes that the caller has already verified that there *are* extensions present
@@ -144,47 +149,30 @@ open class RtpHeader : Serializable {
         fun setExtensions(buf: ByteBuffer, extensions: RtpHeaderExtensions) {
             buf.put(extensions.getBuffer())
         }
-    }
 
-    constructor(buf: ByteBuffer) {
-        this.version = RtpHeader.getVersion(buf)
-        this.hasPadding = RtpHeader.hasPadding(buf)
-        this.hasExtension = RtpHeader.getExtension(buf)
-        this.csrcCount = RtpHeader.getCsrcCount(buf)
-        this.marker = RtpHeader.getMarker(buf)
-        this.payloadType = RtpHeader.getPayloadType(buf)
-        this.sequenceNumber = RtpHeader.getSequenceNumber(buf)
-        this.timestamp = RtpHeader.getTimestamp(buf)
-        this.ssrc = RtpHeader.getSsrc(buf)
-        this.csrcs = RtpHeader.getCsrcs(buf, this.csrcCount)
+        fun fromBuffer(buf: ByteBuffer): RtpHeader {
+            val version = RtpHeader.getVersion(buf)
+            val hasPadding = RtpHeader.hasPadding(buf)
+            val hasExtension = RtpHeader.getExtension(buf)
+            val csrcCount = RtpHeader.getCsrcCount(buf)
+            val marker = RtpHeader.getMarker(buf)
+            val payloadType = RtpHeader.getPayloadType(buf)
+            val sequenceNumber = RtpHeader.getSequenceNumber(buf)
+            val timestamp = RtpHeader.getTimestamp(buf)
+            val ssrc = RtpHeader.getSsrc(buf)
+            val csrcs = RtpHeader.getCsrcs(buf, csrcCount)
 
-        extensions = if (hasExtension) RtpHeader.getExtensions(buf.subBuffer(getExtensionsHeaderOffset())) else RtpHeaderExtensions.NO_EXTENSIONS
-        this.buf = buf.subBuffer(0, this.size)
-    }
+            val extensions = if (hasExtension) {
+                RtpHeader.getExtensions(buf.subBuffer(getExtensionsHeaderOffset(csrcCount)))
+            } else {
+                RtpHeaderExtensions.NO_EXTENSIONS
+            }
 
-    constructor(
-        version: Int = 2,
-        hasPadding: Boolean = false,
-        csrcCount: Int = 0,
-        marker: Boolean = false,
-        payloadType: Int = 0,
-        sequenceNumber: Int = 0,
-        timestamp: Long = 0,
-        ssrc: Long = 0,
-        csrcs: MutableList<Long> = mutableListOf(),
-        extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
-    ) {
-        this.version = version
-        this.hasPadding = hasPadding
-        this.hasExtension = extensions.isNotEmpty()
-        this.csrcCount = csrcCount
-        this.marker = marker
-        this.payloadType = payloadType
-        this.sequenceNumber = sequenceNumber
-        this.timestamp = timestamp
-        this.ssrc = ssrc
-        this.csrcs = csrcs
-        this.extensions = extensions
+            return RtpHeader(
+                version, hasPadding, csrcCount, marker, payloadType, sequenceNumber,
+                    timestamp, ssrc, csrcs, extensions, buf
+            )
+        }
     }
 
     fun getExtension(id: Int): RtpHeaderExtension? = extensions.getExtension(id)
@@ -198,7 +186,6 @@ open class RtpHeader : Serializable {
 
         RtpHeader.setVersion(b, version)
         RtpHeader.setPadding(b, hasPadding)
-        hasExtension = extensions.isNotEmpty()
         RtpHeader.setExtension(b, hasExtension)
         RtpHeader.setCsrcCount(b, csrcCount)
         RtpHeader.setMarker(b, marker)
@@ -209,7 +196,7 @@ open class RtpHeader : Serializable {
         RtpHeader.setCsrcs(b, csrcs)
         if (hasExtension) {
             // Write the generic extension header (the cookie and the length)
-            b.position(getExtensionsHeaderOffset())
+            b.position(getExtensionsHeaderOffset(csrcCount))
             setExtensions(b, extensions)
         }
         b.rewind()

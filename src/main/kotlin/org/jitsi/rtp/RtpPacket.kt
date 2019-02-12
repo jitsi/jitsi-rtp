@@ -46,7 +46,7 @@ open class RtpPacket : Packet {
 
     constructor(buf: ByteBuffer) {
         this.buf = buf
-        this.header = RtpHeader(buf)
+        this.header = RtpHeader.fromBuffer(buf)
         this.payload = buf.subBuffer(header.size)
     }
 

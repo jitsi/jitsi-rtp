@@ -94,7 +94,7 @@ open class SrtpProtocolPacket(protected var buf: ByteBuffer) : Packet() {
  * https://tools.ietf.org/html/rfc3711#section-3.1
  */
 class SrtpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
-    val header = RtpHeader(buf)
+    val header = RtpHeader.fromBuffer(buf)
     // The size of the payload may change depending on whether or not the auth tag has been
     //  removed, but we know it always occupies the space between the end of the header
     //  and the end of the buffer.

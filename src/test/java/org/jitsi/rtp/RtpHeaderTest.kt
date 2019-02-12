@@ -84,7 +84,7 @@ internal class RtpHeaderTest : ShouldSpec() {
     init {
         "parsing" {
             "a header without extensions" {
-                val header = RtpHeader(headerNoExtensionsWithPayload)
+                val header = RtpHeader.fromBuffer(headerNoExtensionsWithPayload)
                 should("parse correctly") {
                     header.version shouldBe 2
                     header.hasPadding shouldBe true
@@ -103,7 +103,7 @@ internal class RtpHeaderTest : ShouldSpec() {
                 }
             }
             "a header with one byte extensions" {
-                val header = RtpHeader(headerWithOneByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithOneByteExtensions)
                 should("parse correctly") {
                     for (i in 1..3) {
                         val ext = header.extensions.getExtension(i)
@@ -113,7 +113,7 @@ internal class RtpHeaderTest : ShouldSpec() {
                 }
             }
             "a header with two byte extensions" {
-                val header = RtpHeader(headerWithTwoByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithTwoByteExtensions)
                 should("parse correctly") {
                     for (i in 1..3) {
                         val ext = header.extensions.getExtension(i)
@@ -126,7 +126,7 @@ internal class RtpHeaderTest : ShouldSpec() {
         "writing" {
             //TODO: do we still want to do a test like this?
             "should update the object's value without touching the buffer" {
-                val header = RtpHeader(ByteBuffer.wrap(headerNoExtensions))
+                val header = RtpHeader.fromBuffer(ByteBuffer.wrap(headerNoExtensions))
                 header.version = 10
                 header.version shouldBe 10
             }
@@ -134,7 +134,7 @@ internal class RtpHeaderTest : ShouldSpec() {
         "serializing" {
             "a header with no extensions" {
                 val buf = ByteBuffer.wrap(headerNoExtensions)
-                val header = RtpHeader(buf)
+                val header = RtpHeader.fromBuffer(buf)
                 val newBuf = header.getBuffer()
                 newBuf.rewind()
                 buf.rewind()
@@ -143,7 +143,7 @@ internal class RtpHeaderTest : ShouldSpec() {
                 }
             }
             "a header with one byte extensions" {
-                val header = RtpHeader(headerWithOneByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithOneByteExtensions)
                 val newBuf = header.getBuffer()
 
                 newBuf.rewind()
