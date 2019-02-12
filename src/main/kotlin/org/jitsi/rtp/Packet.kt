@@ -16,6 +16,8 @@
 package org.jitsi.rtp
 
 import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.put
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.rtcp.RtcpHeader
 import org.jitsi.rtp.rtcp.RtcpPacket
 import org.jitsi.rtp.util.BufferView
@@ -55,7 +57,7 @@ class UnparsedPacket(private val buf: ByteBuffer) : Packet() {
  * [SrtpProtocolPacket] is either an SRTP packet or SRTCP packet (but we don't know which)
  * so it basically just distinguishes a packet as encrypted and stores the buffer
  */
-open class SrtpProtocolPacket(protected val buf: ByteBuffer) : Packet() {
+open class SrtpProtocolPacket(protected var buf: ByteBuffer) : Packet() {
     override val size: Int = buf.limit()
 
     override fun getBuffer(): ByteBuffer {
@@ -64,6 +66,24 @@ open class SrtpProtocolPacket(protected val buf: ByteBuffer) : Packet() {
     }
     override fun clone(): Packet {
         return SrtpProtocolPacket(buf.clone())
+    }
+    fun getAuthTag(tagLength: Int): ByteBuffer {
+        return buf.subBuffer(buf.limit() - tagLength, tagLength)
+    }
+    fun removeAuthTag(tagLength: Int) {
+        buf.limit(buf.limit() - tagLength)
+    }
+    fun addAuthTag(authTag: ByteBuffer) {
+        if (buf.capacity() - buf.limit() >= authTag.limit()) {
+            buf.limit(buf.limit() + authTag.limit())
+            buf.put(buf.limit() - authTag.limit(), authTag)
+        } else {
+            val newBuf = ByteBuffer.allocate(size + authTag.limit())
+            newBuf.put(buf)
+            newBuf.put(authTag)
+            newBuf.flip()
+            buf = newBuf
+        }
     }
 }
 
@@ -76,19 +96,29 @@ class SrtpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
     // The size of the payload may change depending on whether or not the auth tag has been
     //  removed, but we know it always occupies the space between the end of the header
     //  and the end of the buffer.
-    val payload: BufferView
-        get() = BufferView(buf.array(), header.size, buf.limit() - header.size)
-    val ssrc: Long = header.ssrc
-    val seqNum: Int = header.sequenceNumber
+    val payload: ByteBuffer
+        get() = buf.subBuffer(header.size, buf.limit() - header.size)
     override val size: Int
-        get() = header.size + payload.length
+        get() = header.size + payload.limit()
 
-    fun getAuthTag(tagLength: Int): BufferView {
-        return BufferView(buf.array(), buf.limit() - tagLength, tagLength)
-    }
-    fun removeAuthTag(tagLength: Int) {
-        buf.limit(buf.limit() - tagLength)
-    }
+//    fun getAuthTag(tagLength: Int): ByteBuffer {
+//        return buf.subBuffer(buf.limit() - tagLength, tagLength)
+//    }
+//    fun removeAuthTag(tagLength: Int) {
+//        buf.limit(buf.limit() - tagLength)
+//    }
+//    fun addAuthTag(authTag: ByteBuffer) {
+//        if (buf.capacity() - buf.limit() >= authTag.limit()) {
+//            buf.limit(buf.limit() + authTag.limit())
+//            buf.put(buf.limit() - authTag.limit(), authTag)
+//        } else {
+//            val newBuf = ByteBuffer.allocate(size + authTag.limit())
+//            newBuf.put(buf)
+//            newBuf.put(authTag)
+//            newBuf.flip()
+//            buf = newBuf
+//        }
+//    }
     //TODO: override clone
 }
 
@@ -100,11 +130,23 @@ class SrtcpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
     val header = RtcpHeader(buf)
     val payload = BufferView(buf.array(), buf.position(), buf.limit() - buf.position())
     val ssrc: Int = header.senderSsrc.toUInt()
-    fun getAuthTag(tagLength: Int): BufferView {
-        return BufferView(buf.array(), buf.limit() - tagLength, tagLength)
-    }
+//    fun getAuthTag(tagLength: Int): ByteBuffer {
+//        return buf.subBuffer(buf.limit() - tagLength, tagLength)
+//    }
     fun getSrtcpIndex(tagLength: Int): Int {
         return buf.getInt(buf.limit() - (4 + tagLength)) and (0x80000000.inv()).toInt()
+    }
+    fun addSrtcpIndex(srtcpIndex: Int) {
+        if (buf.capacity() - buf.limit() >= 4) {
+            buf.limit(buf.limit() + 4)
+            buf.putInt(buf.limit() - 4, srtcpIndex)
+        } else {
+            val newBuf = ByteBuffer.allocate(size + 4)
+            newBuf.put(buf)
+            newBuf.putInt(srtcpIndex)
+            newBuf.flip()
+            buf = newBuf
+        }
     }
     fun isEncrypted(tagLength: Int): Boolean {
         return buf.getInt(buf.limit() - (4 + tagLength)) and (0x80000000.inv()).toInt() == 0x80000000.toInt()
