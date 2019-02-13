@@ -58,7 +58,8 @@ class UnparsedPacket(private val buf: ByteBuffer) : Packet() {
  * so it basically just distinguishes a packet as encrypted and stores the buffer
  */
 open class SrtpProtocolPacket(protected var buf: ByteBuffer) : Packet() {
-    override val size: Int = buf.limit()
+    override val size: Int
+        get() = buf.limit()
 
     override fun getBuffer(): ByteBuffer {
         buf.rewind()
@@ -79,6 +80,7 @@ open class SrtpProtocolPacket(protected var buf: ByteBuffer) : Packet() {
             buf.put(buf.limit() - authTag.limit(), authTag)
         } else {
             val newBuf = ByteBuffer.allocate(size + authTag.limit())
+            buf.rewind()
             newBuf.put(buf)
             newBuf.put(authTag)
             newBuf.flip()
@@ -128,7 +130,8 @@ class SrtpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
  */
 class SrtcpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
     val header = RtcpHeader(buf)
-    val payload = BufferView(buf.array(), buf.position(), buf.limit() - buf.position())
+    val payload: ByteBuffer
+        get() = getBuffer().subBuffer(header.size)
     val ssrc: Int = header.senderSsrc.toUInt()
 //    fun getAuthTag(tagLength: Int): ByteBuffer {
 //        return buf.subBuffer(buf.limit() - tagLength, tagLength)
@@ -149,7 +152,7 @@ class SrtcpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
         }
     }
     fun isEncrypted(tagLength: Int): Boolean {
-        return buf.getInt(buf.limit() - (4 + tagLength)) and (0x80000000.inv()).toInt() == 0x80000000.toInt()
+        return buf.getInt(buf.limit() - (4 + tagLength)) and 0x80000000.toInt() == 0x80000000.toInt()
     }
     //TODO: override clone
 }
