@@ -16,6 +16,7 @@
 package org.jitsi.rtp.rtcp
 
 import org.jitsi.rtp.Packet
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import java.nio.ByteBuffer
 
@@ -54,6 +55,9 @@ abstract class RtcpPacket : Packet() {
             buf.put(header.getBuffer())
         }
     }
+
+    val payload: ByteBuffer
+        get() = getBuffer().subBuffer(header.size)
 
     override fun toString(): String {
         return with (StringBuffer()) {
