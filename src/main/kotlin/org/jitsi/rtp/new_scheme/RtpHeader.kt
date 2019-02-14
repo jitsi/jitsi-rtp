@@ -25,15 +25,15 @@ import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 class RtpHeaderData(
-        var version: Int = 2,
-        var hasPadding: Boolean = false,
-        var marker: Boolean = false,
-        var payloadType: Int = 0,
-        var sequenceNumber: Int = 0,
-        var timestamp: Long = 0,
-        var ssrc: Long = 0,
-        var csrcs: MutableList<Long> = mutableListOf(),
-        var extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
+    var version: Int = 2,
+    var hasPadding: Boolean = false,
+    var marker: Boolean = false,
+    var payloadType: Int = 0,
+    var sequenceNumber: Int = 0,
+    var timestamp: Long = 0,
+    var ssrc: Long = 0,
+    var csrcs: MutableList<Long> = mutableListOf(),
+    var extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
 ) {
     val sizeBytes: Int
         get() = RtpHeader.FIXED_SIZE_BYTES +
@@ -110,7 +110,7 @@ class RtpHeaderData(
     }
 }
 
-open class ReadOnlyRtpHeader(
+class ReadOnlyRtpHeader(
         version: Int = 2,
         hasPadding: Boolean = false,
         marker: Boolean = false,
@@ -125,7 +125,7 @@ open class ReadOnlyRtpHeader(
     private val dataBuf: ByteBuffer
 
     private val rtpHeaderData = RtpHeaderData(
-            version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
+        version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
     )
 
     val version: Int = rtpHeaderData.version
@@ -196,7 +196,7 @@ open class ReadOnlyRtpHeader(
 open class ModifiableRtpHeader(
         private val headerData: RtpHeaderData = RtpHeaderData(),
         private val dataBuf: ByteBuffer? = null
-) : Modifiable, CanBecomeReadOnly {
+) : Modifiable, CanBecomeReadOnly<ReadOnlyRtpHeader> {
     val sizeBytes: Int = headerData.sizeBytes
 
     var version: Int

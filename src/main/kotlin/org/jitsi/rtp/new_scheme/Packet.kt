@@ -19,14 +19,14 @@ package org.jitsi.rtp.new_scheme
 import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 
-interface CanBecomeModifiable<ModifiableType> {
-    fun modifyInPlace(): Modifiable
+interface CanBecomeModifiable<ModifiableType : Modifiable> {
+    fun modifyInPlace(): ModifiableType
 
-    fun getModifiableCopy(): Modifiable
+    fun getModifiableCopy(): ModifiableType
 }
 
-interface CanBecomeReadOnly {
-    fun toReadOnly(): ReadOnly
+interface CanBecomeReadOnly<ReadOnlyType : ReadOnly> {
+    fun toReadOnly(): ReadOnlyType
 }
 
 interface ReadOnly
@@ -37,10 +37,14 @@ interface ModifiablePacket : Modifiable
 
 abstract class ReadOnlyPacket : ReadOnly, Serializable {
     protected abstract val dataBuf: ByteBuffer
-    val sizeBytes: Int
+    open val sizeBytes: Int
         get() = dataBuf.limit()
 
     override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()
+}
+
+interface Convertable<U> {
+    fun <T : U >convertTo(builder: ConstructableFromBuffer<T>): T
 }
 
 interface ConstructableFromBuffer<T> {
