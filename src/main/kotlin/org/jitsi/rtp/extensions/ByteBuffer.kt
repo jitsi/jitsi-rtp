@@ -34,6 +34,7 @@ fun ByteBuffer.clone(): ByteBuffer {
     clone.put(this)
     this.position(startPosition)
     clone.flip()
+    //TODO(brian): handle if this was a readonly buffer
     return clone
 }
 

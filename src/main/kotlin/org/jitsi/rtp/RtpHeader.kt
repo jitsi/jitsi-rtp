@@ -15,6 +15,7 @@
  */
 package org.jitsi.rtp
 
+import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.getBitAsBool
 import org.jitsi.rtp.extensions.getBits
 import org.jitsi.rtp.extensions.putBitAsBoolean
@@ -27,6 +28,116 @@ import unsigned.toULong
 import unsigned.toUShort
 import java.nio.ByteBuffer
 
+
+//open class ReadOnlyRtpHeader(
+//    open val version: Int = 2,
+//    open val hasPadding: Boolean = false,
+//    open val csrcCount: Int = 0,
+//    open val marker: Boolean = false,
+//    open val payloadType: Int = 0,
+//    open val sequenceNumber: Int = 0,
+//    open val timestamp: Long = 0,
+//    open val ssrc: Long = 0,
+//    open val csrcs: MutableList<Long> = mutableListOf(),
+//    open val extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+//    buf: ByteBuffer? = null
+//) : Serializable {
+//
+//    private lateinit var buffer: ByteBuffer
+//
+//    init {
+//        finalize(buf)
+//    }
+//
+//    val size: Int
+//        get() = RtpHeader.FIXED_SIZE_BYTES +
+//                (csrcCount * RtpHeader.CSRC_SIZE_BYTES) +
+//                extensions.size
+//
+//    val hasExtension: Boolean
+//        get() = extensions.isNotEmpty()
+//
+//    override fun getBuffer(): ByteBuffer = buffer
+//
+//    protected fun finalize(optionalBuffer: ByteBuffer?) {
+//        val b = ByteBufferUtils.ensureCapacity(optionalBuffer, size)
+//        b.rewind()
+//        b.limit(size)
+//
+//        RtpHeader.setVersion(b, version)
+//        RtpHeader.setPadding(b, hasPadding)
+//        RtpHeader.setExtension(b, hasExtension)
+//        RtpHeader.setCsrcCount(b, csrcCount)
+//        RtpHeader.setMarker(b, marker)
+//        RtpHeader.setPayloadType(b, payloadType)
+//        RtpHeader.setSequenceNumber(b, sequenceNumber)
+//        RtpHeader.setTimestamp(b, timestamp)
+//        RtpHeader.setSsrc(b, ssrc)
+//        RtpHeader.setCsrcs(b, csrcs)
+//        if (hasExtension) {
+//            // Write the generic extension header (the cookie and the length)
+//            //TODO
+////            b.position(getExtensionsHeaderOffset(csrcCount))
+////            setExtensions(b, extensions)
+//        }
+//        b.rewind()
+//        buffer = b
+//    }
+//
+//    //TODO(brian): we could return 'this' if this one has already come
+//    // from a modifiable header...but maybe we also want to give the option
+//    // to definitely return a new copy...basically giving us copy-on-write
+//    fun modify(): ModifiableRtpHeader {
+//        return if (this is ModifiableRtpHeader) {
+//            this
+//        } else {
+//            ModifiableRtpHeader(version, hasPadding, csrcCount, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions)
+//        }
+//    }
+//
+//    override fun toString(): String = with (StringBuffer()) {
+//        appendln("size: $size")
+//        appendln("version: $version")
+//        appendln("hasPadding: $hasPadding")
+//        appendln("hasExtension: $hasExtension")
+//        appendln("csrcCount: $csrcCount")
+//        appendln("marker: $marker")
+//        appendln("payloadType: $payloadType")
+//        appendln("sequenceNumber: $sequenceNumber")
+//        appendln("timestamp: $timestamp")
+//        appendln("ssrc: $ssrc")
+//        appendln("csrcs: $csrcs")
+//        appendln("Extensions: $extensions")
+//        toString()
+//    }
+//}
+
+//open class ModifiableRtpHeader(
+//    version: Int = 2,
+//    hasPadding: Boolean = false,
+//    csrcCount: Int = 0,
+//    marker: Boolean = false,
+//    payloadType: Int = 0,
+//    sequenceNumber: Int = 0,
+//    timestamp: Long = 0,
+//    ssrc: Long = 0,
+//    csrcs: MutableList<Long> = mutableListOf(),
+//    extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+//    buf: ByteBuffer? = null
+//) : ReadOnlyRtpHeader(version, hasPadding, csrcCount, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions, buf) {
+//    override var version: Int = super.version
+//    override var ssrc: Long = super.ssrc
+//
+//    //TODO(brian): we need to reflect the changes into the read-only class' buffer
+//    fun finalize(): ReadOnlyRtpHeader {
+//        super.finalize(super.getBuffer())
+//        return this
+//    }
+//
+//    // Getting the buffer from a ModifiableRtpHeader isn't allowed, as it is
+//    // not in a finalized state
+//    override fun getBuffer(): ByteBuffer = throw Exception()
+//}
 
 /**
  *
