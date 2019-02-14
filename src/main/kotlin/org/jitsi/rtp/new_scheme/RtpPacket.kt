@@ -21,12 +21,16 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+abstract class ReadOnlyRtpProtocolPacket : ReadOnlyPacket() {
+    val lengthValue: Int
+        get() = (sizeBytes + 3) / 4 - 1
+}
 
 open class ReadOnlyRtpPacket(
         val header: ReadOnlyRtpHeader = ReadOnlyRtpHeader(),
         val payload: ByteBuffer = ByteBuffer.allocate(0),
         buf: ByteBuffer? = null
-) : ReadOnlyPacket(), CanBecomeModifiable<ModifiableRtpPacket> {
+) : ReadOnlyRtpProtocolPacket(), CanBecomeModifiable<ModifiableRtpPacket> {
     //TODO(brian): will it work to make this final here?
     final override val dataBuf: ByteBuffer
 
@@ -70,7 +74,7 @@ class ModifiableRtpPacket(
         var rtpHeader: ModifiableRtpHeader = ModifiableRtpHeader(),
         var payload: ByteBuffer = ByteBuffer.allocate(0),
         private val dataBuf: ByteBuffer? = null
-) : ModifiablePacket {
+) : ModifiablePacket, CanBecomeReadOnly<ReadOnlyRtpPacket> {
     companion object {
         fun fromBuffer(buf: ByteBuffer): ModifiableRtpPacket {
             val header = ModifiableRtpHeader.fromBuffer(buf)
@@ -79,7 +83,8 @@ class ModifiableRtpPacket(
             return ModifiableRtpPacket(header, payload, buf)
         }
     }
-    fun finalize(): ReadOnlyRtpPacket {
+
+    override fun toReadOnly(): ReadOnlyRtpPacket {
         //TODO: need to make sure all the header fields, etc. are set correctly
         // when doing this
         return ReadOnlyRtpPacket(rtpHeader.toReadOnly(), payload, dataBuf)

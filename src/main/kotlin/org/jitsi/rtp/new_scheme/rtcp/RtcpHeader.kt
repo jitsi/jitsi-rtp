@@ -25,6 +25,16 @@ import org.jitsi.rtp.rtcp.RtcpHeader
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+/**
+ * Models the RTCP header as defined in https://tools.ietf.org/html/rfc3550#section-6.1
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |V=2|P|    RC   |   PT=SR=200   |             length            |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                         SSRC of sender                        |
+ * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ */
 class RtcpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,

@@ -24,6 +24,22 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+/**
+ *
+ * https://tools.ietf.org/html/rfc3550#section-5.1
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |V=2|P|X|  CC   |M|     PT      |       sequence number         |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                           timestamp                           |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |           synchronization source (SSRC) identifier            |
+ * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * |            contributing source (CSRC) identifiers             |
+ * |                             ....                              |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
 class RtpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,

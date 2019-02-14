@@ -20,11 +20,13 @@ import org.jitsi.rtp.new_scheme.CanBecomeModifiable
 import org.jitsi.rtp.new_scheme.CanBecomeReadOnly
 import org.jitsi.rtp.new_scheme.ModifiablePacket
 import org.jitsi.rtp.new_scheme.ReadOnlyPacket
+import org.jitsi.rtp.new_scheme.ReadOnlyRtpProtocolPacket
+import org.jitsi.rtp.rtcp.RtcpByePacket
 import org.jitsi.rtp.rtcp.RtcpHeader
 import java.nio.ByteBuffer
 
 
-abstract class ReadOnlyRtcpPacket : ReadOnlyPacket(), CanBecomeModifiable<ModifiableRtcpPacket> {
+abstract class ReadOnlyRtcpPacket : ReadOnlyRtpProtocolPacket() {
     companion object {
         fun fromBuffer(buf: ByteBuffer): ReadOnlyRtcpPacket {
             val packetType = RtcpHeader.getPacketType(buf)
@@ -32,7 +34,7 @@ abstract class ReadOnlyRtcpPacket : ReadOnlyPacket(), CanBecomeModifiable<Modifi
 //                RtcpSrPacket.PT -> RtcpSrPacket(buf)
 //                RtcpRrPacket.PT -> RtcpRrPacket(buf)
 //                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
-                RtcpByePacket.PT -> RtcpByePacket (buf)
+                RtcpByePacket.PT -> ReadOnlyRtcpByePacket.fromBuffer(buf)
 //                in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
             }
