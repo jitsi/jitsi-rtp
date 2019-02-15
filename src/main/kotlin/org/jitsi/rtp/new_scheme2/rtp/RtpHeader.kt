@@ -156,21 +156,26 @@ private class RtpHeaderData(
     }
 }
 
-class ImmutableRtpHeader(
-    version: Int = 2,
-    hasPadding: Boolean = false,
-    marker: Boolean = false,
-    payloadType: Int = 0,
-    sequenceNumber: Int = 0,
-    timestamp: Long = 0,
-    ssrc: Long = 0,
-    csrcs: MutableList<Long> = mutableListOf(),
-    extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+class ImmutableRtpHeader private constructor(
+    private val headerData: RtpHeaderData = RtpHeaderData(),
     backingBuffer: ByteBuffer? = null
 ) : ImmutableSerializableData() {
-    private val headerData = RtpHeaderData(
-            version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
-    )
+
+    constructor(
+        version: Int = 2,
+        hasPadding: Boolean = false,
+        marker: Boolean = false,
+        payloadType: Int = 0,
+        sequenceNumber: Int = 0,
+        timestamp: Long = 0,
+        ssrc: Long = 0,
+        csrcs: MutableList<Long> = mutableListOf(),
+        extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+        backingBuffer: ByteBuffer? = null
+    ) : this(RtpHeaderData(
+            version, hasPadding, marker, payloadType, sequenceNumber,
+            timestamp, ssrc, csrcs, extensions), backingBuffer)
+
     override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
         b.rewind()
@@ -195,18 +200,7 @@ class ImmutableRtpHeader(
     companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
             val rtpHeaderData = RtpHeaderData.fromBuffer(buf)
-            return ImmutableRtpHeader(
-                rtpHeaderData.version,
-                rtpHeaderData.hasPadding,
-                rtpHeaderData.marker,
-                rtpHeaderData.payloadType,
-                rtpHeaderData.sequenceNumber,
-                rtpHeaderData.timestamp,
-                rtpHeaderData.ssrc,
-                rtpHeaderData.csrcs,
-                rtpHeaderData.extensions,
-                buf
-            )
+            return ImmutableRtpHeader(rtpHeaderData, buf)
         }
     }
 }

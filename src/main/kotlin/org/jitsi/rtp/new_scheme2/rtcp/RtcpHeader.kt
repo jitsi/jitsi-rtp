@@ -90,18 +90,22 @@ private class RtcpHeaderData(
     }
 }
 
-class ImmutableRtcpHeader(
-    version: Int = 2,
-    hasPadding: Boolean = false,
-    reportCount: Int = 0,
-    packetType: Int = 0,
-    length: Int = 0,
-    senderSsrc: Long = 0,
+class ImmutableRtcpHeader private constructor(
+    private val headerData: RtcpHeaderData = RtcpHeaderData(),
     backingBuffer: ByteBuffer? = null
 ) : ImmutableSerializableData() {
-    private val headerData = RtcpHeaderData(
-        version, hasPadding, reportCount, packetType, length, senderSsrc
-    )
+
+    constructor(
+        version: Int = 2,
+        hasPadding: Boolean = false,
+        reportCount: Int = 0,
+        packetType: Int = 0,
+        length: Int = 0,
+        senderSsrc: Long = 0,
+        backingBuffer: ByteBuffer? = null
+    ) : this(RtcpHeaderData(
+            version, hasPadding, reportCount,
+            packetType, length, senderSsrc), backingBuffer)
 
     override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
@@ -123,15 +127,7 @@ class ImmutableRtcpHeader(
     companion object : ConstructableFromBuffer<ImmutableRtcpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtcpHeader {
             val headerData = RtcpHeaderData.fromBuffer(buf)
-            return ImmutableRtcpHeader(
-                headerData.version,
-                headerData.hasPadding,
-                headerData.reportCount,
-                headerData.packetType,
-                headerData.length,
-                headerData.senderSsrc,
-                buf
-            )
+            return ImmutableRtcpHeader(headerData, buf)
         }
     }
 }
