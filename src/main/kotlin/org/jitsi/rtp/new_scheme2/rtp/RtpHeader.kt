@@ -168,29 +168,29 @@ class ImmutableRtpHeader(
     extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
     backingBuffer: ByteBuffer? = null
 ) : ImmutableSerializableData() {
-    private val rtpHeaderData = RtpHeaderData(
+    private val headerData = RtpHeaderData(
             version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
     )
     override val dataBuf: ByteBuffer by lazy {
-        val b = ByteBufferUtils.ensureCapacity(backingBuffer, rtpHeaderData.sizeBytes)
+        val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
         b.rewind()
-        b.limit(rtpHeaderData.sizeBytes)
-        rtpHeaderData.serializeTo(b)
+        b.limit(headerData.sizeBytes)
+        headerData.serializeTo(b)
         b.rewind() as ByteBuffer
     }
 
-    val version: Int = rtpHeaderData.version
-    val hasPadding: Boolean = rtpHeaderData.hasPadding
-    val marker: Boolean = rtpHeaderData.marker
-    val payloadType: Int = rtpHeaderData.payloadType
-    val sequenceNumber: Int = rtpHeaderData.sequenceNumber
-    val timestamp: Long = rtpHeaderData.timestamp
-    val ssrc: Long = rtpHeaderData.ssrc
-    val csrcs: List<Long> = rtpHeaderData.csrcs
+    val version: Int = headerData.version
+    val hasPadding: Boolean = headerData.hasPadding
+    val marker: Boolean = headerData.marker
+    val payloadType: Int = headerData.payloadType
+    val sequenceNumber: Int = headerData.sequenceNumber
+    val timestamp: Long = headerData.timestamp
+    val ssrc: Long = headerData.ssrc
+    val csrcs: List<Long> = headerData.csrcs
     //TODO(brian): need a readonly RtpheaderExtensions
-    val extensions: RtpHeaderExtensions = rtpHeaderData.extensions
+    val extensions: RtpHeaderExtensions = headerData.extensions
 
-    val sizeBytes: Int = rtpHeaderData.sizeBytes
+    val sizeBytes: Int = headerData.sizeBytes
 
     companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
