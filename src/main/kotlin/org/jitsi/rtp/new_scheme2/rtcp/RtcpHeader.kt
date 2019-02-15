@@ -18,7 +18,6 @@ package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
-import org.jitsi.rtp.new_scheme2.Immutable
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.rtcp.RtcpHeader
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -34,7 +33,7 @@ import java.nio.ByteBuffer
  * |                         SSRC of sender                        |
  * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  */
-class RtcpHeaderData(
+private class RtcpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,
     var reportCount: Int = 0,
