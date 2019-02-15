@@ -19,7 +19,7 @@ package org.jitsi.rtp.new_scheme2
 import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 
-abstract class ImmutablePacket : Immutable, Serializable {
+abstract class ImmutableSerializableData : Immutable, Serializable {
     protected abstract val dataBuf: ByteBuffer
 
     final override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()

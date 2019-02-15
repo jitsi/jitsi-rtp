@@ -21,7 +21,7 @@ import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
-import org.jitsi.rtp.new_scheme2.Immutable
+import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -138,11 +138,11 @@ class ImmutableRtpHeader(
     csrcs: MutableList<Long> = mutableListOf(),
     extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
     backingBuffer: ByteBuffer? = null
-) : Serializable, Immutable {
+) : ImmutableSerializableData() {
     private val rtpHeaderData = RtpHeaderData(
             version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
     )
-    private val dataBuf: ByteBuffer by lazy {
+    override protected val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, rtpHeaderData.sizeBytes)
         b.rewind()
         b.limit(rtpHeaderData.sizeBytes)
@@ -179,8 +179,6 @@ class ImmutableRtpHeader(
     val extensions: RtpHeaderExtensions = rtpHeaderData.extensions
 
     val sizeBytes: Int = rtpHeaderData.sizeBytes
-
-    override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()
 
     companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
