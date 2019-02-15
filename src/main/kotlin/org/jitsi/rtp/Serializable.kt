@@ -26,4 +26,6 @@ interface Serializable {
      * the buffer
      */
     fun getBuffer(): ByteBuffer
+
+    fun serializeTo(buf: ByteBuffer) {}
 }

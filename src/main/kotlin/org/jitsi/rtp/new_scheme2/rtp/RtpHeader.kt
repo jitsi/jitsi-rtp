@@ -51,7 +51,7 @@ private class RtpHeaderData(
     var ssrc: Long = 0,
     var csrcs: MutableList<Long> = mutableListOf(),
     var extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
-) {
+) : Serializable {
     val sizeBytes: Int
         get() = RtpHeader.FIXED_SIZE_BYTES +
                 (csrcCount * RtpHeader.CSRC_SIZE_BYTES) +
@@ -62,6 +62,66 @@ private class RtpHeaderData(
 
     val csrcCount
         get() = csrcs.size
+
+    fun clone(): RtpHeaderData {
+        return RtpHeaderData(
+            version,
+            hasPadding,
+            marker,
+            payloadType,
+            sequenceNumber,
+            timestamp,
+            ssrc,
+            csrcs.toMutableList(),
+            //TODO(brian): add clone method to extensions
+            extensions
+        )
+    }
+
+    override fun toString(): String = with (StringBuffer()) {
+        appendln("size: $sizeBytes")
+        appendln("version: $version")
+        appendln("hasPadding: $hasPadding")
+        appendln("hasExtension: $hasExtension")
+        appendln("csrcCount: $csrcCount")
+        appendln("marker: $marker")
+        appendln("payloadType: $payloadType")
+        appendln("sequenceNumber: $sequenceNumber")
+        appendln("timestamp: $timestamp")
+        appendln("ssrc: $ssrc")
+        appendln("csrcs: $csrcs")
+        appendln("Extensions: $extensions")
+        toString()
+    }
+
+    override fun getBuffer(): ByteBuffer {
+        val b = ByteBuffer.allocate(sizeBytes)
+        serializeTo(b)
+        return b.rewind() as ByteBuffer
+    }
+
+    //TODO(brian): we assume that the buf's position 0 is the start
+    // of the header, as the methods here use absolute positioning (which
+    // makes sense for certain scenarios, but doesn't work as well for
+    // serializing to an existing buffer which may have other stuff
+    // before it
+    override fun serializeTo(buf: ByteBuffer) {
+        RtpHeader.setVersion(buf, version)
+        RtpHeader.setPadding(buf, hasPadding)
+        RtpHeader.setExtension(buf, hasExtension)
+        RtpHeader.setCsrcCount(buf, csrcCount)
+        RtpHeader.setMarker(buf, marker)
+        RtpHeader.setPayloadType(buf, payloadType)
+        RtpHeader.setSequenceNumber(buf, sequenceNumber)
+        RtpHeader.setTimestamp(buf, timestamp)
+        RtpHeader.setSsrc(buf, ssrc)
+        RtpHeader.setCsrcs(buf, csrcs)
+        if (hasExtension) {
+            // Write the generic extension header (the cookie and the length)
+            buf.position(RtpHeader.getExtensionsHeaderOffset(csrcCount))
+            RtpHeader.setExtensions(buf, extensions)
+        }
+    }
 
     companion object : ConstructableFromBuffer<RtpHeaderData> {
         override fun fromBuffer(buf: ByteBuffer): RtpHeaderData {
@@ -94,37 +154,6 @@ private class RtpHeaderData(
             )
         }
     }
-
-    fun clone(): RtpHeaderData {
-        return RtpHeaderData(
-            version,
-            hasPadding,
-            marker,
-            payloadType,
-            sequenceNumber,
-            timestamp,
-            ssrc,
-            csrcs.toMutableList(),
-            //TODO(brian): add clone method to extensions
-            extensions
-        )
-    }
-
-    override fun toString(): String = with (StringBuffer()) {
-        appendln("size: $sizeBytes")
-        appendln("version: $version")
-        appendln("hasPadding: $hasPadding")
-        appendln("hasExtension: $hasExtension")
-        appendln("csrcCount: $csrcCount")
-        appendln("marker: $marker")
-        appendln("payloadType: $payloadType")
-        appendln("sequenceNumber: $sequenceNumber")
-        appendln("timestamp: $timestamp")
-        appendln("ssrc: $ssrc")
-        appendln("csrcs: $csrcs")
-        appendln("Extensions: $extensions")
-        toString()
-    }
 }
 
 class ImmutableRtpHeader(
@@ -142,29 +171,12 @@ class ImmutableRtpHeader(
     private val rtpHeaderData = RtpHeaderData(
             version, hasPadding, marker, payloadType, sequenceNumber, timestamp, ssrc, csrcs, extensions
     )
-    override protected val dataBuf: ByteBuffer by lazy {
+    override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, rtpHeaderData.sizeBytes)
         b.rewind()
         b.limit(rtpHeaderData.sizeBytes)
-
-        RtpHeader.setVersion(b, rtpHeaderData.version)
-        RtpHeader.setPadding(b, rtpHeaderData.hasPadding)
-        RtpHeader.setExtension(b, rtpHeaderData.hasExtension)
-        RtpHeader.setCsrcCount(b, rtpHeaderData.csrcCount)
-        RtpHeader.setMarker(b, rtpHeaderData.marker)
-        RtpHeader.setPayloadType(b, rtpHeaderData.payloadType)
-        RtpHeader.setSequenceNumber(b, rtpHeaderData.sequenceNumber)
-        RtpHeader.setTimestamp(b, rtpHeaderData.timestamp)
-        RtpHeader.setSsrc(b, rtpHeaderData.ssrc)
-        RtpHeader.setCsrcs(b, rtpHeaderData.csrcs)
-        if (rtpHeaderData.hasExtension) {
-            // Write the generic extension header (the cookie and the length)
-            b.position(RtpHeader.getExtensionsHeaderOffset(rtpHeaderData.csrcCount))
-            RtpHeader.setExtensions(b, extensions)
-        }
-        b.rewind()
-
-        b
+        rtpHeaderData.serializeTo(b)
+        b.rewind() as ByteBuffer
     }
 
     val version: Int = rtpHeaderData.version
