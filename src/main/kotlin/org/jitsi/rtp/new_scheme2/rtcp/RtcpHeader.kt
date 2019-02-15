@@ -19,7 +19,9 @@ package org.jitsi.rtp.new_scheme2.rtcp
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.Immutable
+import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.rtcp.RtcpHeader
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 /**
@@ -39,7 +41,7 @@ class RtcpHeaderData(
     var packetType: Int = 0,
     var length: Int = 0,
     var senderSsrc: Long = 0
-) {
+) : Serializable {
     val sizeBytes: Int = RtcpHeader.SIZE_BYTES
 
     companion object : ConstructableFromBuffer<RtcpHeaderData> {
@@ -72,6 +74,21 @@ class RtcpHeaderData(
             version, hasPadding, reportCount, packetType, length, senderSsrc
         )
     }
+
+    override fun getBuffer(): ByteBuffer {
+        val b = ByteBuffer.allocate(sizeBytes)
+        serializeTo(b)
+        return b.rewind() as ByteBuffer
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        RtcpHeader.setVersion(buf, version)
+        RtcpHeader.setPadding(buf, hasPadding)
+        RtcpHeader.setReportCount(buf, reportCount)
+        RtcpHeader.setPacketType(buf, packetType)
+        RtcpHeader.setLength(buf, length)
+        RtcpHeader.setSenderSsrc(buf, senderSsrc)
+    }
 }
 
 class ImmutableRtcpHeader(
@@ -82,12 +99,18 @@ class ImmutableRtcpHeader(
     length: Int = 0,
     senderSsrc: Long = 0,
     backingBuffer: ByteBuffer? = null
-) : Serializable, Immutable {
+) : ImmutableSerializableData() {
     private val headerData = RtcpHeaderData(
         version, hasPadding, reportCount, packetType, length, senderSsrc
     )
 
-
+    override val dataBuf: ByteBuffer by lazy {
+        val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
+        b.rewind()
+        b.limit(headerData.sizeBytes)
+        headerData.serializeTo(b)
+        b.rewind() as ByteBuffer
+    }
 
     val sizeBytes: Int = headerData.sizeBytes
 
@@ -97,4 +120,19 @@ class ImmutableRtcpHeader(
     val packetType: Int = headerData.packetType
     val length: Int = headerData.length
     val senderSsrc: Long = headerData.senderSsrc
+
+    companion object : ConstructableFromBuffer<ImmutableRtcpHeader> {
+        override fun fromBuffer(buf: ByteBuffer): ImmutableRtcpHeader {
+            val headerData = RtcpHeaderData.fromBuffer(buf)
+            return ImmutableRtcpHeader(
+                headerData.version,
+                headerData.hasPadding,
+                headerData.reportCount,
+                headerData.packetType,
+                headerData.length,
+                headerData.senderSsrc,
+                buf
+            )
+        }
+    }
 }
