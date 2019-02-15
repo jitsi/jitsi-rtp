@@ -37,7 +37,7 @@ class ImmutableSrtpPacket(
     backingBuffer: ByteBuffer? = null
 ) : ImmutableRtpPacket(header, payload, backingBuffer) {
 
-    fun getAuthTag(tagLength: Int) =
+    fun getAuthTag(tagLength: Int): ByteBuffer =
             dataBuf.subBuffer(dataBuf.limit() - tagLength)
 
 }
