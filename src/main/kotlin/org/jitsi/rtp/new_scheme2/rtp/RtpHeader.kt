@@ -41,7 +41,7 @@ import java.nio.ByteBuffer
  * |                             ....                              |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-private class RtpHeaderData(
+internal class RtpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,
     var marker: Boolean = false,
@@ -156,7 +156,7 @@ private class RtpHeaderData(
     }
 }
 
-class ImmutableRtpHeader private constructor(
+class ImmutableRtpHeader internal constructor(
     private val headerData: RtpHeaderData = RtpHeaderData(),
     backingBuffer: ByteBuffer? = null
 ) : ImmutableSerializableData() {
