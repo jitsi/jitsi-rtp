@@ -17,12 +17,12 @@
 package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
-import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
+import org.jitsi.rtp.new_scheme2.ImmutablePacket
 import org.jitsi.rtp.rtcp.RtcpByePacket
 import org.jitsi.rtp.rtcp.RtcpHeader
 import java.nio.ByteBuffer
 
-abstract class ImmutableRtcpPacket : ImmutableSerializableData() {
+abstract class ImmutableRtcpPacket : ImmutablePacket() {
     abstract val header: ImmutableRtcpHeader
 
     companion object : ConstructableFromBuffer<ImmutableRtcpPacket> {
