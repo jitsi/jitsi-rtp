@@ -22,7 +22,7 @@ import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-open class ImmutableRtpData(
+open class ImmutableRtpPacket(
     val header: ImmutableRtpHeader = ImmutableRtpHeader(),
     val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
@@ -43,11 +43,11 @@ open class ImmutableRtpData(
         b
     }
 
-    companion object : ConstructableFromBuffer<ImmutableRtpData> {
-        override fun fromBuffer(buf: ByteBuffer): ImmutableRtpData {
+    companion object : ConstructableFromBuffer<ImmutableRtpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ImmutableRtpPacket {
             val header = ImmutableRtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
-            return ImmutableRtpData(header, payload, buf)
+            return ImmutableRtpPacket(header, payload, buf)
         }
     }
 }
