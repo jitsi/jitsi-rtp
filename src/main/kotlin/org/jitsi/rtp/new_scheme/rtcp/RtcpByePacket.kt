@@ -15,17 +15,53 @@
  */
 package org.jitsi.rtp.new_scheme.rtcp
 
-import org.jitsi.rtp.Packet
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme.CanBecomeModifiable
+import org.jitsi.rtp.new_scheme.CanBecomeReadOnly
+import org.jitsi.rtp.new_scheme.ConstructableFromBuffer
+import org.jitsi.rtp.new_scheme.ModifiablePacket
+import org.jitsi.rtp.new_scheme.ModifiableRtpHeader
 import org.jitsi.rtp.rtcp.RtcpByePacket
 import org.jitsi.rtp.util.ByteBufferUtils
-import toUInt
-import unsigned.toUByte
-import unsigned.toUInt
-import unsigned.toULong
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+
+private class RtcpByeData(
+    var header: ModifiableRtcpHeader = ModifiableRtcpHeader(),
+    var ssrcs: MutableList<Long> = mutableListOf(),
+    var reason: String? = null
+) {
+
+    companion object : ConstructableFromBuffer<RtcpByeData> {
+        override fun fromBuffer(buf: ByteBuffer): RtcpByeData {
+            val header = ModifiableRtcpHeader.fromBuffer(buf)
+            val ssrcs = org.jitsi.rtp.rtcp.RtcpByePacket.getSsrcs(buf, header.reportCount)
+            val reason = if (org.jitsi.rtp.rtcp.RtcpByePacket.hasReason(buf)) {
+                String(org.jitsi.rtp.rtcp.RtcpByePacket.getReason(buf).array(), StandardCharsets.US_ASCII)
+            } else {
+                null
+            }
+            return RtcpByeData(header, ssrcs, reason)
+        }
+    }
+
+    val sizeBytes: Int
+        get() {
+            val dataSize = header.sizeBytes - 4 + ssrcs.size * 4
+            val reasonSize = reason?.let {
+                val fieldSize = it.toByteArray(StandardCharsets.US_ASCII).size + 1
+                var paddingSize = 0
+                while ((fieldSize + paddingSize) % 4 != 0) {
+                    paddingSize++
+                }
+                fieldSize + paddingSize
+
+            } ?: 0
+
+            return dataSize + reasonSize
+        }
+}
 
 /**
  * https://tools.ietf.org/html/rfc3550#section-6.6
@@ -44,40 +80,25 @@ import java.nio.charset.StandardCharsets
  *
  */
 class ReadOnlyRtcpByePacket(
-    val header: ReadOnlyRtcpHeader = ReadOnlyRtcpHeader(),
-    val ssrcs: List<Long>,
-    val reason: String? = null,
+    header: ReadOnlyRtcpHeader = ReadOnlyRtcpHeader(),
+    ssrcs: List<Long>,
+    reason: String? = null,
     buf: ByteBuffer? = null
-) : ReadOnlyRtcpPacket() {
+) : ReadOnlyRtcpPacket(), CanBecomeModifiable<ModifiableRtcpByePacket> {
     override val dataBuf: ByteBuffer
 
-    override val sizeBytes: Int
-        get() {
-            val dataSize = header.sizeBytes - 4 + ssrcs.size * 4
-            val reasonSize = if (reason != null) {
-                val fieldSize = reason.toByteArray(StandardCharsets.US_ASCII).size + 1
-                var paddingSize = 0
-                while ((fieldSize + paddingSize) % 4 != 0) {
-                    paddingSize++
-                }
-                fieldSize + paddingSize
-            } else {
-                0
-            }
+    private val rtcpByeData = RtcpByeData(header.modifyInPlace(), ssrcs.toMutableList(), reason)
 
-            return dataSize + reasonSize
-        }
+    override val sizeBytes: Int = rtcpByeData.sizeBytes
+
+    override val header: ReadOnlyRtcpHeader = rtcpByeData.header.toReadOnly()
+    val ssrcs: List<Long> = rtcpByeData.ssrcs
+    val reason: String? = rtcpByeData.reason
 
     companion object {
         fun fromBuffer(buf: ByteBuffer): ReadOnlyRtcpByePacket {
-            val header = ReadOnlyRtcpHeader.fromBuffer(buf)
-            val ssrcs = org.jitsi.rtp.rtcp.RtcpByePacket.getSsrcs(buf, header.reportCount)
-            val reason = if (org.jitsi.rtp.rtcp.RtcpByePacket.hasReason(buf)) {
-                String(org.jitsi.rtp.rtcp.RtcpByePacket.getReason(buf).array(), StandardCharsets.US_ASCII)
-            } else {
-                null
-            }
-            return ReadOnlyRtcpByePacket(header, ssrcs, reason)
+            val rtcpByeData = RtcpByeData.fromBuffer(buf)
+            return ReadOnlyRtcpByePacket(rtcpByeData.header.toReadOnly(), rtcpByeData.ssrcs, rtcpByeData.reason, buf)
         }
     }
 
@@ -98,4 +119,67 @@ class ReadOnlyRtcpByePacket(
         b.rewind()
         dataBuf = b
     }
+
+    override val payload: ByteBuffer = dataBuf.subBuffer(header.sizeBytes)
+
+    override fun modifyInPlace(): ModifiableRtcpByePacket =
+            ModifiableRtcpByePacket(rtcpByeData.header, rtcpByeData.ssrcs, rtcpByeData.reason, dataBuf)
+
+    //TODO(brian): some awkwardness here due to storing things as modifiable in RtcpByeData, but i think
+    // it'd be worse if we held it as read only?
+    override fun getModifiableCopy(): ModifiableRtcpByePacket {
+        val reasonCopy = rtcpByeData.reason?.let { it + "" }
+        return ModifiableRtcpByePacket(rtcpByeData.header.toReadOnly().getModifiableCopy(), rtcpByeData.ssrcs.toMutableList(),
+                reasonCopy, dataBuf.clone())
+    }
+
+
+}
+
+class ModifiableRtcpByePacket(
+    header: ModifiableRtcpHeader,
+    ssrcs: MutableList<Long>,
+    reason: String?,
+    private val dataBuf: ByteBuffer? = null
+) : ModifiableRtcpPacket(), CanBecomeReadOnly<ReadOnlyRtcpByePacket> {
+    private val rtcpByeData = RtcpByeData(header, ssrcs, reason)
+
+    override var header: ModifiableRtcpHeader
+        get() = rtcpByeData.header
+        set(header) {
+            rtcpByeData.header = header
+        }
+    var ssrcs: MutableList<Long>
+        get() = rtcpByeData.ssrcs
+        set(ssrcs) {
+            rtcpByeData.ssrcs = ssrcs
+        }
+
+    var reason: String?
+        get() = rtcpByeData.reason
+        set(reason) {
+            rtcpByeData.reason = reason
+        }
+
+//    override var payload: ByteBuffer by lazy {
+//        if (dataBuf.limit() )
+//    }
+
+    companion object : ConstructableFromBuffer<ModifiableRtcpByePacket> {
+        override fun fromBuffer(buf: ByteBuffer): ModifiableRtcpByePacket {
+            val header = ModifiableRtcpHeader.fromBuffer(buf)
+            val ssrcs = org.jitsi.rtp.rtcp.RtcpByePacket.getSsrcs(buf, header.reportCount)
+            val reason = if (org.jitsi.rtp.rtcp.RtcpByePacket.hasReason(buf)) {
+                String(org.jitsi.rtp.rtcp.RtcpByePacket.getReason(buf).array(), StandardCharsets.US_ASCII)
+            } else {
+                null
+            }
+            return ModifiableRtcpByePacket(header, ssrcs, reason)
+        }
+    }
+
+    init {
+    }
+
+    override fun toReadOnly(): ReadOnlyRtcpByePacket = ReadOnlyRtcpByePacket(header.toReadOnly(), ssrcs, reason, dataBuf)
 }

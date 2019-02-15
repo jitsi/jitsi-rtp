@@ -19,6 +19,7 @@ package org.jitsi.rtp.new_scheme.rtcp
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.new_scheme.CanBecomeModifiable
 import org.jitsi.rtp.new_scheme.CanBecomeReadOnly
+import org.jitsi.rtp.new_scheme.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme.Modifiable
 import org.jitsi.rtp.new_scheme.ReadOnly
 import org.jitsi.rtp.rtcp.RtcpHeader
@@ -44,6 +45,19 @@ class RtcpHeaderData(
     var senderSsrc: Long = 0
 ) {
     val sizeBytes: Int = RtcpHeader.SIZE_BYTES
+
+    companion object : ConstructableFromBuffer<RtcpHeaderData> {
+        override fun fromBuffer(buf: ByteBuffer): RtcpHeaderData {
+            val version = RtcpHeader.getVersion(buf)
+            val hasPadding = RtcpHeader.hasPadding(buf)
+            val reportCount = RtcpHeader.getReportCount(buf)
+            val packetType = RtcpHeader.getPacketType(buf)
+            val length = RtcpHeader.getLength(buf)
+            val senderSsrc = RtcpHeader.getSenderSsrc(buf)
+
+            return RtcpHeaderData(version, hasPadding, reportCount, packetType, length, senderSsrc)
+        }
+    }
 
     override fun toString(): String {
         return with(StringBuffer()) {
@@ -129,6 +143,46 @@ class ModifiableRtcpHeader(
     private val headerData: RtcpHeaderData = RtcpHeaderData(),
     private val dataBuf: ByteBuffer? = null
 ) : Modifiable, CanBecomeReadOnly<ReadOnlyRtcpHeader> {
+
+    companion object : ConstructableFromBuffer<ModifiableRtcpHeader> {
+        override fun fromBuffer(buf: ByteBuffer): ModifiableRtcpHeader {
+            val headerData = RtcpHeaderData.fromBuffer(buf)
+            return ModifiableRtcpHeader(headerData, buf)
+        }
+    }
+
+    val sizeBytes: Int = headerData.sizeBytes
+
+    var version: Int
+        get() = headerData.version
+        set(version) {
+            headerData.version = version
+        }
+    var hasPadding: Boolean
+        get() = headerData.hasPadding
+        set(hasPadding) {
+            headerData.hasPadding = hasPadding
+        }
+    var reportCount: Int
+        get() = headerData.reportCount
+        set(reportCount) {
+            headerData.reportCount = reportCount
+        }
+    var packetType: Int
+        get() = headerData.packetType
+        set(packetType) {
+            headerData.packetType = packetType
+        }
+    var length: Int
+        get() = headerData.length
+        set(length) {
+            headerData.length = length
+        }
+    var senderSsrc: Long
+        get() = headerData.senderSsrc
+        set(senderSsrc) {
+            headerData.senderSsrc = senderSsrc
+        }
 
     override fun toReadOnly(): ReadOnlyRtcpHeader {
         return ReadOnlyRtcpHeader(

@@ -62,8 +62,8 @@ class RtpHeaderData(
     val csrcCount
         get() = csrcs.size
 
-    companion object {
-        fun fromBuffer(buf: ByteBuffer): RtpHeaderData {
+    companion object : ConstructableFromBuffer<RtpHeaderData> {
+        override fun fromBuffer(buf: ByteBuffer): RtpHeaderData {
             val version = RtpHeader.getVersion(buf)
             val hasPadding = RtpHeader.hasPadding(buf)
             val hasExtension = RtpHeader.getExtension(buf)
@@ -210,8 +210,8 @@ class ReadOnlyRtpHeader(
 }
 
 open class ModifiableRtpHeader(
-        private val headerData: RtpHeaderData = RtpHeaderData(),
-        private val dataBuf: ByteBuffer? = null
+    private val headerData: RtpHeaderData = RtpHeaderData(),
+    private val dataBuf: ByteBuffer? = null
 ) : Modifiable, CanBecomeReadOnly<ReadOnlyRtpHeader> {
     val sizeBytes: Int = headerData.sizeBytes
 

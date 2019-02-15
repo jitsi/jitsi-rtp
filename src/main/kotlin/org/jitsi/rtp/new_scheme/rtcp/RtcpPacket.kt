@@ -18,17 +18,21 @@ package org.jitsi.rtp.new_scheme.rtcp
 
 import org.jitsi.rtp.new_scheme.CanBecomeModifiable
 import org.jitsi.rtp.new_scheme.CanBecomeReadOnly
+import org.jitsi.rtp.new_scheme.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme.ModifiablePacket
 import org.jitsi.rtp.new_scheme.ReadOnlyPacket
 import org.jitsi.rtp.new_scheme.ReadOnlyRtpProtocolPacket
 import org.jitsi.rtp.rtcp.RtcpByePacket
 import org.jitsi.rtp.rtcp.RtcpHeader
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 
 abstract class ReadOnlyRtcpPacket : ReadOnlyRtpProtocolPacket() {
-    companion object {
-        fun fromBuffer(buf: ByteBuffer): ReadOnlyRtcpPacket {
+    abstract val header: ReadOnlyRtcpHeader
+    abstract val payload: ByteBuffer
+    companion object : ConstructableFromBuffer<ReadOnlyRtcpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ReadOnlyRtcpPacket {
             val packetType = RtcpHeader.getPacketType(buf)
             return when (packetType) {
 //                RtcpSrPacket.PT -> RtcpSrPacket(buf)
@@ -40,9 +44,24 @@ abstract class ReadOnlyRtcpPacket : ReadOnlyRtpProtocolPacket() {
             }
         }
     }
-
 }
 
-abstract class ModifiableRtcpPacket : ModifiablePacket, CanBecomeReadOnly<ReadOnlyRtcpPacket> {
+abstract class ModifiableRtcpPacket : ModifiablePacket {
+    abstract var header: ModifiableRtcpHeader
+//    abstract var payload: ByteBuffer
+    companion object : ConstructableFromBuffer<ModifiableRtcpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ModifiableRtcpPacket {
+            val packetType = RtcpHeader.getPacketType(buf)
+            return when (packetType) {
+//                RtcpSrPacket.PT -> RtcpSrPacket(buf)
+//                RtcpRrPacket.PT -> RtcpRrPacket(buf)
+//                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
+                RtcpByePacket.PT -> ModifiableRtcpByePacket.fromBuffer(buf)
+//                in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
+                else -> throw Exception("Unsupported RTCP packet type $packetType")
+            }
+        }
+
+    }
 
 }

@@ -35,18 +35,26 @@ interface Modifiable
 
 interface ModifiablePacket : Modifiable
 
-abstract class ReadOnlyPacket : ReadOnly, Serializable {
+/**
+ * Any instance of [ReadOnlyPacket] will always have a valid buffer containing all
+ * of the data held in the packet.
+ */
+abstract class ReadOnlyPacket : ReadOnly, Serializable, Convertable<ReadOnlyPacket> {
     protected abstract val dataBuf: ByteBuffer
     open val sizeBytes: Int
         get() = dataBuf.limit()
 
     override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()
+
+    override fun <T : ReadOnlyPacket> convertTo(builder: ConstructableFromBuffer<T>): T {
+        return builder.fromBuffer(dataBuf)
+    }
 }
 
-interface Convertable<U> {
-    fun <T : U >convertTo(builder: ConstructableFromBuffer<T>): T
+interface Convertable<BaseType> {
+    fun <NewType : BaseType >convertTo(builder: ConstructableFromBuffer<NewType>): NewType
 }
 
-interface ConstructableFromBuffer<T> {
-    fun fromBuffer(buf: ByteBuffer): T
+interface ConstructableFromBuffer<ConstructedType> {
+    fun fromBuffer(buf: ByteBuffer): ConstructedType
 }

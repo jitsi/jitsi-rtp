@@ -18,15 +18,15 @@ package org.jitsi.rtp.new_scheme
 
 import java.nio.ByteBuffer
 
-class ReadOnlyUnparsedPacket(override val dataBuf: ByteBuffer) : ReadOnlyPacket(), Convertable<ReadOnlyPacket> {
+class ReadOnlyUnparsedPacket(override val dataBuf: ByteBuffer) : ReadOnlyPacket() {
     companion object : ConstructableFromBuffer<ReadOnlyUnparsedPacket> {
         override fun fromBuffer(buf: ByteBuffer): ReadOnlyUnparsedPacket {
             return ReadOnlyUnparsedPacket(buf)
         }
     }
 
-    override fun <T : ReadOnlyPacket> convertTo(builder: ConstructableFromBuffer<T>): T {
-        return builder.fromBuffer(dataBuf)
-    }
+//    override fun <T : ReadOnlyPacket> convertTo(builder: ConstructableFromBuffer<T>): T {
+//        return builder.fromBuffer(dataBuf)
+//    }
 }
 

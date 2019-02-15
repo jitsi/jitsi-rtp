@@ -27,9 +27,9 @@ abstract class ReadOnlyRtpProtocolPacket : ReadOnlyPacket() {
 }
 
 open class ReadOnlyRtpPacket(
-        val header: ReadOnlyRtpHeader = ReadOnlyRtpHeader(),
-        val payload: ByteBuffer = ByteBuffer.allocate(0),
-        buf: ByteBuffer? = null
+    val header: ReadOnlyRtpHeader = ReadOnlyRtpHeader(),
+    val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    buf: ByteBuffer? = null
 ) : ReadOnlyRtpProtocolPacket(), CanBecomeModifiable<ModifiableRtpPacket> {
     //TODO(brian): will it work to make this final here?
     final override val dataBuf: ByteBuffer
@@ -48,8 +48,8 @@ open class ReadOnlyRtpPacket(
         dataBuf = b
     }
 
-    companion object {
-        fun fromBuffer(buf: ByteBuffer): ReadOnlyRtpPacket {
+    companion object : ConstructableFromBuffer<ReadOnlyRtpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ReadOnlyRtpPacket {
             val header = ReadOnlyRtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
             return ReadOnlyRtpPacket(header, payload, buf)
@@ -71,12 +71,12 @@ open class ReadOnlyRtpPacket(
 }
 
 class ModifiableRtpPacket(
-        var rtpHeader: ModifiableRtpHeader = ModifiableRtpHeader(),
-        var payload: ByteBuffer = ByteBuffer.allocate(0),
-        private val dataBuf: ByteBuffer? = null
+    var rtpHeader: ModifiableRtpHeader = ModifiableRtpHeader(),
+    var payload: ByteBuffer = ByteBuffer.allocate(0),
+    private val dataBuf: ByteBuffer? = null
 ) : ModifiablePacket, CanBecomeReadOnly<ReadOnlyRtpPacket> {
-    companion object {
-        fun fromBuffer(buf: ByteBuffer): ModifiableRtpPacket {
+    companion object : ConstructableFromBuffer<ModifiableRtpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ModifiableRtpPacket {
             val header = ModifiableRtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
 
