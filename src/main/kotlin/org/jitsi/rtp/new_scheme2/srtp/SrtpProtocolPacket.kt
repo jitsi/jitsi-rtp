@@ -26,8 +26,10 @@ import java.nio.ByteBuffer
  * so it basically just distinguishes a packet as encrypted and stores the buffer
  */
 open class ImmutableUnparsedSrtpProtocolPacket(
-    override val dataBuf: ByteBuffer
+    final override val dataBuf: ByteBuffer
 ) : ImmutablePacket() {
+    override val sizeBytes: Int = dataBuf.limit()
+
     companion object : ConstructableFromBuffer<ImmutableUnparsedSrtpProtocolPacket> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableUnparsedSrtpProtocolPacket =
                 ImmutableUnparsedSrtpProtocolPacket(buf)

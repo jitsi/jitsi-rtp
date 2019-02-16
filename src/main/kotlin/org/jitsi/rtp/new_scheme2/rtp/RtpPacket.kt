@@ -28,7 +28,7 @@ open class ImmutableRtpPacket(
     backingBuffer: ByteBuffer? = null
 ) : ImmutablePacket() {
 
-    val sizeBytes: Int = header.sizeBytes + payload.limit()
+    override val sizeBytes: Int = header.sizeBytes + payload.limit()
 
     final override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)

@@ -29,7 +29,7 @@ class ImmutableSrtcpPacket(
     backingBuffer: ByteBuffer? = null
 ) : ImmutableRtcpPacket() {
 
-    val sizeBytes: Int = header.sizeBytes + payload.limit()
+    override val sizeBytes: Int = header.sizeBytes + payload.limit()
 
     override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)

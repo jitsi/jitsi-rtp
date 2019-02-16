@@ -16,4 +16,18 @@
 
 package org.jitsi.rtp.new_scheme2
 
-abstract class ImmutablePacket : ImmutableSerializableData()
+import java.nio.ByteBuffer
+
+abstract class ImmutablePacket : ImmutableSerializableData() {
+    abstract val sizeBytes: Int
+}
+
+class UnparsedPacket(
+    override val dataBuf: ByteBuffer
+) : ImmutablePacket(), Convertible<ImmutablePacket> {
+    override fun <NewType : ImmutablePacket> convertTo(factory: ConstructableFromBuffer<NewType>): NewType {
+        return factory.fromBuffer(dataBuf)
+    }
+
+    override val sizeBytes: Int = dataBuf.limit()
+}

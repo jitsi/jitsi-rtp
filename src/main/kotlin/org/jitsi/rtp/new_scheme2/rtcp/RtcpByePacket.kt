@@ -111,7 +111,7 @@ class ImmutableRtcpByePacket(
     // come up with something there
     private val rtcpByeData = RtcpByeData(ssrcs.toMutableList(), reason)
 
-    val sizeBytes = header.sizeBytes + rtcpByeData.sizeBytes
+    override val sizeBytes = header.sizeBytes + rtcpByeData.sizeBytes
 
     override val dataBuf: ByteBuffer by lazy {
         val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
