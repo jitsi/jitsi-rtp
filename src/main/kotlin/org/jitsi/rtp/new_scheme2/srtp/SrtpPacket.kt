@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme2.srtp
 
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpHeader
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpPacket
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -40,5 +41,12 @@ class ImmutableSrtpPacket(
     fun getAuthTag(tagLength: Int): ByteBuffer =
             dataBuf.subBuffer(dataBuf.limit() - tagLength)
 
+    companion object : ConstructableFromBuffer<ImmutableSrtpPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ImmutableSrtpPacket {
+            val header = ImmutableRtpHeader.fromBuffer(buf)
+            val payload = buf.subBuffer(header.sizeBytes)
+            return ImmutableSrtpPacket(header, payload, buf)
+        }
+    }
 }
 

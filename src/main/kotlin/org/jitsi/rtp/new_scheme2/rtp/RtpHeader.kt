@@ -190,9 +190,6 @@ class ImmutableRtpHeader internal constructor(
         b.rewind() as ByteBuffer
     }
 
-    //NOTE(brian): despite this being an immutable type, we dynamically read
-    // the values from headerData rather than just assigning them at construction
-    // to enable modifyInPlace to work correctly.
     val version: Int by ImmutableAlias(headerData::version)
     val hasPadding: Boolean by ImmutableAlias(headerData::hasPadding)
     val marker: Boolean by ImmutableAlias(headerData::marker)

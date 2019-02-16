@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme2.srtp
 
+import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutablePacket
 import java.nio.ByteBuffer
 
@@ -26,8 +27,11 @@ import java.nio.ByteBuffer
  */
 open class ImmutableUnparsedSrtpProtocolPacket(
     override val dataBuf: ByteBuffer
-) : ImmutablePacket()
+) : ImmutablePacket() {
+    companion object : ConstructableFromBuffer<ImmutableUnparsedSrtpProtocolPacket> {
+        override fun fromBuffer(buf: ByteBuffer): ImmutableUnparsedSrtpProtocolPacket =
+                ImmutableUnparsedSrtpProtocolPacket(buf)
 
-fun main() {
-    val isp = ImmutableSrtpPacket()
+    }
 }
+
