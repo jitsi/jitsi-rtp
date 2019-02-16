@@ -23,7 +23,13 @@ interface Mutable
 interface Immutable
 
 interface CanBecomeMutable<MutableType : Mutable> {
-    fun modifyInPlace(): MutableType
+    /**
+     * [modifyInPlace] should ONLY be used if you know
+     * you have exclusive ownership of the instance.
+     * If so, this provides a more convenient way of
+     * making changes to an immutable instance.
+     */
+    fun modifyInPlace(block: MutableType.() -> Unit)
 
     fun getMutableCopy(): MutableType
 }

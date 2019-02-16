@@ -19,9 +19,13 @@ package org.jitsi.rtp.new_scheme2.rtp
 import org.jitsi.rtp.RtpHeader
 import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
+import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
+import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -159,7 +163,77 @@ internal class RtpHeaderData(
 class ImmutableRtpHeader internal constructor(
     private val headerData: RtpHeaderData = RtpHeaderData(),
     backingBuffer: ByteBuffer? = null
-) : ImmutableSerializableData() {
+) : ImmutableSerializableData(), CanBecomeMutable<MutableRtpHeader> {
+
+    constructor(
+        version: Int = 2,
+        hasPadding: Boolean = false,
+        marker: Boolean = false,
+        payloadType: Int = 0,
+        sequenceNumber: Int = 0,
+        timestamp: Long = 0,
+        ssrc: Long = 0,
+        csrcs: List<Long> = listOf(),
+        extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
+        backingBuffer: ByteBuffer? = null
+    ) : this(RtpHeaderData(
+            version, hasPadding, marker, payloadType, sequenceNumber,
+            timestamp, ssrc, csrcs.toMutableList(), extensions), backingBuffer)
+
+    override val dataBuf: ByteBuffer by lazy {
+        val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
+        b.rewind()
+        b.limit(headerData.sizeBytes)
+        headerData.serializeTo(b)
+        b.rewind() as ByteBuffer
+    }
+
+    //NOTE(brian): despite this being an immutable type, we dynamically read
+    // the values from headerData rather than just assigning them at construction
+    // to enable modifyInPlace to work correctly.
+    val version: Int
+        get() = headerData.version
+    val hasPadding: Boolean
+        get() = headerData.hasPadding
+    val marker: Boolean
+        get() = headerData.marker
+    val payloadType: Int
+        get() = headerData.payloadType
+    val sequenceNumber: Int
+        get() = headerData.sequenceNumber
+    val timestamp: Long
+        get() = headerData.timestamp
+    val ssrc: Long
+        get() = headerData.ssrc
+    val csrcs: List<Long>
+        get() = headerData.csrcs
+    //TODO(brian): need a readonly RtpheaderExtensions
+    val extensions: RtpHeaderExtensions
+        get() = headerData.extensions
+
+    val sizeBytes: Int = headerData.sizeBytes
+
+    override fun modifyInPlace(block: MutableRtpHeader.() -> Unit) {
+        with (MutableRtpHeader(headerData, dataBuf)) {
+            block()
+        }
+    }
+
+    override fun getMutableCopy(): MutableRtpHeader =
+        MutableRtpHeader(headerData.clone(), dataBuf.clone())
+
+    companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
+        override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
+            val rtpHeaderData = RtpHeaderData.fromBuffer(buf)
+            return ImmutableRtpHeader(rtpHeaderData, buf)
+        }
+    }
+}
+
+class MutableRtpHeader internal constructor(
+    private val headerData: RtpHeaderData = RtpHeaderData(),
+    private val backingBuffer: ByteBuffer? = null
+) : Mutable, CanBecomeImmutable<ImmutableRtpHeader> {
 
     constructor(
         version: Int = 2,
@@ -173,34 +247,48 @@ class ImmutableRtpHeader internal constructor(
         extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
         backingBuffer: ByteBuffer? = null
     ) : this(RtpHeaderData(
-            version, hasPadding, marker, payloadType, sequenceNumber,
-            timestamp, ssrc, csrcs, extensions), backingBuffer)
+            version, hasPadding, marker, payloadType,
+            sequenceNumber, timestamp, ssrc, csrcs, extensions), backingBuffer)
 
-    override val dataBuf: ByteBuffer by lazy {
-        val b = ByteBufferUtils.ensureCapacity(backingBuffer, headerData.sizeBytes)
-        b.rewind()
-        b.limit(headerData.sizeBytes)
-        headerData.serializeTo(b)
-        b.rewind() as ByteBuffer
-    }
-
-    val version: Int = headerData.version
-    val hasPadding: Boolean = headerData.hasPadding
-    val marker: Boolean = headerData.marker
-    val payloadType: Int = headerData.payloadType
-    val sequenceNumber: Int = headerData.sequenceNumber
-    val timestamp: Long = headerData.timestamp
-    val ssrc: Long = headerData.ssrc
-    val csrcs: List<Long> = headerData.csrcs
-    //TODO(brian): need a readonly RtpheaderExtensions
-    val extensions: RtpHeaderExtensions = headerData.extensions
-
-    val sizeBytes: Int = headerData.sizeBytes
-
-    companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
-        override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
-            val rtpHeaderData = RtpHeaderData.fromBuffer(buf)
-            return ImmutableRtpHeader(rtpHeaderData, buf)
+    var version: Int
+        get() = headerData.version
+        set(version) {
+            headerData.version = version
         }
-    }
+    var hasPadding: Boolean
+        get() = headerData.hasPadding
+        set(hasPadding) {
+            headerData.hasPadding = hasPadding
+        }
+    var marker: Boolean
+        get() = headerData.marker
+        set(marker) {
+            headerData.marker = marker
+        }
+    var payloadType: Int
+        get() = headerData.payloadType
+        set(payloadType) {
+            headerData.payloadType = payloadType
+        }
+    var sequenceNumber: Int
+        get() = headerData.sequenceNumber
+        set(sequenceNumber) {
+            headerData.sequenceNumber = sequenceNumber
+        }
+    var timestamp: Long
+        get() = headerData.timestamp
+        set(timestamp) {
+            headerData.timestamp = timestamp
+        }
+    var ssrc: Long
+        get() = headerData.ssrc
+        set(ssrc) {
+            headerData.ssrc = ssrc
+        }
+    val csrcs: MutableList<Long>
+        get() = headerData.csrcs
+    val extensions: RtpHeaderExtensions
+        get() = headerData.extensions
+
+    override fun toImmutable(): ImmutableRtpHeader = ImmutableRtpHeader(headerData, backingBuffer)
 }
