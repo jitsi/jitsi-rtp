@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.rtcp.RtcpByePacket
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -24,7 +25,7 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.stream.Collectors.toList
 
-private class RtcpByeData(
+internal class RtcpByeData(
     //NOTE(brian): the ssrcs passed here do include the one held in the RTCP header, but we don't
     // include it when calculating the size of this data portion
     var ssrcs: MutableList<Long> = mutableListOf(),
@@ -100,16 +101,18 @@ private class RtcpByeData(
     }
 }
 
-class ImmutableRtcpByePacket(
+class ImmutableRtcpByePacket internal constructor(
     override val header: ImmutableRtcpHeader = ImmutableRtcpHeader(),
-    ssrcs: List<Long>,
-    reason: String? = null,
+    private val rtcpByeData: RtcpByeData = RtcpByeData(),
     backingBuffer: ByteBuffer? = null
 ) : ImmutableRtcpPacket() {
-    //TODO(brian): it's unfortunate we have to convert the ssrcs to a mutable
-    // list here, since we have to copy but may not actually need it.  maybe can
-    // come up with something there
-    private val rtcpByeData = RtcpByeData(ssrcs.toMutableList(), reason)
+
+    constructor(
+        header: ImmutableRtcpHeader = ImmutableRtcpHeader(),
+        ssrcs: List<Long>,
+        reason: String? = null,
+        backingBuffer: ByteBuffer? = null
+    ) : this(header, RtcpByeData(ssrcs.toMutableList(), reason), backingBuffer)
 
     override val sizeBytes = header.sizeBytes + rtcpByeData.sizeBytes
 
@@ -134,7 +137,8 @@ class ImmutableRtcpByePacket(
                 buf, header.senderSsrc, header.reportCount - 1, hasReason)
             buf.reset()
 
-            return ImmutableRtcpByePacket(header, data.ssrcs, data.reason, buf)
+            return ImmutableRtcpByePacket(
+                header, data, buf.subBuffer(0, header.sizeBytes + data.sizeBytes))
         }
     }
 }

@@ -59,7 +59,7 @@ class ImmutableSrtcpPacket(
             val header = ImmutableRtcpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
 
-            return ImmutableSrtcpPacket(header, payload, buf)
+            return ImmutableSrtcpPacket(header, payload, buf.subBuffer(header.sizeBytes + payload.limit()))
         }
     }
 }

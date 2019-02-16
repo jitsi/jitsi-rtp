@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme2.srtp
 
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
+import org.jitsi.rtp.new_scheme2.Convertible
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpHeader
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpPacket
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -36,16 +37,20 @@ class ImmutableSrtpPacket(
     header: ImmutableRtpHeader = ImmutableRtpHeader(),
     payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
-) : ImmutableRtpPacket(header, payload, backingBuffer) {
+) : ImmutableRtpPacket(header, payload, backingBuffer), Convertible<ImmutableRtpPacket> {
 
     fun getAuthTag(tagLength: Int): ByteBuffer =
             dataBuf.subBuffer(dataBuf.limit() - tagLength)
+
+    override fun <NewType : ImmutableRtpPacket> convertTo(factory: ConstructableFromBuffer<NewType>): NewType {
+        return factory.fromBuffer(dataBuf)
+    }
 
     companion object : ConstructableFromBuffer<ImmutableSrtpPacket> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableSrtpPacket {
             val header = ImmutableRtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
-            return ImmutableSrtpPacket(header, payload, buf)
+            return ImmutableSrtpPacket(header, payload, buf.subBuffer(0, header.sizeBytes + payload.limit()))
         }
     }
 }

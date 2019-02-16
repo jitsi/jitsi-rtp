@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
 import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
@@ -143,7 +144,7 @@ class ImmutableRtcpHeader internal constructor(
     companion object : ConstructableFromBuffer<ImmutableRtcpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtcpHeader {
             val headerData = RtcpHeaderData.fromBuffer(buf)
-            return ImmutableRtcpHeader(headerData, buf)
+            return ImmutableRtcpHeader(headerData, buf.subBuffer(0, headerData.sizeBytes))
         }
     }
 }

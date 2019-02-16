@@ -215,7 +215,7 @@ class ImmutableRtpHeader internal constructor(
     companion object : ConstructableFromBuffer<ImmutableRtpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpHeader {
             val rtpHeaderData = RtpHeaderData.fromBuffer(buf)
-            return ImmutableRtpHeader(rtpHeaderData, buf)
+            return ImmutableRtpHeader(rtpHeaderData, buf.subBuffer(0, rtpHeaderData.sizeBytes))
         }
     }
 }

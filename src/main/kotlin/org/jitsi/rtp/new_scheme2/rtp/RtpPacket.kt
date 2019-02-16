@@ -47,7 +47,7 @@ open class ImmutableRtpPacket(
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpPacket {
             val header = ImmutableRtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
-            return ImmutableRtpPacket(header, payload, buf)
+            return ImmutableRtpPacket(header, payload, buf.subBuffer(0, header.sizeBytes + payload.limit()))
         }
     }
 }
