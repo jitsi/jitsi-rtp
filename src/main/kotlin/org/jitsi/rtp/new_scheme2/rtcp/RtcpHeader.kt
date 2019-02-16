@@ -17,9 +17,15 @@
 package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
+import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutableAlias
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
+import org.jitsi.rtp.new_scheme2.Mutable
+import org.jitsi.rtp.new_scheme2.MutableAlias
+import org.jitsi.rtp.new_scheme2.rtp.MutableRtpHeader
 import org.jitsi.rtp.rtcp.RtcpHeader
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
@@ -34,7 +40,7 @@ import java.nio.ByteBuffer
  * |                         SSRC of sender                        |
  * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  */
-private class RtcpHeaderData(
+internal class RtcpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,
     var reportCount: Int = 0,
@@ -91,10 +97,10 @@ private class RtcpHeaderData(
     }
 }
 
-class ImmutableRtcpHeader private constructor(
+class ImmutableRtcpHeader internal constructor(
     private val headerData: RtcpHeaderData = RtcpHeaderData(),
     backingBuffer: ByteBuffer? = null
-) : ImmutableSerializableData() {
+) : ImmutableSerializableData(), CanBecomeMutable<MutableRtcpHeader> {
 
     constructor(
         version: Int = 2,
@@ -125,10 +131,47 @@ class ImmutableRtcpHeader private constructor(
     val length: Int by ImmutableAlias(headerData::length)
     val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
+    override fun modifyInPlace(block: MutableRtcpHeader.() -> Unit) {
+        with (MutableRtcpHeader(headerData, dataBuf)) {
+            block()
+        }
+    }
+
+    override fun getMutableCopy(): MutableRtcpHeader =
+        MutableRtcpHeader(headerData.clone(), dataBuf.clone())
+
     companion object : ConstructableFromBuffer<ImmutableRtcpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtcpHeader {
             val headerData = RtcpHeaderData.fromBuffer(buf)
             return ImmutableRtcpHeader(headerData, buf)
         }
     }
+}
+
+class MutableRtcpHeader internal constructor(
+    private val headerData: RtcpHeaderData = RtcpHeaderData(),
+    private val backingBuffer: ByteBuffer? = null
+) : Mutable, CanBecomeImmutable<ImmutableRtcpHeader> {
+
+    constructor(
+        version: Int = 2,
+        hasPadding: Boolean = false,
+        reportCount: Int = 0,
+        packetType: Int = 0,
+        length: Int = 0,
+        senderSsrc: Long = 0,
+        backingBuffer: ByteBuffer? = null
+    ) : this(RtcpHeaderData(
+        version, hasPadding, reportCount,
+        packetType, length, senderSsrc), backingBuffer)
+
+    val version: Int by MutableAlias(headerData::version)
+    val hasPadding: Boolean by MutableAlias(headerData::hasPadding)
+    val reportCount: Int by MutableAlias(headerData::reportCount)
+    val packetType: Int by MutableAlias(headerData::packetType)
+    val length: Int by MutableAlias(headerData::length)
+    val senderSsrc: Long by MutableAlias(headerData::senderSsrc)
+
+    override fun toImmutable(): ImmutableRtcpHeader =
+        ImmutableRtcpHeader(headerData, backingBuffer)
 }
