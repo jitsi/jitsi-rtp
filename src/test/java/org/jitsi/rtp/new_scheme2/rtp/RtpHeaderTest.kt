@@ -67,5 +67,20 @@ internal class RtpHeaderTest : BehaviorSpec() {
                 }
             }
         }
+        given("a MutableRtpHeader") {
+            val mutable = MutableRtpHeader(
+                payloadType = 42,
+                sequenceNumber = 1234,
+                timestamp = 123456,
+                ssrc = 45678,
+                csrcs = mutableListOf(123, 456)
+            )
+            `when`("a change is made") {
+                mutable.version = 3
+                then("the changes should be reflected") {
+                    mutable.version shouldBe 3
+                }
+            }
+        }
     }
 }

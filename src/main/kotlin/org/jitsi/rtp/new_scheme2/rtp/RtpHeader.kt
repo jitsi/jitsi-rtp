@@ -21,9 +21,11 @@ import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme2.MutableAlias
 import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
 import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
+import org.jitsi.rtp.new_scheme2.ImmutableAlias
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -191,25 +193,18 @@ class ImmutableRtpHeader internal constructor(
     //NOTE(brian): despite this being an immutable type, we dynamically read
     // the values from headerData rather than just assigning them at construction
     // to enable modifyInPlace to work correctly.
-    val version: Int
-        get() = headerData.version
-    val hasPadding: Boolean
-        get() = headerData.hasPadding
-    val marker: Boolean
-        get() = headerData.marker
-    val payloadType: Int
-        get() = headerData.payloadType
-    val sequenceNumber: Int
-        get() = headerData.sequenceNumber
-    val timestamp: Long
-        get() = headerData.timestamp
-    val ssrc: Long
-        get() = headerData.ssrc
-    val csrcs: List<Long>
-        get() = headerData.csrcs
+//    val version: Int
+//        get() = headerData.version
+    val version: Int by ImmutableAlias(headerData::version)
+    val hasPadding: Boolean by ImmutableAlias(headerData::hasPadding)
+    val marker: Boolean by ImmutableAlias(headerData::marker)
+    val payloadType: Int by ImmutableAlias(headerData::payloadType)
+    val sequenceNumber: Int by ImmutableAlias(headerData::sequenceNumber)
+    val timestamp: Long by ImmutableAlias(headerData::timestamp)
+    val ssrc: Long by ImmutableAlias(headerData::ssrc)
+    val csrcs: List<Long> by ImmutableAlias(headerData::csrcs)
     //TODO(brian): need a readonly RtpheaderExtensions
-    val extensions: RtpHeaderExtensions
-        get() = headerData.extensions
+    val extensions: RtpHeaderExtensions by ImmutableAlias(headerData::extensions)
 
     val sizeBytes: Int = headerData.sizeBytes
 
@@ -250,45 +245,15 @@ class MutableRtpHeader internal constructor(
             version, hasPadding, marker, payloadType,
             sequenceNumber, timestamp, ssrc, csrcs, extensions), backingBuffer)
 
-    var version: Int
-        get() = headerData.version
-        set(version) {
-            headerData.version = version
-        }
-    var hasPadding: Boolean
-        get() = headerData.hasPadding
-        set(hasPadding) {
-            headerData.hasPadding = hasPadding
-        }
-    var marker: Boolean
-        get() = headerData.marker
-        set(marker) {
-            headerData.marker = marker
-        }
-    var payloadType: Int
-        get() = headerData.payloadType
-        set(payloadType) {
-            headerData.payloadType = payloadType
-        }
-    var sequenceNumber: Int
-        get() = headerData.sequenceNumber
-        set(sequenceNumber) {
-            headerData.sequenceNumber = sequenceNumber
-        }
-    var timestamp: Long
-        get() = headerData.timestamp
-        set(timestamp) {
-            headerData.timestamp = timestamp
-        }
-    var ssrc: Long
-        get() = headerData.ssrc
-        set(ssrc) {
-            headerData.ssrc = ssrc
-        }
-    val csrcs: MutableList<Long>
-        get() = headerData.csrcs
-    val extensions: RtpHeaderExtensions
-        get() = headerData.extensions
+    var version: Int by MutableAlias(headerData::version)
+    var hasPadding: Boolean by MutableAlias(headerData::hasPadding)
+    var marker: Boolean by MutableAlias(headerData::marker)
+    var payloadType: Int by MutableAlias(headerData::payloadType)
+    var sequenceNumber: Int by MutableAlias(headerData::sequenceNumber)
+    var timestamp: Long by MutableAlias(headerData::timestamp)
+    var ssrc: Long by MutableAlias(headerData::ssrc)
+    val csrcs: MutableList<Long> by MutableAlias(headerData::csrcs)
+    val extensions: RtpHeaderExtensions by MutableAlias(headerData::extensions)
 
     override fun toImmutable(): ImmutableRtpHeader = ImmutableRtpHeader(headerData, backingBuffer)
 }
