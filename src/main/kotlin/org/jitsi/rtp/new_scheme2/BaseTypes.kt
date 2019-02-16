@@ -37,6 +37,7 @@ interface CanBecomeMutable<MutableType : Mutable> {
 }
 
 interface CanBecomeImmutable<ImmutableType : Immutable> {
+    //TODO(brian): do we need getImmutableCopy as well?
     fun toImmutable(): ImmutableType
 }
 

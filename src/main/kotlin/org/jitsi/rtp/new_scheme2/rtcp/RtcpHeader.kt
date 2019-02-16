@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme2.rtcp
 
 import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
+import org.jitsi.rtp.new_scheme2.ImmutableAlias
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
 import org.jitsi.rtp.rtcp.RtcpHeader
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -117,12 +118,12 @@ class ImmutableRtcpHeader private constructor(
 
     val sizeBytes: Int = headerData.sizeBytes
 
-    val version: Int = headerData.version
-    val hasPadding: Boolean = headerData.hasPadding
-    val reportCount: Int = headerData.reportCount
-    val packetType: Int = headerData.packetType
-    val length: Int = headerData.length
-    val senderSsrc: Long = headerData.senderSsrc
+    val version: Int by ImmutableAlias(headerData::version)
+    val hasPadding: Boolean by ImmutableAlias(headerData::hasPadding)
+    val reportCount: Int by ImmutableAlias(headerData::reportCount)
+    val packetType: Int by ImmutableAlias(headerData::packetType)
+    val length: Int by ImmutableAlias(headerData::length)
+    val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
     companion object : ConstructableFromBuffer<ImmutableRtcpHeader> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtcpHeader {
