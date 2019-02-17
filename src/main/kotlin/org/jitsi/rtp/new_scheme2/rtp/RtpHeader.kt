@@ -204,6 +204,9 @@ class ImmutableRtpHeader internal constructor(
 
     val sizeBytes: Int = headerData.sizeBytes
 
+    override fun toMutable(): MutableRtpHeader =
+        MutableRtpHeader(headerData, dataBuf)
+
     override fun getMutableCopy(): MutableRtpHeader =
         MutableRtpHeader(headerData.clone(), dataBuf.clone())
 

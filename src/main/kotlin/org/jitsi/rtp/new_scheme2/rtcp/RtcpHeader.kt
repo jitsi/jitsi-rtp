@@ -133,11 +133,8 @@ class ImmutableRtcpHeader internal constructor(
     val length: Int by ImmutableAlias(headerData::length)
     val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
-//    override fun modifyInPlace(block: MutableRtcpHeader.() -> Unit) {
-//        with (MutableRtcpHeader(headerData, dataBuf)) {
-//            block()
-//        }
-//    }
+    override fun toMutable(): MutableRtcpHeader =
+        MutableRtcpHeader(headerData, dataBuf)
 
     override fun getMutableCopy(): MutableRtcpHeader =
         MutableRtcpHeader(headerData.clone(), dataBuf.clone())

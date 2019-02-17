@@ -22,7 +22,6 @@ import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
 import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutablePacket
-import org.jitsi.rtp.new_scheme2.LockableImmutableAlias
 import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
@@ -51,14 +50,8 @@ open class ImmutableRtpPacket(
     override fun getMutableCopy(): MutableRtpPacket =
         MutableRtpPacket(header.getMutableCopy(), payload.clone(), dataBuf.clone())
 
-//    override fun modifyInPlace(block: MutableRtpPacket.() -> Unit) {
-//        //TODO(brian): we don't have a good way to get a modifiable version
-//        // of an immutable class to use here...neither getting a copy nor
-//        // modifyingInPlace works.  i think we may need a third method
-//        // (one that modifyInPlace could probably leverage and therefore nott
-//        // need to be implemented by each class?)
-//        TODO()
-//    }
+    override fun toMutable(): MutableRtpPacket =
+        MutableRtpPacket(header.toMutable(), payload, dataBuf)
 
     companion object : ConstructableFromBuffer<ImmutableRtpPacket> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpPacket {
