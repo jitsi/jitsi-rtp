@@ -19,6 +19,7 @@ package org.jitsi.rtp.new_scheme2
 import java.nio.ByteBuffer
 import kotlin.reflect.KMutableProperty0
 import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty0
 
 interface Mutable
 
@@ -49,12 +50,15 @@ interface Convertible<BaseType> {
     fun <NewType : BaseType> convertTo(factory: ConstructableFromBuffer<NewType>): NewType
 }
 
-open class ImmutableAlias<T>(protected val delegate: KMutableProperty0<T>) {
+class ImmutableAlias<T>(private val delegate: KProperty0<T>) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
         delegate.get()
 }
 
-class MutableAlias<T>(delegate: KMutableProperty0<T>) : ImmutableAlias<T>(delegate) {
+class MutableAlias<T>(private val delegate: KMutableProperty0<T>) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
+        delegate.get()
+
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         delegate.set(value)
     }
