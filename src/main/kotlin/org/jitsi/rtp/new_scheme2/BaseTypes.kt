@@ -25,14 +25,28 @@ interface Mutable
 
 interface Immutable
 
+interface InPlaceModifier
+
 interface CanBecomeMutable<MutableType : Mutable> {
+//    companion object {
+//        fun <T : Mutable>modifyInPlace(immutable: CanBecomeMutable<T>, block: T.() -> Unit) {
+//            with (immutable.toMutable()) {
+//                block()
+//            }
+//        }
+//    }
+
+    fun toMutable(): MutableType {
+        TODO()
+    }
+
     /**
-     * [modifyInPlace] should ONLY be used if you know
+     * [getInPlaceModifier] should ONLY be used if you know
      * you have exclusive ownership of the instance.
      * If so, this provides a more convenient way of
      * making changes to an immutable instance.
      */
-    fun modifyInPlace(block: MutableType.() -> Unit)
+    fun getInPlaceModifier(): InPlaceModifier
 
     fun getMutableCopy(): MutableType
 }

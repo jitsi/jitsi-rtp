@@ -71,7 +71,7 @@ open class ImmutableRtpPacket(
 open class MutableRtpPacket(
     val header: MutableRtpHeader = MutableRtpHeader(),
     val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
-    backingBuffer: ByteBuffer? = null
+    protected val backingBuffer: ByteBuffer? = null
 ) : Mutable, CanBecomeImmutable<ImmutableRtpPacket> {
 
     override fun toImmutable(): ImmutableRtpPacket =
