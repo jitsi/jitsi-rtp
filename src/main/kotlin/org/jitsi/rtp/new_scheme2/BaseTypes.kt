@@ -46,13 +46,37 @@ interface CanBecomeMutable<MutableType : Mutable> {
      * If so, this provides a more convenient way of
      * making changes to an immutable instance.
      */
-    fun getInPlaceModifier(): InPlaceModifier
+//    fun getInPlaceModifier(): InPlaceModifier
 
     fun getMutableCopy(): MutableType
 }
 
-interface CanBecomeImmutable<ImmutableType : Immutable> {
-    fun toImmutable(): ImmutableType
+abstract class CanBecomeImmutable<ImmutableType : Immutable> {
+    /**
+     * When something becomes immutable, the mutable version
+     * of it is no longer valid (since we re-use the buffers
+     * and letting the mutable version remain valid means
+     * that the immutable version could be changed).
+     * [locked] denotes whether or not this mutable
+     * type can still be modified.
+     */
+    private var locked: Boolean = false
+
+    protected fun<T> getLockableMutableMemberAlias(prop: KMutableProperty0<T>): LockableMutableAlias<T> {
+        return LockableMutableAlias(prop, ::locked)
+    }
+
+    protected fun<T> getLockableImmutableMemberAlias(prop: KProperty0<T>): LockableImmutableAlias<T> {
+        return LockableImmutableAlias(prop, ::locked)
+    }
+
+    fun toImmutable(): ImmutableType {
+        val immutable = doGetImmutable()
+        locked = true
+        return immutable
+    }
+
+    protected abstract fun doGetImmutable(): ImmutableType
 }
 
 interface ConstructableFromBuffer<ConstructedType> {
@@ -74,6 +98,30 @@ class MutableAlias<T>(private val delegate: KMutableProperty0<T>) {
 
     operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         delegate.set(value)
+    }
+}
+
+class LockableImmutableAlias<T>(private val delegate: KProperty0<T>, private val isLocked: KProperty0<Boolean>) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        if (isLocked.get()) {
+            throw Exception()
+        }
+        return delegate.get()
+    }
+}
+
+class LockableMutableAlias<T>(private val delegate: KMutableProperty0<T>, private val isLocked: KProperty0<Boolean>) {
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        if (isLocked.get()) {
+            throw Exception()
+        }
+        return delegate.get()
+    }
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        if (isLocked.get()) {
+            throw Exception()
+        }
+        return delegate.set(value)
     }
 }
 

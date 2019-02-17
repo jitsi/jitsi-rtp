@@ -22,6 +22,7 @@ import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
 import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutablePacket
+import org.jitsi.rtp.new_scheme2.LockableImmutableAlias
 import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
@@ -50,14 +51,14 @@ open class ImmutableRtpPacket(
     override fun getMutableCopy(): MutableRtpPacket =
         MutableRtpPacket(header.getMutableCopy(), payload.clone(), dataBuf.clone())
 
-    override fun modifyInPlace(block: MutableRtpPacket.() -> Unit) {
-        //TODO(brian): we don't have a good way to get a modifiable version
-        // of an immutable class to use here...neither getting a copy nor
-        // modifyingInPlace works.  i think we may need a third method
-        // (one that modifyInPlace could probably leverage and therefore nott
-        // need to be implemented by each class?)
-        TODO()
-    }
+//    override fun modifyInPlace(block: MutableRtpPacket.() -> Unit) {
+//        //TODO(brian): we don't have a good way to get a modifiable version
+//        // of an immutable class to use here...neither getting a copy nor
+//        // modifyingInPlace works.  i think we may need a third method
+//        // (one that modifyInPlace could probably leverage and therefore nott
+//        // need to be implemented by each class?)
+//        TODO()
+//    }
 
     companion object : ConstructableFromBuffer<ImmutableRtpPacket> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpPacket {
@@ -69,11 +70,18 @@ open class ImmutableRtpPacket(
 }
 
 open class MutableRtpPacket(
-    val header: MutableRtpHeader = MutableRtpHeader(),
-    val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    private val _header: MutableRtpHeader = MutableRtpHeader(),
+    private val _payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     protected val backingBuffer: ByteBuffer? = null
-) : Mutable, CanBecomeImmutable<ImmutableRtpPacket> {
+) : Mutable, CanBecomeImmutable<ImmutableRtpPacket>() {
 
-    override fun toImmutable(): ImmutableRtpPacket =
-        ImmutableRtpPacket(header.toImmutable(), payload)
+    // Although the header and payload are mutable themselves, I think we should
+    // be able to keep the instances themselves the same (and just mutate them
+    // directly), hence why they are vals - although that does make it look
+    // a bit confusing since they use an immutable alias
+    val header: MutableRtpHeader by getLockableImmutableMemberAlias(::_header)
+    val payload: ByteBuffer by getLockableImmutableMemberAlias(::_payload)
+
+    override fun doGetImmutable(): ImmutableRtpPacket =
+        ImmutableRtpPacket(header.toImmutable(), payload, backingBuffer)
 }

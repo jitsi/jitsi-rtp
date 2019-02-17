@@ -24,6 +24,7 @@ import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutableAlias
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
+import org.jitsi.rtp.new_scheme2.LockableMutableAlias
 import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.new_scheme2.MutableAlias
 import org.jitsi.rtp.new_scheme2.rtp.MutableRtpHeader
@@ -132,11 +133,11 @@ class ImmutableRtcpHeader internal constructor(
     val length: Int by ImmutableAlias(headerData::length)
     val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
-    override fun modifyInPlace(block: MutableRtcpHeader.() -> Unit) {
-        with (MutableRtcpHeader(headerData, dataBuf)) {
-            block()
-        }
-    }
+//    override fun modifyInPlace(block: MutableRtcpHeader.() -> Unit) {
+//        with (MutableRtcpHeader(headerData, dataBuf)) {
+//            block()
+//        }
+//    }
 
     override fun getMutableCopy(): MutableRtcpHeader =
         MutableRtcpHeader(headerData.clone(), dataBuf.clone())
@@ -152,7 +153,7 @@ class ImmutableRtcpHeader internal constructor(
 class MutableRtcpHeader internal constructor(
     private val headerData: RtcpHeaderData = RtcpHeaderData(),
     private val backingBuffer: ByteBuffer? = null
-) : Mutable, CanBecomeImmutable<ImmutableRtcpHeader> {
+) : Mutable, CanBecomeImmutable<ImmutableRtcpHeader>() {
 
     constructor(
         version: Int = 2,
@@ -166,13 +167,13 @@ class MutableRtcpHeader internal constructor(
         version, hasPadding, reportCount,
         packetType, length, senderSsrc), backingBuffer)
 
-    val version: Int by MutableAlias(headerData::version)
-    val hasPadding: Boolean by MutableAlias(headerData::hasPadding)
-    val reportCount: Int by MutableAlias(headerData::reportCount)
-    val packetType: Int by MutableAlias(headerData::packetType)
-    val length: Int by MutableAlias(headerData::length)
-    val senderSsrc: Long by MutableAlias(headerData::senderSsrc)
+    val version: Int by getLockableMutableMemberAlias(headerData::version)
+    val hasPadding: Boolean by getLockableMutableMemberAlias(headerData::hasPadding)
+    val reportCount: Int by getLockableMutableMemberAlias(headerData::reportCount)
+    val packetType: Int by getLockableMutableMemberAlias(headerData::packetType)
+    val length: Int by getLockableMutableMemberAlias(headerData::length)
+    val senderSsrc: Long by getLockableMutableMemberAlias(headerData::senderSsrc)
 
-    override fun toImmutable(): ImmutableRtcpHeader =
+    override fun doGetImmutable(): ImmutableRtcpHeader =
         ImmutableRtcpHeader(headerData, backingBuffer)
 }

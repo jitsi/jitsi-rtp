@@ -19,6 +19,7 @@ package org.jitsi.rtp.new_scheme2.rtp
 import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.collections.shouldContainInOrder
 import io.kotlintest.shouldBe
+import io.kotlintest.shouldThrowUnit
 import io.kotlintest.specs.BehaviorSpec
 
 internal class RtpHeaderTest : BehaviorSpec() {
@@ -50,22 +51,22 @@ internal class RtpHeaderTest : BehaviorSpec() {
                     }
                 }
             }
-            `when`("it is modified in place") {
-                immutable.modifyInPlace {
-                    payloadType = 43
-                    sequenceNumber = 1235
-                    timestamp = 123457
-                    ssrc = 45679
-                    csrcs.add(789)
-                }
-                then("the changes should be reflected") {
-                    immutable.payloadType shouldBe 43
-                    immutable.sequenceNumber shouldBe 1235
-                    immutable.timestamp shouldBe 123457
-                    immutable.ssrc shouldBe 45679
-                    immutable.csrcs.shouldContainInOrder(123L, 456L, 789L)
-                }
-            }
+//            `when`("it is modified in place") {
+//                immutable.modifyInPlace {
+//                    payloadType = 43
+//                    sequenceNumber = 1235
+//                    timestamp = 123457
+//                    ssrc = 45679
+//                    csrcs.add(789)
+//                }
+//                then("the changes should be reflected") {
+//                    immutable.payloadType shouldBe 43
+//                    immutable.sequenceNumber shouldBe 1235
+//                    immutable.timestamp shouldBe 123457
+//                    immutable.ssrc shouldBe 45679
+//                    immutable.csrcs.shouldContainInOrder(123L, 456L, 789L)
+//                }
+//            }
         }
         given("a MutableRtpHeader") {
             val mutable = MutableRtpHeader(
@@ -79,6 +80,16 @@ internal class RtpHeaderTest : BehaviorSpec() {
                 mutable.version = 3
                 then("the changes should be reflected") {
                     mutable.version shouldBe 3
+                }
+            }
+            `when`("it is converted to mutable") {
+                mutable.toImmutable()
+                and("a further change is attempted") {
+                    then("it should throw an exception") {
+                        shouldThrowUnit<Exception> {
+                            mutable.ssrc = 789L
+                        }
+                    }
                 }
             }
         }

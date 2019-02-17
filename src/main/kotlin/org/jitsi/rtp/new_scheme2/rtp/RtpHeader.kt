@@ -27,6 +27,7 @@ import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutableAlias
 import org.jitsi.rtp.new_scheme2.ImmutableSerializableData
+import org.jitsi.rtp.new_scheme2.LockableMutableAlias
 import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
@@ -203,12 +204,6 @@ class ImmutableRtpHeader internal constructor(
 
     val sizeBytes: Int = headerData.sizeBytes
 
-    override fun modifyInPlace(block: MutableRtpHeader.() -> Unit) {
-        with (MutableRtpHeader(headerData, dataBuf)) {
-            block()
-        }
-    }
-
     override fun getMutableCopy(): MutableRtpHeader =
         MutableRtpHeader(headerData.clone(), dataBuf.clone())
 
@@ -223,7 +218,7 @@ class ImmutableRtpHeader internal constructor(
 class MutableRtpHeader internal constructor(
     private val headerData: RtpHeaderData = RtpHeaderData(),
     private val backingBuffer: ByteBuffer? = null
-) : Mutable, CanBecomeImmutable<ImmutableRtpHeader> {
+) : Mutable, CanBecomeImmutable<ImmutableRtpHeader>() {
 
     constructor(
         version: Int = 2,
@@ -242,15 +237,17 @@ class MutableRtpHeader internal constructor(
 
     val sizeBytes: Int by ImmutableAlias(headerData::sizeBytes)
 
-    var version: Int by MutableAlias(headerData::version)
-    var hasPadding: Boolean by MutableAlias(headerData::hasPadding)
-    var marker: Boolean by MutableAlias(headerData::marker)
-    var payloadType: Int by MutableAlias(headerData::payloadType)
-    var sequenceNumber: Int by MutableAlias(headerData::sequenceNumber)
-    var timestamp: Long by MutableAlias(headerData::timestamp)
-    var ssrc: Long by MutableAlias(headerData::ssrc)
-    val csrcs: MutableList<Long> by MutableAlias(headerData::csrcs)
-    val extensions: RtpHeaderExtensions by MutableAlias(headerData::extensions)
+//    var version: Int by LockableMutableAlias(headerData::version, ::locked)
+    var version: Int by getLockableMutableMemberAlias(headerData::version)
+    var hasPadding: Boolean by getLockableMutableMemberAlias(headerData::hasPadding)
+    var marker: Boolean by getLockableMutableMemberAlias(headerData::marker)
+    var payloadType: Int by getLockableMutableMemberAlias(headerData::payloadType)
+    var sequenceNumber: Int by getLockableMutableMemberAlias(headerData::sequenceNumber)
+    var timestamp: Long by getLockableMutableMemberAlias(headerData::timestamp)
+    var ssrc: Long by getLockableMutableMemberAlias(headerData::ssrc)
+    val csrcs: MutableList<Long> by getLockableMutableMemberAlias(headerData::csrcs)
+    val extensions: RtpHeaderExtensions by getLockableMutableMemberAlias(headerData::extensions)
 
-    override fun toImmutable(): ImmutableRtpHeader = ImmutableRtpHeader(headerData, backingBuffer)
+    override fun doGetImmutable(): ImmutableRtpHeader =
+        ImmutableRtpHeader(headerData, backingBuffer)
 }

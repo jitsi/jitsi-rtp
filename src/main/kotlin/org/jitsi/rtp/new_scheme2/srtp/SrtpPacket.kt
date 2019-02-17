@@ -19,11 +19,8 @@ package org.jitsi.rtp.new_scheme2.srtp
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.put
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.Convertible
-import org.jitsi.rtp.new_scheme2.InPlaceModifier
-import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpHeader
 import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpPacket
 import org.jitsi.rtp.new_scheme2.rtp.MutableRtpHeader
@@ -55,34 +52,6 @@ class ImmutableSrtpPacket(
 
     override fun toMutable(): MutableSrtpPacket {
         return MutableSrtpPacket(header.toMutable(), payload, null)
-    }
-
-    override fun modifyInPlace(block: MutableRtpPacket.() -> Unit) {
-        with (MutableSrtpPacket(header.toMutable(), payload)) {
-            block()
-        }
-        TODO()
-    }
-
-    fun <T : Mutable>modifyInPlace(immutable: CanBecomeMutable<T>, block: T.() -> Unit) {
-        with (immutable.toMutable()) {
-            block()
-        }
-    }
-
-    private val modifier = SrtpPacketInPlaceModifier()
-    override fun getInPlaceModifier(): SrtpPacketInPlaceModifier {
-        return modifier
-    }
-
-    inner class SrtpPacketInPlaceModifier : InPlaceModifier {
-        // This method can't be defined in an interface, because the receiver function
-        // type is specific to the individual class
-        fun modify(block: MutableSrtpPacket.() -> Unit) {
-            with (MutableSrtpPacket(header.toMutable(), payload)) {
-                block()
-            }
-        }
     }
 
     override fun getMutableCopy(): MutableSrtpPacket =
@@ -131,13 +100,21 @@ class MutableSrtpPacket(
             newPayload.put(authTag)
         }
     }
+
+    override fun doGetImmutable(): ImmutableSrtpPacket =
+        ImmutableSrtpPacket(header.toImmutable(), payload, backingBuffer)
 }
 
-fun main() {
-    val isrtp = ImmutableSrtpPacket()
-
-    isrtp.getInPlaceModifier().modify {
-        removeAuthTag(10)
-
-    }
-}
+//fun main() {
+//    var isrtp = ImmutableSrtpPacket()
+//
+//    isrtp.getInPlaceModifier().modify {
+//        removeAuthTag(10)
+//
+//    }
+//
+//    isrtp = isrtp.toMutable().run {
+//        removeAuthTag()
+//        doGetImmutable()
+//    }
+//}
