@@ -240,6 +240,8 @@ class MutableRtpHeader internal constructor(
             version, hasPadding, marker, payloadType,
             sequenceNumber, timestamp, ssrc, csrcs, extensions), backingBuffer)
 
+    val sizeBytes: Int by ImmutableAlias(headerData::sizeBytes)
+
     var version: Int by MutableAlias(headerData::version)
     var hasPadding: Boolean by MutableAlias(headerData::hasPadding)
     var marker: Boolean by MutableAlias(headerData::marker)

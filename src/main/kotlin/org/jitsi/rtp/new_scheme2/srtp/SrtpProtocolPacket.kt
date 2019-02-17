@@ -19,7 +19,6 @@ package org.jitsi.rtp.new_scheme2.srtp
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.Convertible
 import org.jitsi.rtp.new_scheme2.ImmutablePacket
-import org.jitsi.rtp.new_scheme2.rtp.ImmutableRtpPacket
 import java.nio.ByteBuffer
 
 
