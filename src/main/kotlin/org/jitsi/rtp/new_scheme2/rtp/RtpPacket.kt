@@ -16,9 +16,13 @@
 
 package org.jitsi.rtp.new_scheme2.rtp
 
+import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme2.CanBecomeImmutable
+import org.jitsi.rtp.new_scheme2.CanBecomeMutable
 import org.jitsi.rtp.new_scheme2.ConstructableFromBuffer
 import org.jitsi.rtp.new_scheme2.ImmutablePacket
+import org.jitsi.rtp.new_scheme2.Mutable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -26,7 +30,7 @@ open class ImmutableRtpPacket(
     val header: ImmutableRtpHeader = ImmutableRtpHeader(),
     val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
-) : ImmutablePacket() {
+) : ImmutablePacket(), CanBecomeMutable<MutableRtpPacket> {
 
     override val sizeBytes: Int = header.sizeBytes + payload.limit()
 
@@ -43,6 +47,18 @@ open class ImmutableRtpPacket(
         b
     }
 
+    override fun getMutableCopy(): MutableRtpPacket =
+        MutableRtpPacket(header.getMutableCopy(), payload.clone(), dataBuf.clone())
+
+    override fun modifyInPlace(block: MutableRtpPacket.() -> Unit) {
+        //TODO(brian): we don't have a good way to get a modifiable version
+        // of an immutable class to use here...neither getting a copy nor
+        // modifyingInPlace works.  i think we may need a third method
+        // (one that modifyInPlace could probably leverage and therefore nott
+        // need to be implemented by each class?)
+        TODO()
+    }
+
     companion object : ConstructableFromBuffer<ImmutableRtpPacket> {
         override fun fromBuffer(buf: ByteBuffer): ImmutableRtpPacket {
             val header = ImmutableRtpHeader.fromBuffer(buf)
@@ -50,4 +66,14 @@ open class ImmutableRtpPacket(
             return ImmutableRtpPacket(header, payload, buf.subBuffer(0, header.sizeBytes + payload.limit()))
         }
     }
+}
+
+open class MutableRtpPacket(
+    val header: MutableRtpHeader = MutableRtpHeader(),
+    val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    backingBuffer: ByteBuffer? = null
+) : Mutable, CanBecomeImmutable<ImmutableRtpPacket> {
+
+    override fun toImmutable(): ImmutableRtpPacket =
+        ImmutableRtpPacket(header.toImmutable(), payload)
 }
