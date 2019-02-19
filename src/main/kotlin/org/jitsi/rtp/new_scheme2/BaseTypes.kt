@@ -62,7 +62,6 @@ abstract class CanBecomeImmutable<ImmutableType : Immutable> {
 interface ConstructableFromBuffer<ConstructedType> {
     fun fromBuffer(buf: ByteBuffer): ConstructedType
 }
-
 interface Convertible<BaseType> {
     fun <NewType : BaseType> convertTo(factory: ConstructableFromBuffer<NewType>): NewType
 }
