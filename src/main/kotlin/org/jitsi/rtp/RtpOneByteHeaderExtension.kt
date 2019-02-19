@@ -58,6 +58,8 @@ open class RtpOneByteHeaderExtension : RtpHeaderExtension {
     final override val size: Int
         get() = RtpOneByteHeaderExtension.HEADER_SIZE + lengthBytes
 
+    private var backingBuffer: ByteBuffer? = null
+
     companion object {
         const val HEADER_SIZE = 1
         const val COOKIE: Short = 0xBEDE.toShort()
@@ -108,6 +110,7 @@ open class RtpOneByteHeaderExtension : RtpHeaderExtension {
         data = getData(buf, lengthBytes)
         // Advance the buffer's position to the end of the data for this extension
         buf.position(buf.position() + size)
+        backingBuffer = buf.subBuffer(0, size)
     }
 
     /**
@@ -126,7 +129,7 @@ open class RtpOneByteHeaderExtension : RtpHeaderExtension {
     }
 
     override fun getBuffer(): ByteBuffer {
-        val buf = ByteBufferUtils.ensureCapacity(null, size)
+        val buf = ByteBufferUtils.ensureCapacity(backingBuffer, size)
         buf.rewind()
         buf.limit(size)
 
@@ -136,6 +139,7 @@ open class RtpOneByteHeaderExtension : RtpHeaderExtension {
         setData(buf, data)
 
         buf.rewind()
+        backingBuffer = buf
         return buf
     }
 
