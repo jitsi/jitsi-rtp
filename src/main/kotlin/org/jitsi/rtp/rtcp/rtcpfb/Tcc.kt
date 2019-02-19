@@ -748,12 +748,13 @@ class EightBitReceiveDelta : ReceiveDelta {
     }
 
     override fun getBuffer(): ByteBuffer {
-        if (this.buf == null) {
-            this.buf = ByteBuffer.allocate(EightBitReceiveDelta.SIZE_BYTES)
-        }
-        setDeltaMs(this.buf!!, deltaMs)
+        val b = ByteBufferUtils.ensureCapacity(buf, EightBitReceiveDelta.SIZE_BYTES)
+        b.rewind()
+        setDeltaMs(b, deltaMs)
+        b.rewind()
+        buf = b
 
-        return this.buf!!.rewind() as ByteBuffer
+        return b
     }
 
     override fun getSize(): Int = EightBitReceiveDelta.SIZE_BYTES
