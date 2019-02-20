@@ -17,7 +17,6 @@
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.GenericNack
 import java.nio.ByteBuffer
@@ -31,20 +30,13 @@ class RtcpFbNackPacket(
     private val fci: GenericNack = GenericNack(),
     backingBuffer: ByteBuffer? = null
 ) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
-    override val sizeBytes: Int
-        get() = header.sizeBytes + fci.sizeBytes
 
     val missingSeqNums
         get() = fci.missingSeqNums
 
     constructor(mediaSourceSsrc: Int, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
 
-    override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
-        fci.serializeTo(buf)
-    }
-
-    override fun clone(): Packet {
+    override fun clone(): RtcpFbNackPacket {
         TODO()
     }
 

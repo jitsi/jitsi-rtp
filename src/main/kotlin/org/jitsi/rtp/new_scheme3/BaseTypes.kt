@@ -120,6 +120,21 @@ class MutableAlias<T>(private val delegate: KMutableProperty0<T>) {
     }
 }
 
+/**
+ * A delegate to be used for serialized fields, where changing them should set a dirty flag
+ * that any prior serialization needs to be updated to reflect this change
+ */
+class SerializedField<T>(initialValue: T, private var dirtyField: KMutableProperty0<Boolean>) {
+    private var value: T = initialValue
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
+        value
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        dirtyField.set(true)
+        this.value = value
+    }
+}
+
 class LockableImmutableAlias<T>(private val delegate: KProperty0<T>, private val isLocked: KProperty0<Boolean>) {
     operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
         if (isLocked.get()) {
