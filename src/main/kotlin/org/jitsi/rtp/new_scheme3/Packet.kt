@@ -70,3 +70,6 @@ open class UnparsedPacket(
     }
 }
 
+class DtlsProtocolPacket(
+    buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+) : UnparsedPacket(buf)
