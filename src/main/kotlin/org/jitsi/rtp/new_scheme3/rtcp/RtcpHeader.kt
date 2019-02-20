@@ -86,6 +86,7 @@ class RtcpHeader(
     }
 
     companion object {
+        const val SIZE_BYTES = RtcpHeaderData.SIZE_BYTES
         fun create(buf: ByteBuffer): RtcpHeader {
             val headerData = RtcpHeaderData.create(buf)
             return RtcpHeader(headerData, buf)

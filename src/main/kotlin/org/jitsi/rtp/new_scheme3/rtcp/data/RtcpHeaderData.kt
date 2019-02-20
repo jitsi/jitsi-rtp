@@ -38,8 +38,7 @@ data class RtcpHeaderData(
     var length: Int = 0,
     var senderSsrc: Long = 0
 ) : SerializableData() {
-    override val sizeBytes: Int = RtcpHeader.SIZE_BYTES
-
+    override val sizeBytes: Int = SIZE_BYTES
 
     override fun toString(): String {
         return with(StringBuffer()) {
@@ -75,6 +74,7 @@ data class RtcpHeaderData(
     }
 
     companion object {
+        const val SIZE_BYTES = 8
         fun create(buf: ByteBuffer): RtcpHeaderData {
             val version = RtcpHeader.getVersion(buf)
             val hasPadding = RtcpHeader.hasPadding(buf)

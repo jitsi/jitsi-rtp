@@ -52,6 +52,10 @@ abstract class RtcpPacket(
         return backingBuffer!!
     }
 
+    override fun serializeTo(buf: ByteBuffer) {
+        _header.serializeTo(buf)
+    }
+
     companion object {
         fun parse(buf: ByteBuffer): RtcpPacket {
             val packetType = org.jitsi.rtp.rtcp.RtcpHeader.getPacketType(buf)
