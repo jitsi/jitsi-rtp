@@ -21,7 +21,7 @@ import java.nio.ByteBuffer
 
 class RtcpRrPacket(
     header: RtcpHeader = RtcpHeader(),
-    private val reportBlocks: List<RtcpReportBlock> = listOf(),
+    val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
     override val sizeBytes: Int

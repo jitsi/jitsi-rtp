@@ -228,7 +228,7 @@ class RtcpSrPacket(
     header: RtcpHeader = RtcpHeader(),
     //TODO: need to tweak things to enforce modifying senderinfo happens in a modifySenderInfo block
     val senderInfo: SenderInfo = SenderInfo(),
-    private val reportBlocks: List<RtcpReportBlock> = listOf(),
+    val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
     override val sizeBytes: Int
