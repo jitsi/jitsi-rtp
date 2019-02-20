@@ -98,8 +98,23 @@ class RtpHeader(
         RtpHeader(headerData.clone())
 
     companion object {
+        const val FIXED_HEADER_SIZE_BYTES = RtpHeaderData.FIXED_HEADER_SIZE_BYTES
         fun create(buf: ByteBuffer): RtpHeader =
             RtpHeader(RtpHeaderData.create(buf), buf)
+
+        fun fromValues(
+            version: Int = 2,
+            hasPadding: Boolean = false,
+            marker: Boolean = false,
+            payloadType: Int = 0,
+            sequenceNumber: Int = 0,
+            timestamp: Long = 0,
+            ssrc: Long = 0,
+            csrcs: List<Long> = listOf(),
+            extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
+        ): RtpHeader = RtpHeader(RtpHeaderData(
+                version, hasPadding, marker, payloadType, sequenceNumber,
+                timestamp, ssrc, csrcs.toMutableList(), extensions))
     }
 }
 

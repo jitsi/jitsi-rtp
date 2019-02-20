@@ -122,6 +122,7 @@ data class RtpHeaderData(
     }
 
     companion object {
+        const val FIXED_HEADER_SIZE_BYTES = 12
         fun create(buf: ByteBuffer): RtpHeaderData {
             val version = RtpHeader.getVersion(buf)
             val hasPadding = RtpHeader.hasPadding(buf)
