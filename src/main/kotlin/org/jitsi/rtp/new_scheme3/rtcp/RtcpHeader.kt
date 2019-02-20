@@ -91,5 +91,19 @@ class RtcpHeader(
             val headerData = RtcpHeaderData.create(buf)
             return RtcpHeader(headerData, buf)
         }
+
+        fun fromValues(
+            version: Int = 2,
+            hasPadding: Boolean = false,
+            reportCount: Int = 0,
+            packetType: Int = 0,
+            length: Int = 0,
+            senderSsrc: Long = 0,
+            backingBuffer: ByteBuffer? = null
+        ) : RtcpHeader {
+            return RtcpHeader(RtcpHeaderData(
+                version, hasPadding, reportCount,
+                packetType, length, senderSsrc), backingBuffer)
+        }
     }
 }
