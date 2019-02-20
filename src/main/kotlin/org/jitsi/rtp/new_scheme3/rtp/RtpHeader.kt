@@ -18,7 +18,6 @@ package org.jitsi.rtp.new_scheme3.rtp
 
 import org.jitsi.rtp.RtpHeaderExtension
 import org.jitsi.rtp.RtpHeaderExtensions
-import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.new_scheme3.Cloneable
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
@@ -82,10 +81,11 @@ abstract class ImmutableRtpHeader internal constructor(
     }
 }
 
-class RtpHeader internal constructor(
+class RtpHeader(
     headerData: RtpHeaderData = RtpHeaderData(),
     backingBuffer: ByteBuffer? = null
 ) : ImmutableRtpHeader(headerData, backingBuffer) {
+
     fun modify(block: RtpHeaderData.() -> Unit) {
         doModify(block)
     }

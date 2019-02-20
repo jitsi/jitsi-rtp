@@ -45,6 +45,23 @@ open class RtpPacket(
         }
     }
 
+    val paddingSize: Int
+        get() {
+            return if (header.hasPadding) {
+                // The last octet of the padding contains a count of how many
+                // padding octets should be ignored, including itself.
+
+                // It's an 8-bit unsigned number.
+                payload.get(payload.limit() - 1).toInt()
+
+            } else {
+                0
+            }
+        }
+
+    fun toOtherRtpPacketType(factory: (RtpHeader, ByteBuffer, ByteBuffer?) -> RtpPacket): RtpPacket =
+        factory(_header, _payload, backingBuffer)
+
     override fun clone(): Packet {
         return RtpPacket(_header.clone(), _payload.clone())
     }
