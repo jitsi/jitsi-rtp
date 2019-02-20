@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.new_scheme3.Cloneable
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.SerializableData
@@ -26,7 +25,7 @@ import java.nio.charset.StandardCharsets
 data class RtcpByeData(
     var ssrcs: MutableList<Long> = mutableListOf(),
     var reason: String? = null
-) : SerializableData(), Cloneable<RtcpByeData> {
+) : SerializableData(), kotlin.Cloneable {
 
     override val sizeBytes: Int
         get() {
@@ -64,7 +63,7 @@ data class RtcpByeData(
         }
     }
 
-    override fun clone(): RtcpByeData =
+    public override fun clone(): RtcpByeData =
         RtcpByeData(ssrcs.toMutableList(), reason?.plus(""))
 
     companion object {
@@ -112,7 +111,7 @@ class RtcpByePacket internal constructor(
         byeData.serializeTo(buf)
     }
 
-    override fun clone(): Packet =
+    public override fun clone(): Packet =
         RtcpByePacket(_header.clone(), byeData.clone())
 
     fun modify(block: RtcpByeData.() -> Unit) {

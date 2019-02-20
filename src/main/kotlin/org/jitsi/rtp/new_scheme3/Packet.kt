@@ -46,13 +46,11 @@ abstract class SerializableData : Serializable {
     }
 }
 
-interface Cloneable<T> {
-    fun clone(): T
-}
-
 //TODO(brian): i don't think cloning RTCP makes much sense.  can we get away
 // without it?
-abstract class Packet : SerializableData(), Cloneable<Packet>
+abstract class Packet : SerializableData(), kotlin.Cloneable {
+    public abstract override fun clone(): Packet
+}
 
 open class UnparsedPacket(
     private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER

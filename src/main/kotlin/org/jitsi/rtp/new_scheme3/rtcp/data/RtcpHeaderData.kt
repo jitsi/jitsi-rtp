@@ -37,7 +37,7 @@ data class RtcpHeaderData(
     var packetType: Int = 0,
     var length: Int = 0,
     var senderSsrc: Long = 0
-) : SerializableData() {
+) : SerializableData(), kotlin.Cloneable {
     override val sizeBytes: Int = SIZE_BYTES
 
     override fun toString(): String {
@@ -52,7 +52,7 @@ data class RtcpHeaderData(
         }
     }
 
-    fun clone(): RtcpHeaderData {
+    public override fun clone(): RtcpHeaderData {
         return RtcpHeaderData(
             version, hasPadding, reportCount, packetType, length, senderSsrc
         )

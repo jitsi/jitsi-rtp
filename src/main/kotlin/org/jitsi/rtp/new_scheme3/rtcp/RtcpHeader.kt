@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.new_scheme3.Cloneable
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -26,7 +25,7 @@ import java.nio.ByteBuffer
 abstract class ImmutableRtcpHeader internal constructor(
     protected val headerData: RtcpHeaderData = RtcpHeaderData(),
     protected var backingBuffer: ByteBuffer? = null
-) : SerializableData(), Cloneable<ImmutableRtcpHeader> {
+) : SerializableData(), kotlin.Cloneable {
     override val sizeBytes: Int
         get() = headerData.sizeBytes
 
@@ -74,7 +73,7 @@ class RtcpHeader(
     backingBuffer: ByteBuffer? = null
 ) : ImmutableRtcpHeader(headerData, backingBuffer) {
 
-    override fun clone(): RtcpHeader =
+    public override fun clone(): RtcpHeader =
             RtcpHeader(headerData.clone())
 
     fun modify(block: RtcpHeaderData.() -> Unit) {
