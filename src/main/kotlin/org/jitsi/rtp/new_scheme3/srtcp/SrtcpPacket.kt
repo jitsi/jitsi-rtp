@@ -21,12 +21,10 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
-import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 class SrtcpPacket(
     header: RtcpHeader = RtcpHeader(),
-    private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
 
@@ -61,9 +59,8 @@ class SrtcpPacket(
         private const val SRTCP_INDEX_MASK = IS_ENCRYPTED_MASK.inv().toInt()
         fun create(buf: ByteBuffer): SrtcpPacket {
             val header = RtcpHeader.create(buf)
-            val payload = buf.subBuffer(header.sizeBytes)
 
-            return SrtcpPacket(header, payload, buf.subBuffer(0, header.sizeBytes + payload.limit()))
+            return SrtcpPacket(header, buf)
         }
     }
 }

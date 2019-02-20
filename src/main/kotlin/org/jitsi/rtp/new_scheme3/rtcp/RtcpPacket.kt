@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -28,12 +29,26 @@ abstract class RtcpPacket(
 ) : Packet() {
     private var dirty: Boolean = true
 
+    /**
+     * The serialized version of everything else in this [RtcpPacket] after the
+     * [RtcpHeader]
+     */
+    val payload: ByteBuffer
+        get() = getBuffer().subBuffer(_header.sizeBytes)
+
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
     //TODO(brian): it'd be nice to not expose header data here.  maybe
     // RtcpHeader should add its own layer for each variabl
     fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
         _header.modify(block)
+        dirty = true
+    }
+
+    fun modifyPayload(block: ByteBuffer.() -> Unit) {
+        with(payload) {
+            block()
+        }
         dirty = true
     }
 
