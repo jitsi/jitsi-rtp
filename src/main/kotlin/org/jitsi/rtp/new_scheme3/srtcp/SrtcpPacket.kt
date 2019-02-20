@@ -50,6 +50,12 @@ class SrtcpPacket(
     override fun clone(): Packet =
         SrtcpPacket(_header.clone(), payload.clone())
 
+    override fun serializeTo(buf: ByteBuffer) {
+        _header.serializeTo(buf)
+        payload.rewind()
+        buf.put(payload)
+    }
+
     companion object {
         private const val IS_ENCRYPTED_MASK = 0x80000000.toInt()
         private const val SRTCP_INDEX_MASK = IS_ENCRYPTED_MASK.inv().toInt()

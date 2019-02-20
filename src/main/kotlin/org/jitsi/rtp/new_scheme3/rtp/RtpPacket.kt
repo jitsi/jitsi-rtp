@@ -72,14 +72,18 @@ open class RtpPacket(
             // this buffer, so that we can do things like re-add the auth tag
             // into the available space
             val buf = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
-            buf.put(header.getBuffer())
-            _payload.rewind()
-            buf.put(_payload)
+            serializeTo(buf)
 
             buf.rewind()
             backingBuffer = buf
             dirty = false
         }
         return backingBuffer!!
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        buf.put(_header.getBuffer())
+        _payload.rewind()
+        buf.put(_payload)
     }
 }

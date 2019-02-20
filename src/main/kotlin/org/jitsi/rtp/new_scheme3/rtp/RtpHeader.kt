@@ -73,11 +73,15 @@ abstract class ImmutableRtpHeader internal constructor(
     override fun getBuffer(): ByteBuffer {
         if (dirty) {
             val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
-            headerData.serializeTo(b)
+            serializeTo(b)
             dirty = false
             backingBuffer = b
         }
         return backingBuffer!!.asReadOnlyBuffer()
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        headerData.serializeTo(buf)
     }
 }
 

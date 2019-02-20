@@ -16,13 +16,34 @@
 
 package org.jitsi.rtp.new_scheme3
 
-import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+interface Serializable {
+    /**
+     * Get the contents of this object serialized into a buffer.  The
+     * returned buffer MUST:
+     * 1) Have its current position set to 0
+     * 2) Have its limit set to the size of the valid data contained within
+     * the buffer
+     */
+    fun getBuffer(): ByteBuffer
+
+    //TODO(brian): eventually this should be the required one and getBuffer can
+    // have a default implementation which leverages this method
+    fun serializeTo(buf: ByteBuffer)
+}
+
 abstract class SerializableData : Serializable {
     abstract val sizeBytes: Int
+
+    override fun getBuffer(): ByteBuffer {
+        val b = ByteBuffer.allocate(sizeBytes)
+        serializeTo(b)
+
+        return b.rewind() as ByteBuffer
+    }
 }
 
 interface Cloneable<T> {
@@ -42,5 +63,10 @@ open class UnparsedPacket(
     override fun clone(): Packet = UnparsedPacket(buf.clone())
 
     override fun getBuffer(): ByteBuffer = buf
+
+    override fun serializeTo(buf: ByteBuffer) {
+        this.buf.rewind()
+        buf.put(this.buf)
+    }
 }
 

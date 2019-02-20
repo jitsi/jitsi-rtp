@@ -81,6 +81,10 @@ class RtcpHeader(
         doModify(block)
     }
 
+    override fun serializeTo(buf: ByteBuffer) {
+        headerData.serializeTo(buf)
+    }
+
     companion object {
         fun create(buf: ByteBuffer): RtcpHeader {
             val headerData = RtcpHeaderData.create(buf)
