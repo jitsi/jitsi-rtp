@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-package org.jitsi.rtp.new_scheme2
+package org.jitsi.rtp.new_scheme3.srtp
 
-import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.new_scheme3.UnparsedPacket
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 /**
- * Data which is immutable but whose serialized data can be retrieved.
- *
- * This exists mainly to ensure the buffer is given out as read-only.
+ * Either an SRTP or SRTCP packet, but we don't know which yet
  */
-abstract class ImmutableSerializableData : Immutable, Serializable {
-    protected abstract val dataBuf: ByteBuffer
-
-    final override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()
-}
+class SrtpProtocolPacket(
+    buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+) : UnparsedPacket(buf)

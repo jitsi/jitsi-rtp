@@ -27,5 +27,7 @@ interface Serializable {
      */
     fun getBuffer(): ByteBuffer
 
+    //TODO(brian): eventually this should be the required one and getBuffer can
+    // have a default implementation which leverages this method
     fun serializeTo(buf: ByteBuffer) {}
 }

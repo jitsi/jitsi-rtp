@@ -27,11 +27,14 @@ class ByteBufferUtils {
          * size [capacity]
          */
         fun ensureCapacity(buf: ByteBuffer?, capacity: Int): ByteBuffer {
-            return if (buf == null || buf.limit() < capacity) {
+            val newBuf = if (buf == null || buf.limit() < capacity) {
                 ByteBuffer.allocate(capacity)
             } else {
                 buf
             }
+            newBuf.rewind()
+            newBuf.limit(capacity)
+            return newBuf
         }
 
         /**

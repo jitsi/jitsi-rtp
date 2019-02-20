@@ -14,18 +14,33 @@
  * limitations under the License.
  */
 
-package org.jitsi.rtp.new_scheme2
+package org.jitsi.rtp.new_scheme3
 
 import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-/**
- * Data which is immutable but whose serialized data can be retrieved.
- *
- * This exists mainly to ensure the buffer is given out as read-only.
- */
-abstract class ImmutableSerializableData : Immutable, Serializable {
-    protected abstract val dataBuf: ByteBuffer
-
-    final override fun getBuffer(): ByteBuffer = dataBuf.asReadOnlyBuffer()
+abstract class SerializableData : Serializable {
+    abstract val sizeBytes: Int
 }
+
+interface Cloneable<T> {
+    fun clone(): T
+}
+
+//TODO(brian): i don't think cloning RTCP makes much sense.  can we get away
+// without it?
+abstract class Packet : SerializableData(), Cloneable<Packet>
+
+open class UnparsedPacket(
+    private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+) : Packet() {
+
+    override val sizeBytes: Int = buf.limit()
+
+    override fun clone(): Packet = UnparsedPacket(buf.clone())
+
+    override fun getBuffer(): ByteBuffer = buf
+}
+
