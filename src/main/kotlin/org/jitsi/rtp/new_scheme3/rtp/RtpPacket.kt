@@ -38,12 +38,14 @@ open class RtpPacket(
 
     fun modifyHeader(block: RtpHeaderData.() -> Unit) {
         _header.modify(block)
+        dirty = true
     }
 
     fun modifyPayload(block: ByteBuffer.() -> Unit) {
         with (_payload) {
             block()
         }
+        dirty = true
     }
 
     val paddingSize: Int

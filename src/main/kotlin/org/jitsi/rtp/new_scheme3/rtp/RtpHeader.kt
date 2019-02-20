@@ -21,12 +21,10 @@ import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
-import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 abstract class ImmutableRtpHeader internal constructor(
-    protected val headerData: RtpHeaderData = RtpHeaderData(),
-    protected var backingBuffer: ByteBuffer? = null
+    protected val headerData: RtpHeaderData = RtpHeaderData()
 ) : SerializableData(), kotlin.Cloneable {
     override val sizeBytes: Int
         get() = headerData.sizeBytes
@@ -43,7 +41,9 @@ abstract class ImmutableRtpHeader internal constructor(
     // be modified here since it's an object
     val extensions: RtpHeaderExtensions by ImmutableAlias(headerData::extensions)
 
-    private var dirty: Boolean = true
+    val hasExtension: Boolean get() = extensions.isNotEmpty()
+
+    val csrcCount: Int get() = csrcs.size
 
     constructor(
         version: Int = 2,
@@ -54,11 +54,10 @@ abstract class ImmutableRtpHeader internal constructor(
         timestamp: Long = 0,
         ssrc: Long = 0,
         csrcs: List<Long> = listOf(),
-        extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS,
-        backingBuffer: ByteBuffer? = null
+        extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
     ) : this(RtpHeaderData(
         version, hasPadding, marker, payloadType, sequenceNumber,
-        timestamp, ssrc, csrcs.toMutableList(), extensions), backingBuffer)
+        timestamp, ssrc, csrcs.toMutableList(), extensions))
 
     fun getExtension(id: Int): RtpHeaderExtension? = extensions.getExtension(id)
 
@@ -66,17 +65,6 @@ abstract class ImmutableRtpHeader internal constructor(
         with (headerData) {
             block()
         }
-        dirty = true
-    }
-
-    override fun getBuffer(): ByteBuffer {
-        if (dirty) {
-            val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
-            serializeTo(b)
-            dirty = false
-            backingBuffer = b
-        }
-        return backingBuffer!!.asReadOnlyBuffer()
     }
 
     override fun serializeTo(buf: ByteBuffer) {
@@ -85,9 +73,8 @@ abstract class ImmutableRtpHeader internal constructor(
 }
 
 class RtpHeader(
-    headerData: RtpHeaderData = RtpHeaderData(),
-    backingBuffer: ByteBuffer? = null
-) : ImmutableRtpHeader(headerData, backingBuffer) {
+    headerData: RtpHeaderData = RtpHeaderData()
+) : ImmutableRtpHeader(headerData) {
 
     fun modify(block: RtpHeaderData.() -> Unit) {
         doModify(block)
@@ -99,7 +86,7 @@ class RtpHeader(
     companion object {
         const val FIXED_HEADER_SIZE_BYTES = RtpHeaderData.FIXED_HEADER_SIZE_BYTES
         fun create(buf: ByteBuffer): RtpHeader =
-            RtpHeader(RtpHeaderData.create(buf), buf)
+            RtpHeader(RtpHeaderData.create(buf))
 
         fun fromValues(
             version: Int = 2,
