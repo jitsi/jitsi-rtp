@@ -56,6 +56,10 @@ abstract class RtcpPacket(
         dirty = true
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun <OtherType : RtcpPacket>toOtherRtcpPacketType(factory: (RtcpHeader, backingBuffer: ByteBuffer?) -> RtcpPacket): OtherType
+        = factory(_header, backingBuffer) as OtherType
+
     final override fun getBuffer(): ByteBuffer {
         if (dirty) {
             val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)

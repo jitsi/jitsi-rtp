@@ -60,8 +60,9 @@ open class RtpPacket(
             }
         }
 
-    fun toOtherRtpPacketType(factory: (RtpHeader, ByteBuffer, ByteBuffer?) -> RtpPacket): RtpPacket =
-        factory(_header, _payload, backingBuffer)
+    @Suppress("UNCHECKED_CAST")
+    fun <OtherType : RtpPacket>toOtherRtpPacketType(factory: (RtpHeader, ByteBuffer, ByteBuffer?) -> RtpPacket): OtherType =
+        factory(_header, _payload, backingBuffer) as OtherType
 
     override fun clone(): Packet {
         return RtpPacket(_header.clone(), _payload.clone())
