@@ -40,8 +40,19 @@ class SrtcpPacket(
     fun isEncrypted(tagLen: Int): Boolean =
         (payload.getInt(payload.limit() - (4 + tagLen)) and IS_ENCRYPTED_MASK) == IS_ENCRYPTED_MASK
 
+    //TODO: could we work all the auth tag/index operations into modifyPayload?
     fun removeAuthTagAndSrtcpIndex(tagLen: Int) {
         payload.limit(payload.limit() - (4 + tagLen))
+        payloadModified()
+    }
+
+    fun addAuthTag(authTag: ByteBuffer) {
+        TODO()
+        payloadModified()
+    }
+
+    fun addSrtcpIndex(srtcpIndex: Int, tagLen: Int) {
+        TODO()
         payloadModified()
     }
 
