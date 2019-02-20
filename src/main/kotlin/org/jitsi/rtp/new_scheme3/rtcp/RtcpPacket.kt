@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
+import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -29,11 +30,11 @@ abstract class RtcpPacket(
 
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
-    fun modifyHeader(block: RtcpHeader.() -> Unit) {
-        with (_header) {
-            block()
-            dirty = true
-        }
+    //TODO(brian): it'd be nice to not expose header data here.  maybe
+    // RtcpHeader should add its own layer for each variabl
+    fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
+        _header.modify(block)
+        dirty = true
     }
 
     protected fun payloadModified() {
