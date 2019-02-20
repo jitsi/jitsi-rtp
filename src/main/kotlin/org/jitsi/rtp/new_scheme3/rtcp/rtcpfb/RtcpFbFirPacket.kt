@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.Fir
@@ -33,6 +34,8 @@ class RtcpFbFirPacket(
     }
 
     companion object {
+        const val FMT = 4
+
         fun fromValues(
             header: RtcpHeader = RtcpHeader(),
             mediaSourceSsrc: Long = -1,
@@ -40,6 +43,14 @@ class RtcpFbFirPacket(
         ): RtcpFbFirPacket {
             val fci = Fir(mediaSourceSsrc, commandSeqNum)
             return RtcpFbFirPacket(header, mediaSourceSsrc, fci)
+        }
+
+        fun fromBuffer(buf: ByteBuffer): RtcpFbFirPacket {
+            val header = RtcpHeader.create(buf)
+            val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
+            val fci = Fir.fromBuffer(buf.subBuffer(RtcpFbPacket.FCI_OFFSET))
+
+            return RtcpFbFirPacket(header, mediaSourceSsrc, fci, buf)
         }
     }
 }

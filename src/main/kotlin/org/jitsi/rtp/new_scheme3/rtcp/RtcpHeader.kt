@@ -16,6 +16,10 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
+import org.jitsi.rtp.extensions.getBitAsBool
+import org.jitsi.rtp.extensions.getBits
+import org.jitsi.rtp.extensions.putBitAsBoolean
+import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -103,6 +107,30 @@ class RtcpHeader(
             return RtcpHeader(RtcpHeaderData(
                 version, hasPadding, reportCount,
                 packetType, length, senderSsrc), backingBuffer)
+        }
+
+        fun getVersion(buf: ByteBuffer): Int = buf.get(0).getBits(0, 2).toInt()
+        fun setVersion(buf: ByteBuffer, version: Int) = buf.putBits(0, 0, version.toByte(), 2)
+
+        fun hasPadding(buf: ByteBuffer): Boolean = buf.get(0).getBitAsBool(2)
+        fun setPadding(buf: ByteBuffer, hasPadding: Boolean) = buf.putBitAsBoolean(0, 2, hasPadding)
+
+        fun getReportCount(buf: ByteBuffer): Int = buf.get(0).getBits(3, 5).toInt()
+        fun setReportCount(buf: ByteBuffer, reportCount: Int) = buf.putBits(0, 3, reportCount.toByte(), 5)
+
+        fun getPacketType(buf: ByteBuffer): Int = buf.get(1).toInt()
+        fun setPacketType(buf: ByteBuffer, packetType: Int) {
+            buf.put(1, packetType.toByte())
+        }
+
+        fun getLength(buf: ByteBuffer): Int = buf.getShort(2).toInt()
+        fun setLength(buf: ByteBuffer, length: Int) {
+            buf.putShort(2, length.toShort())
+        }
+
+        fun getSenderSsrc(buf: ByteBuffer): Long = buf.getInt(4).toLong()
+        fun setSenderSsrc(buf: ByteBuffer, senderSsrc: Long) {
+            buf.putInt(4, senderSsrc.toInt())
         }
     }
 }

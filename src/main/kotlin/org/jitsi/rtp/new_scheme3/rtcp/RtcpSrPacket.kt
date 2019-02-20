@@ -233,9 +233,6 @@ class RtcpSrPacket(
 ) : RtcpPacket(header, backingBuffer) {
     override val sizeBytes: Int
         get() = header.sizeBytes + senderInfo.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
-
-
-
     //TODO(brian): where do we make sure the packet type is set correctly?
 
     override fun serializeTo(buf: ByteBuffer) {
@@ -302,6 +299,13 @@ class RtcpSrPacket(
             reportBlocks.forEach { reportBlock ->
                 reportBlockBuf.put(reportBlock.getBuffer())
             }
+        }
+
+        fun fromBuffer(buf: ByteBuffer): RtcpSrPacket {
+            val header = RtcpHeader.create(buf)
+            val senderInfo = getSenderInfo(buf)
+            val reportBlocks = getReportBlocks(buf, header.reportCount)
+            return RtcpSrPacket(header, senderInfo, reportBlocks, buf)
         }
     }
 }

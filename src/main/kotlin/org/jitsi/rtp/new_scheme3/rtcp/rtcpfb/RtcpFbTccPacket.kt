@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc.Tcc
@@ -40,5 +41,17 @@ class RtcpFbTccPacket(
 
     override fun clone(): RtcpFbTccPacket {
         TODO()
+    }
+
+    companion object {
+        const val FMT = 15
+
+        fun fromBuffer(buf: ByteBuffer): RtcpFbTccPacket {
+            val header = RtcpHeader.create(buf)
+            val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
+            val fci = Tcc.fromBuffer(buf.subBuffer(RtcpFbPacket.FCI_OFFSET))
+
+            return RtcpFbTccPacket(header, mediaSourceSsrc, fci, buf)
+        }
     }
 }

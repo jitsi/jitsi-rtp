@@ -51,5 +51,20 @@ class Fir(
 
     companion object {
         const val SIZE_BYTES = 8
+
+        fun fromBuffer(buf: ByteBuffer): Fir {
+            val ssrc = getSsrc(buf)
+            val seqNum = getSeqNum(buf)
+
+            return Fir(ssrc, seqNum)
+        }
+
+        fun getSsrc(buf: ByteBuffer): Long = buf.getInt(0).toLong()
+        fun setSsrc(buf: ByteBuffer, ssrc: Long) = buf.putInt(0, ssrc.toInt())
+
+        fun getSeqNum(buf: ByteBuffer) = buf.get(4).toInt()
+        fun setSeqNum(buf: ByteBuffer, seqNum: Int) {
+            buf.put(4, seqNum.toByte())
+        }
     }
 }

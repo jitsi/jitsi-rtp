@@ -122,6 +122,7 @@ class RtcpByePacket internal constructor(
     }
 
     companion object {
+        const val PT: Int = 203
         fun create(buf: ByteBuffer): RtcpByePacket {
             val header = RtcpHeader.create(buf)
             val hasReason = run {

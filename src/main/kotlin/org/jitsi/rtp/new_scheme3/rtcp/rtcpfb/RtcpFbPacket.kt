@@ -59,9 +59,37 @@ abstract class RtcpFbPacket(
     }
 
     companion object {
+        val PACKET_TYPES = listOf(205, 206)
+        const val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4
+
         fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toLong()
         fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Int) {
             buf.putInt(mediaSourceSsrc)
+        }
+
+        fun fromBuffer(buf: ByteBuffer): RtcpFbPacket {
+            val packetType = RtcpHeader.getPacketType(buf)
+            val fmt = RtcpHeader.getReportCount(buf)
+            return when (packetType) {
+                TransportLayerFbPacket.PT -> {
+                    when (fmt) {
+                        RtcpFbNackPacket.FMT -> RtcpFbNackPacket.fromBuffer(buf)
+                        RtcpFbTccPacket.FMT -> RtcpFbTccPacket.fromBuffer(buf)
+                        else -> throw Exception("Unrecognized RTCPFB format: pt $packetType, fmt $fmt")
+                    }
+                }
+                PayloadSpecificFbPacket.PT -> {
+                    when (fmt) {
+//                        RtcpFbPliPacket.FMT -> RtcpFbPliPacket(buf)
+                        RtcpFbFirPacket.FMT -> RtcpFbFirPacket.fromBuffer(buf)
+                        2 -> TODO("sli")
+                        3 -> TODO("rpsi")
+                        15 -> TODO("afb")
+                        else -> throw Exception("Unrecognized RTCPFB format: pt $packetType, fmt $fmt")
+                    }
+                }
+                else -> throw Exception("Unrecognized RTCPFB payload type: $packetType")
+            }
         }
     }
 }

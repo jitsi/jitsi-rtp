@@ -20,6 +20,7 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
+import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -80,7 +81,11 @@ abstract class RtcpPacket(
         fun parse(buf: ByteBuffer): RtcpPacket {
             val packetType = org.jitsi.rtp.rtcp.RtcpHeader.getPacketType(buf)
             return when (packetType) {
-                org.jitsi.rtp.rtcp.RtcpByePacket.PT -> RtcpByePacket.create(buf)
+                RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
+                RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)
+//                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
+                RtcpByePacket.PT -> RtcpByePacket.create(buf)
+                in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
             }
         }
