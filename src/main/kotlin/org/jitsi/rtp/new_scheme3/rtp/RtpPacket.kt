@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3.rtp
 
 import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -71,6 +72,8 @@ open class RtpPacket(
             //TODO: we should somehow track the original limit we were given for
             // this buffer, so that we can do things like re-add the auth tag
             // into the available space
+            // -> backingBuffer should always be the same.  any changes we make to
+            // it should be a duplicate so we know how much we have to work with
             val buf = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
             serializeTo(buf)
 
@@ -85,5 +88,13 @@ open class RtpPacket(
         buf.put(_header.getBuffer())
         _payload.rewind()
         buf.put(_payload)
+    }
+
+    companion object {
+        fun fromBuffer(buf: ByteBuffer): RtpPacket {
+            val header = RtpHeader.create(buf)
+            val payload = buf.subBuffer(header.sizeBytes)
+            return RtpPacket(header, payload, buf)
+        }
     }
 }
