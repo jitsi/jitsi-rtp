@@ -22,7 +22,7 @@ import java.nio.ByteBuffer
 
 abstract class TransportLayerFbPacket(
     header: RtcpHeader = RtcpHeader(),
-    mediaSourceSsrc: Int = -1,
+    mediaSourceSsrc: Long = -1,
     fci: FeedbackControlInformation,
     backingBuffer: ByteBuffer? = null
 ) : RtcpFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {

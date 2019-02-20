@@ -18,27 +18,28 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
-import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc.Tcc
+import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.Fir
 import java.nio.ByteBuffer
 
-class RtcpFbTccPacket(
+class RtcpFbFirPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
-    //TODO(brian): expose tcc fci as read-only except for in modifyFci
-    val fci: Tcc = Tcc(),
+    private val fci: Fir = Fir(),
     backingBuffer: ByteBuffer? = null
-) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
+) : PayloadSpecificFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
 
-    val numPackets: Int get() = fci.numPackets
-
-    fun modifyFci(block: Tcc.() -> Unit) {
-        //TODO: dirty
-        with (fci) {
-            block()
-        }
+    override fun clone(): Packet {
+        TODO()
     }
 
-    override fun clone(): RtcpFbTccPacket {
-        TODO()
+    companion object {
+        fun fromValues(
+            header: RtcpHeader = RtcpHeader(),
+            mediaSourceSsrc: Long = -1,
+            commandSeqNum: Int = -1
+        ): RtcpFbFirPacket {
+            val fci = Fir(mediaSourceSsrc, commandSeqNum)
+            return RtcpFbFirPacket(header, mediaSourceSsrc, fci)
+        }
     }
 }

@@ -41,7 +41,7 @@ import java.nio.ByteBuffer
  */
 abstract class RtcpFbPacket(
     header: RtcpHeader = RtcpHeader(),
-    mediaSourceSsrc: Int = -1,
+    mediaSourceSsrc: Long = -1,
     private val fci: FeedbackControlInformation,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
@@ -50,16 +50,16 @@ abstract class RtcpFbPacket(
     final override val sizeBytes: Int
         get() = header.sizeBytes + 4 + fci.sizeBytes
 
-    var mediaSourceSsrc: Int by SerializedField(mediaSourceSsrc, ::dirty)
+    var mediaSourceSsrc: Long by SerializedField(mediaSourceSsrc, ::dirty)
 
     final override fun serializeTo(buf: ByteBuffer) {
         _header.serializeTo(buf)
-        buf.putInt(mediaSourceSsrc)
+        buf.putInt(mediaSourceSsrc.toInt())
         fci.serializeTo(buf)
     }
 
     companion object {
-        fun getMediaSourceSsrc(buf: ByteBuffer): Int = buf.int
+        fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toLong()
         fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Int) {
             buf.putInt(mediaSourceSsrc)
         }

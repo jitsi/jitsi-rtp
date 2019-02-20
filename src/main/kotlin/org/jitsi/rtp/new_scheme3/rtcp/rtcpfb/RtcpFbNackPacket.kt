@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
  */
 class RtcpFbNackPacket(
     header: RtcpHeader = RtcpHeader(),
-    mediaSourceSsrc: Int = -1,
+    mediaSourceSsrc: Long = -1,
     private val fci: GenericNack = GenericNack(),
     backingBuffer: ByteBuffer? = null
 ) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
@@ -34,7 +34,7 @@ class RtcpFbNackPacket(
     val missingSeqNums
         get() = fci.missingSeqNums
 
-    constructor(mediaSourceSsrc: Int, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
+    constructor(mediaSourceSsrc: Long, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
 
     override fun clone(): RtcpFbNackPacket {
         TODO()
@@ -52,7 +52,7 @@ class RtcpFbNackPacket(
         }
         fun fromFields(
             header: RtcpHeader = RtcpHeader(),
-            mediaSourceSsrc: Int = -1,
+            mediaSourceSsrc: Long = -1,
             missingSeqNums: List<Int> = listOf()
         ): RtcpFbNackPacket {
             val fci = GenericNack.fromFields(missingSeqNums)
