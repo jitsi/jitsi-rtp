@@ -16,7 +16,9 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.unsigned.position
+import org.jitsi.rtp.extensions.unsigned.subBuffer
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -24,18 +26,36 @@ import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+@ExperimentalUnsignedTypes
+class RtcpPacketForEncryption(
+    header: RtcpHeader = RtcpHeader(),
+    val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    backingBuffer: ByteBuffer? = null
+) : RtcpPacket(header, backingBuffer) {
+
+    override val sizeBytes: UInt
+        get() = header.sizeBytes + payload.limit().toUInt()
+
+    override fun clone(): Packet {
+        return RtcpPacketForEncryption(_header.clone(), payload.clone())
+    }
+}
+
+@ExperimentalUnsignedTypes
 abstract class RtcpPacket(
     protected val _header: RtcpHeader,
     private var backingBuffer: ByteBuffer?
 ) : Packet() {
     private var dirty: Boolean = true
 
+//    protected val _payload: ByteBuffer
+//        get() = getBuffer().subBuffer(_header.sizeBytes)
+
     /**
      * The serialized version of everything else in this [RtcpPacket] after the
      * [RtcpHeader]
      */
-    val payload: ByteBuffer
-        get() = getBuffer().subBuffer(_header.sizeBytes)
+//    val payload: ByteBuffer get() = _payload.duplicate().asReadOnlyBuffer()
 
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
@@ -46,13 +66,17 @@ abstract class RtcpPacket(
         dirty = true
     }
 
-    fun modifyPayload(block: ByteBuffer.() -> Unit) {
-        with(payload) {
-            block()
-        }
-        dirty = true
+    fun prepareForEncryption(): RtcpPacketForEncryption {
+        return RtcpPacketForEncryption(_header, getBuffer().subBuffer(_header.sizeBytes), backingBuffer)
     }
 
+//    fun modifyPayload(block: ByteBuffer.() -> Unit) {
+//        with(_payload) {
+//            block()
+//        }
+//        dirty = true
+//    }
+//
     protected fun payloadModified() {
         dirty = true
     }
@@ -75,6 +99,7 @@ abstract class RtcpPacket(
 
     override fun serializeTo(buf: ByteBuffer) {
         _header.serializeTo(buf)
+        buf.position(_header.sizeBytes)
     }
 
     companion object {

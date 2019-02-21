@@ -16,7 +16,12 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.getUInt
+import org.jitsi.rtp.extensions.unsigned.getULong
+import org.jitsi.rtp.extensions.unsigned.putUInt
+import org.jitsi.rtp.extensions.unsigned.putULong
+import org.jitsi.rtp.extensions.unsigned.subBuffer
+import org.jitsi.rtp.extensions.usize
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.SerializableData
 import unsigned.toULong
@@ -38,6 +43,7 @@ import java.util.Objects
  *
  * RTCP SenderInfo block
  */
+@ExperimentalUnsignedTypes
 class SenderInfo(
     /**
      * NTP timestamp: 64 bits
@@ -61,7 +67,7 @@ class SenderInfo(
      *     has no notion of wallclock or elapsed time MAY set the NTP
      *     timestamp to zero.
      */
-    val ntpTimestamp: Long = -1,
+    val ntpTimestamp: ULong = 0u,
     /**
      * RTP timestamp: 32 bits
      *     Corresponds to the same time as the NTP timestamp (above), but in
@@ -77,7 +83,7 @@ class SenderInfo(
      *     maintained by periodically checking the wallclock time at a
      *     sampling instant.
      */
-    val rtpTimestamp: Long = -1,
+    val rtpTimestamp: UInt = 0u,
     /**
      * sender's packet count: 32 bits
      *     The total number of RTP data packets transmitted by the sender
@@ -85,7 +91,7 @@ class SenderInfo(
      *     generated.  The count SHOULD be reset if the sender changes its
      *     SSRC identifier.
      */
-    val sendersPacketCount: Long = -1,
+    val sendersPacketCount: UInt = 0u,
     /**
      * sender's octet count: 32 bits
      *     The total number of payload octets (i.e., not including header or
@@ -95,9 +101,9 @@ class SenderInfo(
      *     SSRC identifier.  This field can be used to estimate the average
      *     payload data rate.
      */
-    val sendersOctetCount: Long = -1
+    val sendersOctetCount: UInt = 0u
 ) : SerializableData() {
-    override val sizeBytes: Int = SIZE_BYTES
+    override val sizeBytes: UInt = SIZE_BYTES
 
     /**
      * https://tools.ietf.org/html/rfc3550#section-4
@@ -107,16 +113,16 @@ class SenderInfo(
      * The high 16 bits of the integer part must be determined
      * independently.
      */
-    val compactedNtpTimestamp: Long
-        get() = ntpTimestamp.and(0x0000FFFFFFFF0000).shr(16)
+    val compactedNtpTimestamp: UInt
+        get() = ntpTimestamp.and(0x0000FFFFFFFF0000u).shr(16).toUInt()
 
     override fun serializeTo(buf: ByteBuffer) {
-        TODO()
         //these use absolute positions which isn't what we want here
-//        SenderInfo.setNtpTimestamp(buf, ntpTimestamp)
-//        SenderInfo.setRtpTimestamp(buf, rtpTimestamp)
-//        SenderInfo.setSendersPacketCount(buf, sendersPacketCount)
-//        SenderInfo.setSendersOctetCount(buf, sendersOctetCount)
+        //TODO: change helpers to not use absolute positioning
+        buf.putULong(ntpTimestamp)
+        buf.putUInt(rtpTimestamp)
+        buf.putUInt(sendersPacketCount)
+        buf.putUInt(sendersOctetCount)
     }
 
     override fun getBuffer(): ByteBuffer {
@@ -162,13 +168,14 @@ class SenderInfo(
         return Objects.hash(ntpTimestamp, compactedNtpTimestamp, rtpTimestamp, sendersPacketCount, sendersOctetCount)
     }
 
+    @ExperimentalUnsignedTypes
     companion object {
-        const val SIZE_BYTES = 20
+        const val SIZE_BYTES: UInt = 20u
         fun fromBuffer(buf: ByteBuffer): SenderInfo {
-            val ntpTimestamp = buf.long
-            val rtpTimestamp = buf.int.toLong()
-            val sendersPacketCount = buf.int.toLong()
-            val sendersOctetCount = buf.int.toLong()
+            val ntpTimestamp = buf.getULong()
+            val rtpTimestamp = buf.getUInt()
+            val sendersPacketCount = buf.getUInt()
+            val sendersOctetCount = buf.getUInt()
 
             return SenderInfo(ntpTimestamp, rtpTimestamp, sendersPacketCount, sendersOctetCount)
         }
@@ -224,6 +231,7 @@ class SenderInfo(
  *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * https://tools.ietf.org/html/rfc3550#section-6.4.1
  */
+@ExperimentalUnsignedTypes
 class RtcpSrPacket(
     header: RtcpHeader = RtcpHeader(),
     //TODO: need to tweak things to enforce modifying senderinfo happens in a modifySenderInfo block
@@ -231,8 +239,8 @@ class RtcpSrPacket(
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
-    override val sizeBytes: Int
-        get() = header.sizeBytes + senderInfo.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
+    override val sizeBytes: UInt
+        get() = header.sizeBytes + senderInfo.sizeBytes + (reportBlocks.usize * RtcpReportBlock.SIZE_BYTES)
     //TODO(brian): where do we make sure the packet type is set correctly?
 
     override fun serializeTo(buf: ByteBuffer) {
@@ -283,7 +291,7 @@ class RtcpSrPacket(
             val reportBlockStartPos = RtcpHeader.SIZE_BYTES + SenderInfo.SIZE_BYTES
             repeat (numReportBlocks) { reportBlockIndex ->
                 val currReportBlockBuf =
-                    buf.subBuffer(reportBlockStartPos + (reportBlockIndex * RtcpReportBlock.SIZE_BYTES))
+                    buf.subBuffer(reportBlockStartPos + (reportBlockIndex.toUInt() * RtcpReportBlock.SIZE_BYTES).toUInt())
                 val reportBlock = RtcpReportBlock.fromBuffer(currReportBlockBuf)
                 reportBlocks.add(reportBlock)
             }

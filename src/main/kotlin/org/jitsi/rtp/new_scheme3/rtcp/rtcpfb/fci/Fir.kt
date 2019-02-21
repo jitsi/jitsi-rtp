@@ -16,10 +16,10 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
-import org.jitsi.rtp.extensions.getUByte
-import org.jitsi.rtp.extensions.getUInt
-import org.jitsi.rtp.extensions.putUByte
-import org.jitsi.rtp.extensions.putUInt
+import org.jitsi.rtp.extensions.unsigned.getUByte
+import org.jitsi.rtp.extensions.unsigned.getUInt
+import org.jitsi.rtp.extensions.unsigned.putUByte
+import org.jitsi.rtp.extensions.unsigned.putUInt
 import java.nio.ByteBuffer
 
 /**
@@ -40,7 +40,7 @@ class Fir(
     ssrc: UInt = 0u,
     seqNum: UByte = 0u
 ) : FeedbackControlInformation() {
-    override val sizeBytes: Int = SIZE_BYTES
+    override val sizeBytes: UInt = SIZE_BYTES
 
     var ssrc: UInt = ssrc
         private set
@@ -59,7 +59,7 @@ class Fir(
     }
 
     companion object {
-        const val SIZE_BYTES = 8
+        const val SIZE_BYTES: UInt = 8u
 
         fun fromBuffer(buf: ByteBuffer): Fir {
             val ssrc = buf.getUInt()

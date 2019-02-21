@@ -26,6 +26,7 @@ import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
+@ExperimentalUnsignedTypes
 internal class ReceiveDeltaTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
@@ -71,7 +72,7 @@ internal class ReceiveDeltaTest : ShouldSpec() {
             "from an invalid buffer" {
                 should("throw an exception") {
                     shouldThrow<Exception> {
-                        ReceiveDelta.parse(byteBufferOf(0x00, 0x28, 0x29), 3)
+                        ReceiveDelta.parse(byteBufferOf(0x00, 0x28, 0x29), 3u)
                     }
                 }
             }

@@ -18,7 +18,7 @@ package org.jitsi.rtp.new_scheme3.rtp.data
 
 import org.jitsi.rtp.RtpHeader
 import org.jitsi.rtp.RtpHeaderExtensions
-import org.jitsi.rtp.Serializable
+import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
@@ -39,6 +39,7 @@ import java.nio.ByteBuffer
  * |                             ....                              |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+@ExperimentalUnsignedTypes
 data class RtpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,
@@ -50,10 +51,10 @@ data class RtpHeaderData(
     var csrcs: MutableList<Long> = mutableListOf(),
     var extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
 ) : SerializableData() {
-    override val sizeBytes: Int
-        get() = RtpHeader.FIXED_SIZE_BYTES +
-                (csrcCount * RtpHeader.CSRC_SIZE_BYTES) +
-                extensions.size
+    override val sizeBytes: UInt
+        get() = FIXED_HEADER_SIZE_BYTES +
+                (csrcCount * RtpHeader.CSRC_SIZE_BYTES).toUInt() +
+                extensions.size.toUInt()
 
     val hasExtension: Boolean
         get() = extensions.isNotEmpty()
@@ -93,7 +94,7 @@ data class RtpHeaderData(
     }
 
     override fun getBuffer(): ByteBuffer {
-        val b = ByteBuffer.allocate(sizeBytes)
+        val b = allocateByteBuffer(sizeBytes)
         serializeTo(b)
         return b.rewind() as ByteBuffer
     }
@@ -122,7 +123,7 @@ data class RtpHeaderData(
     }
 
     companion object {
-        const val FIXED_HEADER_SIZE_BYTES = 12
+        const val FIXED_HEADER_SIZE_BYTES: UInt = 12u
         fun create(buf: ByteBuffer): RtpHeaderData {
             val version = RtpHeader.getVersion(buf)
             val hasPadding = RtpHeader.hasPadding(buf)

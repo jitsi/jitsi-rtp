@@ -26,7 +26,7 @@ import java.nio.ByteBuffer
 abstract class ImmutableRtpHeader internal constructor(
     protected val headerData: RtpHeaderData = RtpHeaderData()
 ) : SerializableData(), kotlin.Cloneable {
-    override val sizeBytes: Int
+    override val sizeBytes: UInt
         get() = headerData.sizeBytes
 
     val version: Int by ImmutableAlias(headerData::version)

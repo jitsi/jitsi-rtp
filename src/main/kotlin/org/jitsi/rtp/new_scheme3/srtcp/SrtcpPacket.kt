@@ -17,32 +17,71 @@
 package org.jitsi.rtp.new_scheme3.srtcp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.position
+import org.jitsi.rtp.extensions.unsigned.subBuffer
+import org.jitsi.rtp.extensions.unsigned.ulimit
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-class SrtcpPacket(
+@ExperimentalUnsignedTypes
+class SrtcpPacketForDecryption(
     header: RtcpHeader = RtcpHeader(),
+    private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
 
-    override val sizeBytes: Int
-        get() = header.sizeBytes + payload.limit()
+    fun getPayload(): ByteBuffer {
+        // We assume that if the payload is retrieved that it's being modified
+        payloadModified()
+        return payload
+    }
+
+    override val sizeBytes: UInt
+        get() = header.sizeBytes + payload.ulimit()
+
+    override fun clone(): Packet {
+        return SrtcpPacketForDecryption(_header.clone(), payload.clone())
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        super.serializeTo(buf)
+        payload.rewind()
+        buf.put(payload)
+    }
+}
+
+@ExperimentalUnsignedTypes
+class SrtcpPacket(
+    header: RtcpHeader = RtcpHeader(),
+    private var srtcpPayload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    backingBuffer: ByteBuffer? = null
+) : RtcpPacket(header, backingBuffer) {
+
+    override val sizeBytes: UInt
+        get() = header.sizeBytes + srtcpPayload.ulimit()
+
+    fun prepareForDecryption(): SrtcpPacketForDecryption {
+        //TODO: do we need to expose the backing buffer in RtcpPacket
+        // so we can pass it here?
+        return SrtcpPacketForDecryption(_header, srtcpPayload)
+    }
 
     fun getAuthTag(tagLen: Int): ByteBuffer =
-        payload.subBuffer(payload.limit() - tagLen)
+        srtcpPayload.subBuffer(srtcpPayload.ulimit() - tagLen.toUInt())
 
     fun getSrtcpIndex(tagLen: Int): Int =
-        payload.getInt(payload.limit() - (4 + tagLen) and SRTCP_INDEX_MASK)
+        srtcpPayload.getInt(srtcpPayload.limit() - (4 + tagLen)) and SRTCP_INDEX_MASK
 
     fun isEncrypted(tagLen: Int): Boolean =
-        (payload.getInt(payload.limit() - (4 + tagLen)) and IS_ENCRYPTED_MASK) == IS_ENCRYPTED_MASK
+        (srtcpPayload.getInt(srtcpPayload.limit() - (4 + tagLen)) and IS_ENCRYPTED_MASK) == IS_ENCRYPTED_MASK
 
     //TODO: could we work all the auth tag/index operations into modifyPayload?
+    //TODO: do we need to re-assign srtcpPayload after each of these operations?
     fun removeAuthTagAndSrtcpIndex(tagLen: Int) {
-        payload.limit(payload.limit() - (4 + tagLen))
+        srtcpPayload.limit(srtcpPayload.limit() - (4 + tagLen))
         payloadModified()
     }
 
@@ -57,21 +96,27 @@ class SrtcpPacket(
     }
 
     override fun clone(): Packet =
-        SrtcpPacket(_header.clone(), payload.clone())
+        SrtcpPacket(_header.clone(), srtcpPayload.clone())
 
     override fun serializeTo(buf: ByteBuffer) {
         _header.serializeTo(buf)
-        payload.rewind()
-        buf.put(payload)
+        srtcpPayload.rewind()
+        //TODO(brian): _header.serialize uses absolute positioning, so we
+        // need to manually set the buffer's position here.  in the future
+        // i think we'll change everything to relative positioning when
+        // serializing
+        buf.position(_header.sizeBytes)
+        buf.put(srtcpPayload.duplicate())
     }
 
     companion object {
         private const val IS_ENCRYPTED_MASK = 0x80000000.toInt()
-        private const val SRTCP_INDEX_MASK = IS_ENCRYPTED_MASK.inv().toInt()
+        private const val SRTCP_INDEX_MASK = IS_ENCRYPTED_MASK.inv()
         fun create(buf: ByteBuffer): SrtcpPacket {
             val header = RtcpHeader.create(buf)
+            val payload = buf.subBuffer(header.sizeBytes)
 
-            return SrtcpPacket(header, buf)
+            return SrtcpPacket(header, payload, buf)
         }
     }
 }

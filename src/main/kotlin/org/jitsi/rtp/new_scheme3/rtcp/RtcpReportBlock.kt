@@ -40,6 +40,7 @@ import java.util.Objects
  * |                   delay since last SR (DLSR)                  |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+@ExperimentalUnsignedTypes
 class RtcpReportBlock(
     /**
      * SSRC_n (source identifier): 32 bits
@@ -191,10 +192,11 @@ class RtcpReportBlock(
     val extendedHighestSeqNum: Long
         get() = (seqNumCycles.shl(16) or seqNum).toLong()
 
-    override val sizeBytes: Int = SIZE_BYTES
+    override val sizeBytes: UInt = SIZE_BYTES
 
+    @ExperimentalUnsignedTypes
     companion object {
-        const val SIZE_BYTES = 24
+        const val SIZE_BYTES: UInt = 24u
 
         fun fromBuffer(buf: ByteBuffer): RtcpReportBlock {
             val ssrc = RtcpReportBlock.getSsrc(buf)

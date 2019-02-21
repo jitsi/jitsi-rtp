@@ -18,9 +18,12 @@ package org.jitsi.rtp.new_scheme3.srtp
 
 import io.kotlintest.IsolationMode
 import io.kotlintest.specs.BehaviorSpec
+import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
+import org.jitsi.rtp.extensions.unsigned.ulimit
 import org.jitsi.rtp.new_scheme3.rtp.RtpHeader
 import java.nio.ByteBuffer
 
+@ExperimentalUnsignedTypes
 internal class SrtpPacketTest : BehaviorSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
@@ -28,7 +31,7 @@ internal class SrtpPacketTest : BehaviorSpec() {
         given("an SRTP packet created from a buffer") {
             val header = RtpHeader()
             val payload = ByteBuffer.allocate(110)
-            val buf = ByteBuffer.allocate(header.sizeBytes + payload.limit())
+            val buf = allocateByteBuffer(header.sizeBytes + payload.ulimit())
             header.serializeTo(buf)
             buf.put(payload)
             val srtpPacket = SrtpPacket.create(buf)

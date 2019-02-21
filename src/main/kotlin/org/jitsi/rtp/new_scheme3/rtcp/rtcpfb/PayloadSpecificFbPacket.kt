@@ -20,6 +20,7 @@ import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import java.nio.ByteBuffer
 
+@ExperimentalUnsignedTypes
 abstract class PayloadSpecificFbPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
@@ -27,6 +28,6 @@ abstract class PayloadSpecificFbPacket(
     backingBuffer: ByteBuffer? = null
 ) : RtcpFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
     companion object {
-        const val PT = 206
+        const val PT: UByte = 206u
     }
 }

@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3
 
 import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -35,11 +36,12 @@ interface Serializable {
     fun serializeTo(buf: ByteBuffer)
 }
 
+@ExperimentalUnsignedTypes
 abstract class SerializableData : Serializable {
-    abstract val sizeBytes: Int
+    abstract val sizeBytes: UInt
 
     override fun getBuffer(): ByteBuffer {
-        val b = ByteBuffer.allocate(sizeBytes)
+        val b = allocateByteBuffer(sizeBytes)
         serializeTo(b)
 
         return b.rewind() as ByteBuffer
@@ -48,15 +50,17 @@ abstract class SerializableData : Serializable {
 
 //TODO(brian): i don't think cloning RTCP makes much sense.  can we get away
 // without it?
+@ExperimentalUnsignedTypes
 abstract class Packet : SerializableData(), kotlin.Cloneable {
     public abstract override fun clone(): Packet
 }
 
+@ExperimentalUnsignedTypes
 open class UnparsedPacket(
     private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : Packet() {
 
-    override val sizeBytes: Int = buf.limit()
+    override val sizeBytes: UInt = buf.limit().toUInt()
 
     override fun clone(): Packet = UnparsedPacket(buf.clone())
 
@@ -68,6 +72,7 @@ open class UnparsedPacket(
     }
 }
 
+@ExperimentalUnsignedTypes
 class DtlsProtocolPacket(
     buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : UnparsedPacket(buf)

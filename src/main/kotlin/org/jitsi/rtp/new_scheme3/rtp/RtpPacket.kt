@@ -17,22 +17,24 @@
 package org.jitsi.rtp.new_scheme3.rtp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.subBuffer
+import org.jitsi.rtp.extensions.unsigned.ulimit
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+@ExperimentalUnsignedTypes
 open class RtpPacket(
     protected val _header: RtpHeader = RtpHeader(),
     protected val _payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     private var backingBuffer: ByteBuffer? = null
 ) : Packet() {
-    val payload: ByteBuffer get() = _payload.asReadOnlyBuffer()
+    val payload: ByteBuffer get() = _payload.duplicate().asReadOnlyBuffer()
     val header: ImmutableRtpHeader get() = _header
 
-    override val sizeBytes: Int
-        get() = _header.sizeBytes + _payload.limit()
+    override val sizeBytes: UInt
+        get() = _header.sizeBytes + _payload.ulimit()
 
     private var dirty: Boolean = true
 

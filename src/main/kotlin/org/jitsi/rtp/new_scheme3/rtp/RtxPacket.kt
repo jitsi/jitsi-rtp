@@ -16,7 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtp
 
-import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.subBuffer
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -31,6 +31,7 @@ class RtxPacket internal constructor(
     backingBuffer: ByteBuffer? = null
 ) : RtpPacket(header, payload, backingBuffer) {
 
+    @ExperimentalUnsignedTypes
     companion object {
         fun fromRtpPacket(rtpPacket: RtpPacket): RtxPacket {
             return rtpPacket.toOtherRtpPacketType { rtpHeader, payload, backingBuffer ->
@@ -39,8 +40,8 @@ class RtxPacket internal constructor(
         }
         fun fromBuffer(buf: ByteBuffer): RtxPacket {
             val header = RtpHeader.create(buf)
-            val originalSequenceNumber = buf.getShort(header.sizeBytes).toInt()
-            val payload = buf.subBuffer(header.sizeBytes + 2)
+            val originalSequenceNumber = buf.getShort(header.sizeBytes.toInt()).toInt()
+            val payload = buf.subBuffer(header.sizeBytes + 2u)
 
             return RtxPacket(header, payload, originalSequenceNumber, buf)
         }

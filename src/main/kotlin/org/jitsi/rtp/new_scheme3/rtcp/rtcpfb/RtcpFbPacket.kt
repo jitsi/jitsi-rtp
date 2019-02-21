@@ -19,6 +19,7 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 import org.jitsi.rtp.new_scheme3.SerializedField
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
+import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import java.nio.ByteBuffer
 
@@ -39,6 +40,7 @@ import java.nio.ByteBuffer
  *    Note that an RTCP FB packet re-interprets the standard report count
  *    (RC) field of the RTCP header as a FMT field
  */
+@ExperimentalUnsignedTypes
 abstract class RtcpFbPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
@@ -47,8 +49,8 @@ abstract class RtcpFbPacket(
 ) : RtcpPacket(header, backingBuffer) {
     private var dirty: Boolean = true
 
-    final override val sizeBytes: Int
-        get() = header.sizeBytes + 4 + fci.sizeBytes
+    final override val sizeBytes: UInt
+        get() = header.sizeBytes + 4u + fci.sizeBytes
 
     var mediaSourceSsrc: Long by SerializedField(mediaSourceSsrc, ::dirty)
 
@@ -60,7 +62,7 @@ abstract class RtcpFbPacket(
 
     companion object {
         val PACKET_TYPES = listOf(205, 206)
-        const val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4
+        val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4u
 
         fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toLong()
         fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Int) {
@@ -68,8 +70,8 @@ abstract class RtcpFbPacket(
         }
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbPacket {
-            val packetType = RtcpHeader.getPacketType(buf)
-            val fmt = RtcpHeader.getReportCount(buf)
+            val packetType = RtcpHeaderData.getPacketType(buf)
+            val fmt = RtcpHeaderData.getReportCount(buf)
             return when (packetType) {
                 TransportLayerFbPacket.PT -> {
                     when (fmt) {
@@ -88,7 +90,7 @@ abstract class RtcpFbPacket(
                         else -> throw Exception("Unrecognized RTCPFB format: pt $packetType, fmt $fmt")
                     }
                 }
-                else -> throw Exception("Unrecognized RTCPFB payload type: $packetType")
+                else -> throw Exception("Unrecognized RTCPFB payload type: ${packetType.toString(16)}")
             }
         }
     }

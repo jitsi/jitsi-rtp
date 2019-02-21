@@ -15,6 +15,7 @@
  */
 package org.jitsi.rtp.extensions
 
+import unsigned.Uint
 import unsigned.toUInt
 import java.nio.ByteBuffer
 
@@ -59,29 +60,6 @@ fun ByteBuffer.put3Bytes(index: Int, value: Int) {
     this.put(index, ((value and 0x00FF0000) ushr 16).toByte())
     this.put(index + 1, ((value and 0x0000FF00) ushr 8).toByte())
     this.put(index + 2, (value and 0x000000FF).toByte())
-}
-
-@ExperimentalUnsignedTypes
-fun ByteBuffer.getUByte() = get().toUByte()
-@ExperimentalUnsignedTypes
-fun ByteBuffer.getUByte(index: Int) = get(index).toUByte()
-@ExperimentalUnsignedTypes
-fun ByteBuffer.putUByte(value: UByte) = put(value.toByte())
-@ExperimentalUnsignedTypes
-fun ByteBuffer.putUByte(index: Int, value: UByte) = put(index, value.toByte())
-
-@ExperimentalUnsignedTypes
-fun ByteBuffer.getUInt() = int.toUInt()
-@ExperimentalUnsignedTypes
-fun ByteBuffer.getUInt(index: Int) = getInt(index).toUInt()
-@ExperimentalUnsignedTypes
-fun ByteBuffer.putUInt(value: UInt) = putInt(value.toInt())
-@ExperimentalUnsignedTypes
-fun ByteBuffer.putUInt(index: Int, value: UInt) = putInt(index, value.toInt())
-
-
-fun ByteBuffer.incrementPosition(value: Int) {
-    position(position() + value)
 }
 
 
@@ -171,6 +149,10 @@ fun ByteBuffer.subBuffer(startPosition: Int, size: Int): ByteBuffer {
 fun ByteBuffer.subBuffer(startPosition: Int): ByteBuffer {
     return (duplicate().position(startPosition) as ByteBuffer).slice()
 }
+
+@ExperimentalUnsignedTypes
+val Collection<*>.usize
+    get(): UInt = size.toUInt()
 
 /**
  * Put [buf] into this buffer starting at [index]

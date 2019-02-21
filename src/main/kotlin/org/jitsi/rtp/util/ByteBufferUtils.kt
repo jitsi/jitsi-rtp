@@ -37,6 +37,10 @@ class ByteBufferUtils {
             return newBuf
         }
 
+        @ExperimentalUnsignedTypes
+        fun ensureCapacity(buf: ByteBuffer?, capacity: UInt): ByteBuffer =
+                Companion.ensureCapacity(buf, capacity.toInt())
+
         /**
          * [ByteBuffer.wrap] will set the buffer's current position to the offset, what this
          * method does is create a sub buffer (via [ByteBuffer.subBuffer]) where the sub buffer's
