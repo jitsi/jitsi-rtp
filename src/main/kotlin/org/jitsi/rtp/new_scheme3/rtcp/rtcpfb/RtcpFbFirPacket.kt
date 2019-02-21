@@ -25,7 +25,7 @@ import java.nio.ByteBuffer
 class RtcpFbFirPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
-    private val fci: Fir = Fir(),
+    private val fci: Fir = Fir(-1L, -1),
     backingBuffer: ByteBuffer? = null
 ) : PayloadSpecificFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
 
