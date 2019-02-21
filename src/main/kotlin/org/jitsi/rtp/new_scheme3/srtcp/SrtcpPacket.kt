@@ -21,34 +21,9 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
+import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacketForCrypto
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
-
-class SrtcpPacketForDecryption(
-    header: RtcpHeader = RtcpHeader(),
-    private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
-    backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header, backingBuffer) {
-
-    fun getPayload(): ByteBuffer {
-        // We assume that if the payload is retrieved that it's being modified
-        payloadModified()
-        return payload
-    }
-
-    override val sizeBytes: Int
-        get() = header.sizeBytes + payload.limit()
-
-    override fun clone(): Packet {
-        return SrtcpPacketForDecryption(_header.clone(), payload.clone())
-    }
-
-    override fun serializeTo(buf: ByteBuffer) {
-        super.serializeTo(buf)
-        payload.rewind()
-        buf.put(payload)
-    }
-}
 
 class SrtcpPacket(
     header: RtcpHeader = RtcpHeader(),
@@ -59,10 +34,10 @@ class SrtcpPacket(
     override val sizeBytes: Int
         get() = header.sizeBytes + srtcpPayload.limit()
 
-    fun prepareForDecryption(): SrtcpPacketForDecryption {
+    fun prepareForDecryption(): RtcpPacketForCrypto {
         //TODO: do we need to expose the backing buffer in RtcpPacket
         // so we can pass it here?
-        return SrtcpPacketForDecryption(_header, srtcpPayload)
+        return RtcpPacketForCrypto(_header, srtcpPayload)
     }
 
     fun getAuthTag(tagLen: Int): ByteBuffer =

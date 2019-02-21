@@ -25,17 +25,29 @@ import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-class RtcpPacketForEncryption(
+class RtcpPacketForCrypto(
     header: RtcpHeader = RtcpHeader(),
-    val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
+
+    fun getPayload(): ByteBuffer {
+        // We assume that if the payload is retrieved that it's being modified
+        payloadModified()
+        return payload
+    }
 
     override val sizeBytes: Int
         get() = header.sizeBytes + payload.limit()
 
     override fun clone(): Packet {
-        return RtcpPacketForEncryption(_header.clone(), payload.clone())
+        return RtcpPacketForCrypto(_header.clone(), payload.clone())
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        super.serializeTo(buf)
+        payload.rewind()
+        buf.put(payload)
     }
 }
 
@@ -63,8 +75,8 @@ abstract class RtcpPacket(
         dirty = true
     }
 
-    fun prepareForEncryption(): RtcpPacketForEncryption {
-        return RtcpPacketForEncryption(_header, getBuffer().subBuffer(_header.sizeBytes), backingBuffer)
+    fun prepareForEncryption(): RtcpPacketForCrypto {
+        return RtcpPacketForCrypto(_header, getBuffer().subBuffer(_header.sizeBytes), backingBuffer)
     }
 
 //    fun modifyPayload(block: ByteBuffer.() -> Unit) {
