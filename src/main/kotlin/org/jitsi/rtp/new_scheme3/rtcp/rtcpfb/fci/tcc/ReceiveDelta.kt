@@ -22,18 +22,12 @@ import java.nio.ByteBuffer
 
 abstract class ReceiveDelta : SerializableData() {
     abstract var deltaMs: Double //TODO: should we be able to hold this as a long? don't think a double makes sense?
-    //TODO(brian): still some work here to integrate the backing buffer to make it consistent
-    // with the other classes
-    private var backingBuffer: ByteBuffer? = null
 
     final override fun getBuffer(): ByteBuffer {
-        val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
-        b.rewind()
+        val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
-        b.rewind()
-        backingBuffer = b
 
-        return b
+        return b.rewind() as ByteBuffer
     }
 
     companion object {
@@ -76,12 +70,12 @@ class EightBitReceiveDelta : ReceiveDelta {
         /**
          * The value written in the field is represented as multiples of 250us
          */
-        fun getDeltaMs(buf: ByteBuffer): Double {
+        private fun getDeltaMs(buf: ByteBuffer): Double {
             val uSecMultiple = buf.get().toInt()
             val uSecs = uSecMultiple * 250.0
             return uSecs / 1000.0
         }
-        fun setDeltaMs(buf: ByteBuffer, deltaMs: Double) {
+        private fun putDeltaMs(buf: ByteBuffer, deltaMs: Double) {
             val uSecs = deltaMs * 1000.0
             val uSecMultiple = uSecs / 250.0
             buf.put(uSecMultiple.toByte())
@@ -97,7 +91,7 @@ class EightBitReceiveDelta : ReceiveDelta {
     }
 
     override fun serializeTo(buf: ByteBuffer) {
-        setDeltaMs(buf, deltaMs)
+        putDeltaMs(buf, deltaMs)
     }
 }
 
