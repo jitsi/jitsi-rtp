@@ -19,13 +19,9 @@ package org.jitsi.rtp.new_scheme3.rtcp.data
 import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.toHex
-import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.util.BitBuffer
 import java.nio.ByteBuffer
-import org.jitsi.rtp.extensions.unsigned.plus
-import org.jitsi.rtp.extensions.unsigned.putUInt
-import org.jitsi.rtp.extensions.unsigned.subBuffer
 
 @ExperimentalUnsignedTypes
 internal class RtcpHeaderDataTest : ShouldSpec() {
@@ -38,17 +34,17 @@ internal class RtcpHeaderDataTest : ShouldSpec() {
                     version = 3,
                     hasPadding = true,
                     reportCount = 1,
-                    packetType = 200u,
-                    length = 65535u,
-                    senderSsrc = 0xFFFFFFFFu
+                    packetType = 200,
+                    length = 65535,
+                    senderSsrc = 0xFFFFFFFF
                 )
                 should("set all the values correctly") {
                     headerData.version shouldBe 3
                     headerData.hasPadding shouldBe true
                     headerData.reportCount shouldBe 1
-                    headerData.packetType shouldBe 200.toUByte()
-                    headerData.length shouldBe 65535.toUShort()
-                    headerData.senderSsrc shouldBe 0xFFFFFFFFu
+                    headerData.packetType shouldBe 200
+                    headerData.length shouldBe 65535
+                    headerData.senderSsrc shouldBe 0xFFFFFFFF
                 }
                 "and then retreiving its buffer" {
                     val buf = headerData.getBuffer()
@@ -57,15 +53,15 @@ internal class RtcpHeaderDataTest : ShouldSpec() {
                     }
                 }
                 "and then serializing to an existing buffer" {
-                    val existingBuf = allocateByteBuffer(RtcpHeaderData.SIZE_BYTES + 10u)
+                    val existingBuf = ByteBuffer.allocate(RtcpHeaderData.SIZE_BYTES + 10)
                     existingBuf.position(5)
                     headerData.serializeTo(existingBuf)
                     should("serialize it to the proper place") {
-                        val subBuf = existingBuf.subBuffer(5u, RtcpHeaderData.SIZE_BYTES)
+                        val subBuf = existingBuf.subBuffer(5, RtcpHeaderData.SIZE_BYTES)
                         subBuf.compareTo(headerBuf) shouldBe 0
                     }
                     should("leave the buffer's position after the field it just wrote") {
-                        existingBuf.position() shouldBe (5 + RtcpHeaderData.SIZE_BYTES.toInt())
+                        existingBuf.position() shouldBe (5 + RtcpHeaderData.SIZE_BYTES)
                     }
                 }
             }
@@ -75,9 +71,9 @@ internal class RtcpHeaderDataTest : ShouldSpec() {
                     header.version shouldBe 3
                     header.hasPadding shouldBe true
                     header.reportCount shouldBe 1
-                    header.packetType shouldBe 200.toUByte()
-                    header.length shouldBe 65535.toUShort()
-                    header.senderSsrc shouldBe 0xFFFFFFFFu
+                    header.packetType shouldBe 200
+                    header.length shouldBe 65535
+                    header.senderSsrc shouldBe 0xFFFFFFFF
                 }
             }
         }
@@ -89,7 +85,7 @@ internal class RtcpHeaderDataTest : ShouldSpec() {
         bitBuffer.putBits(1.toByte(), 5) // report count = 1
         put(200.toByte()) // packet type = 200
         putShort(0xFFFF.toShort()) // length = 65535
-        putUInt(0xFFFFFFFFu) // sender ssrc = 4294967295
+        putInt(0xFFFFFFFF.toInt()) // sender ssrc = 4294967295
         this.rewind() as ByteBuffer
     }
 }

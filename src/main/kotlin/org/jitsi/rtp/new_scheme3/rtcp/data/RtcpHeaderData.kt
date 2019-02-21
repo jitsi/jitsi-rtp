@@ -20,16 +20,10 @@ import org.jitsi.rtp.extensions.getBitAsBool
 import org.jitsi.rtp.extensions.getBits
 import org.jitsi.rtp.extensions.putBitAsBoolean
 import org.jitsi.rtp.extensions.putBits
-import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
-import org.jitsi.rtp.extensions.unsigned.getUByte
-import org.jitsi.rtp.extensions.unsigned.getUInt
-import org.jitsi.rtp.extensions.unsigned.getUShort
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.incrementPosition
-import org.jitsi.rtp.extensions.unsigned.putUByte
-import org.jitsi.rtp.extensions.unsigned.putUInt
-import org.jitsi.rtp.extensions.unsigned.putUShort
-import org.jitsi.rtp.extensions.unsigned.subBuffer
-import org.jitsi.rtp.extensions.unsigned.uposition
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 
@@ -43,16 +37,15 @@ import java.nio.ByteBuffer
  * |                         SSRC of sender                        |
  * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  */
-@ExperimentalUnsignedTypes
 data class RtcpHeaderData(
     var version: Int = 2,
     var hasPadding: Boolean = false,
-    var reportCount: Int = 0,
-    var packetType: UByte = 0u,
-    var length: UShort = 0u,
-    var senderSsrc: UInt = 0u
+    var reportCount: Int = -1,
+    var packetType: Int = -1,
+    var length: Int = -1,
+    var senderSsrc: Long = -1
 ) : SerializableData(), kotlin.Cloneable {
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
     override fun toString(): String {
         return with(StringBuffer()) {
@@ -73,7 +66,7 @@ data class RtcpHeaderData(
     }
 
     override fun getBuffer(): ByteBuffer {
-        val b = allocateByteBuffer(sizeBytes)
+        val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
         return b.rewind() as ByteBuffer
     }
@@ -86,7 +79,7 @@ data class RtcpHeaderData(
         // of serializeTo), so we create a temporary wrapper around the given buffer whose
         // position 0 is at buf's current position and then we manually increment
         // buf's position to after the header data we just wrote
-        val absBuf = buf.subBuffer(buf.uposition(), RtcpHeaderData.SIZE_BYTES)
+        val absBuf = buf.subBuffer(buf.position(), RtcpHeaderData.SIZE_BYTES)
         setVersion(absBuf, version)
         setPadding(absBuf, hasPadding)
         setReportCount(absBuf, reportCount)
@@ -97,7 +90,7 @@ data class RtcpHeaderData(
     }
 
     companion object {
-        const val SIZE_BYTES: UInt = 8u
+        const val SIZE_BYTES = 8
         fun create(buf: ByteBuffer): RtcpHeaderData {
             val version = getVersion(buf)
             val hasPadding = hasPadding(buf)
@@ -118,19 +111,19 @@ data class RtcpHeaderData(
         fun getReportCount(buf: ByteBuffer): Int = buf.get(0).getBits(3, 5).toInt()
         fun setReportCount(buf: ByteBuffer, reportCount: Int) = buf.putBits(0, 3, reportCount.toByte(), 5)
 
-        fun getPacketType(buf: ByteBuffer): UByte = buf.getUByte(1)
-        fun setPacketType(buf: ByteBuffer, packetType: UByte) {
-            buf.putUByte(1, packetType)
+        fun getPacketType(buf: ByteBuffer): Int = buf.get(1).toPositiveInt()
+        fun setPacketType(buf: ByteBuffer, packetType: Int) {
+            buf.put(1, packetType.toByte())
         }
 
-        fun getLength(buf: ByteBuffer): UShort = buf.getUShort(2)
-        fun setLength(buf: ByteBuffer, length: UShort) {
-            buf.putUShort(2, length)
+        fun getLength(buf: ByteBuffer): Int = buf.getShort(2).toPositiveInt()
+        fun setLength(buf: ByteBuffer, length: Int) {
+            buf.putShort(2, length.toShort())
         }
 
-        fun getSenderSsrc(buf: ByteBuffer): UInt = buf.getUInt(4)
-        fun setSenderSsrc(buf: ByteBuffer, senderSsrc: UInt) {
-            buf.putUInt(4, senderSsrc)
+        fun getSenderSsrc(buf: ByteBuffer): Long = buf.getInt(4).toPositiveLong()
+        fun setSenderSsrc(buf: ByteBuffer, senderSsrc: Long) {
+            buf.putInt(4, senderSsrc.toInt())
         }
     }
 }

@@ -24,23 +24,22 @@ import org.jitsi.rtp.extensions.unsigned.getUInt
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 internal class FirTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     init {
         "Creating a FIR FCI" {
             "from values" {
-                val fir = Fir(123u, 220u)
+                val fir = Fir(123, 220)
                 should("set the values correctly") {
-                    fir.ssrc shouldBe 123u
-                    fir.seqNum shouldBe 220.toUByte()
+                    fir.ssrc shouldBe 123
+                    fir.seqNum shouldBe 220
                 }
                 "and then getting its buffer" {
                     val buf = fir.getBuffer()
                     should("serialize the data correctly") {
-                        buf.getUInt() shouldBe 123u
-                        buf.getUByte() shouldBe 220.toUByte()
+                        buf.getInt() shouldBe 123
+                        buf.get() shouldBe 220.toByte()
                     }
                 }
                 "and then serializing to an existing buffer" {
@@ -48,7 +47,7 @@ internal class FirTest : ShouldSpec() {
                     existingBuf.position(10)
                     fir.serializeTo(existingBuf)
                     should("serialize it to the proper place") {
-                        existingBuf.getUInt(10) shouldBe 123u
+                        existingBuf.getInt(10) shouldBe 123
                         existingBuf.get(14) shouldBe 220.toByte()
                     }
                     should("leave the buffer's position after the field it just wrote") {
@@ -64,8 +63,8 @@ internal class FirTest : ShouldSpec() {
                 )
                 val fir = Fir.fromBuffer(buf)
                 should("parse the values correctly") {
-                    fir.ssrc shouldBe 123u
-                    fir.seqNum shouldBe 220.toUByte()
+                    fir.ssrc shouldBe 123L
+                    fir.seqNum shouldBe 220
                 }
                 should("leave the buffer's position after its data") {
                     buf.position() shouldBe 8

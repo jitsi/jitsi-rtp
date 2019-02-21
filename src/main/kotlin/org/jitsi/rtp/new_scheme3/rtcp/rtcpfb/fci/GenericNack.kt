@@ -16,9 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.incrementPosition
-import org.jitsi.rtp.extensions.unsigned.subBuffer
-import org.jitsi.rtp.extensions.unsigned.uposition
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.util.RightToLeftBufferUtils
 import java.nio.ByteBuffer
@@ -32,12 +31,11 @@ import java.nio.ByteBuffer
  * |            PID                |             BLP               |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-@ExperimentalUnsignedTypes
 class GenericNack(
     private val packetId: Int = 0,
     private val genericNackBlp: GenericNackBlp = GenericNackBlp()
 ) : FeedbackControlInformation() {
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
     val missingSeqNums: List<Int> = listOf(packetId) + genericNackBlp.lostPacketOffsets.map { it + packetId }
 
@@ -46,9 +44,8 @@ class GenericNack(
         genericNackBlp.serializeTo(buf)
     }
 
-    @ExperimentalUnsignedTypes
     companion object {
-        val SIZE_BYTES: UInt = 2u + GenericNackBlp.SIZE_BYTES
+        const val SIZE_BYTES  = 2 + GenericNackBlp.SIZE_BYTES
         fun fromBuffer(buf: ByteBuffer): GenericNack {
             val packetId = buf.short.toInt()
             val blp = GenericNackBlp.parse(buf)
@@ -69,19 +66,18 @@ class GenericNack(
  * Parse the NACK BLP field into a more user-friendly set of lost packet offsets which
  * can be applied to the packet ID to get the lost sequence numbers
  */
-@ExperimentalUnsignedTypes
 class GenericNackBlp(
     val lostPacketOffsets: List<Int> = listOf()
 ) : SerializableData() {
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
     override fun serializeTo(buf: ByteBuffer) {
-        setLostPacketOffsets(buf.subBuffer(buf.uposition(), SIZE_BYTES), lostPacketOffsets)
+        setLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES), lostPacketOffsets)
         buf.incrementPosition(SIZE_BYTES)
     }
 
     companion object {
-        const val SIZE_BYTES: UInt = 2u
+        const val SIZE_BYTES = 2
         fun getLostPacketOffsets(buf: ByteBuffer): List<Int> {
             val lostPacketOffsets = mutableListOf<Int>()
             for (rightToLeftBitIndex in 0..15) {
@@ -101,7 +97,7 @@ class GenericNackBlp(
         }
 
         fun parse(buf: ByteBuffer): GenericNackBlp {
-            val lostPacketOffsets = getLostPacketOffsets(buf.subBuffer(buf.uposition(), SIZE_BYTES))
+            val lostPacketOffsets = getLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES))
             buf.incrementPosition(SIZE_BYTES)
             return GenericNackBlp(lostPacketOffsets)
         }

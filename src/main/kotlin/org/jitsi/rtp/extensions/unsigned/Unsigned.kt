@@ -107,3 +107,8 @@ fun ByteBuffer.subBuffer(startPosition: UInt): ByteBuffer = subBuffer(startPosit
 
 @ExperimentalUnsignedTypes
 fun ByteBuffer.subBuffer(startPosition: UInt, size: UInt): ByteBuffer = subBuffer(startPosition.toInt(), size.toInt())
+
+
+fun Byte.toPositiveInt(): Int = toInt() and 0xFF
+fun Short.toPositiveInt(): Int = toInt() and 0xFFFF
+fun Int.toPositiveLong(): Long = toLong() and 0xFFFFFFFF

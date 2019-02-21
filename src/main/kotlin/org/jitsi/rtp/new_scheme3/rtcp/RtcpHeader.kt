@@ -21,29 +21,28 @@ import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 abstract class ImmutableRtcpHeader internal constructor(
     protected val headerData: RtcpHeaderData = RtcpHeaderData()
 ) : SerializableData(), kotlin.Cloneable {
-    override val sizeBytes: UInt
+    override val sizeBytes: Int
         get() = headerData.sizeBytes
 
     val version: Int by ImmutableAlias(headerData::version)
     val hasPadding: Boolean by ImmutableAlias(headerData::hasPadding)
     val reportCount: Int by ImmutableAlias(headerData::reportCount)
-    val packetType: UByte by ImmutableAlias(headerData::packetType)
-    val length: UShort by ImmutableAlias(headerData::length)
-    val senderSsrc: UInt by ImmutableAlias(headerData::senderSsrc)
+    val packetType: Int by ImmutableAlias(headerData::packetType)
+    val length: Int by ImmutableAlias(headerData::length)
+    val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
     private var dirty: Boolean = true
 
     constructor(
         version: Int = 2,
         hasPadding: Boolean = false,
-        reportCount: Int = 0,
-        packetType: UByte = 0u,
-        length: UShort = 0u,
-        senderSsrc: UInt = 0u
+        reportCount: Int = -1,
+        packetType: Int = -1,
+        length: Int = -1,
+        senderSsrc: Long = -1
     ) : this(RtcpHeaderData(
         version, hasPadding, reportCount,
         packetType, length, senderSsrc))
@@ -60,7 +59,6 @@ abstract class ImmutableRtcpHeader internal constructor(
     }
 }
 
-@ExperimentalUnsignedTypes
 class RtcpHeader(
     headerData: RtcpHeaderData = RtcpHeaderData()
 ) : ImmutableRtcpHeader(headerData) {
@@ -86,10 +84,10 @@ class RtcpHeader(
         fun fromValues(
             version: Int = 2,
             hasPadding: Boolean = false,
-            reportCount: Int = 0,
-            packetType: UByte = 0u,
-            length: UShort = 0u,
-            senderSsrc: UInt = 0u
+            reportCount: Int = -1,
+            packetType: Int = -1,
+            length: Int = -1,
+            senderSsrc: Long = -1
         ) : RtcpHeader {
             return RtcpHeader(RtcpHeaderData(
                 version, hasPadding, reportCount,

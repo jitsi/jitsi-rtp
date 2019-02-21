@@ -17,8 +17,7 @@
 package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.unsigned.position
-import org.jitsi.rtp.extensions.unsigned.subBuffer
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -26,22 +25,20 @@ import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 class RtcpPacketForEncryption(
     header: RtcpHeader = RtcpHeader(),
     val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
 
-    override val sizeBytes: UInt
-        get() = header.sizeBytes + payload.limit().toUInt()
+    override val sizeBytes: Int
+        get() = header.sizeBytes + payload.limit()
 
     override fun clone(): Packet {
         return RtcpPacketForEncryption(_header.clone(), payload.clone())
     }
 }
 
-@ExperimentalUnsignedTypes
 abstract class RtcpPacket(
     protected val _header: RtcpHeader,
     private var backingBuffer: ByteBuffer?

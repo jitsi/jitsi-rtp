@@ -17,16 +17,13 @@
 package org.jitsi.rtp.new_scheme3.srtcp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.unsigned.position
-import org.jitsi.rtp.extensions.unsigned.subBuffer
-import org.jitsi.rtp.extensions.unsigned.ulimit
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 class SrtcpPacketForDecryption(
     header: RtcpHeader = RtcpHeader(),
     private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
@@ -39,8 +36,8 @@ class SrtcpPacketForDecryption(
         return payload
     }
 
-    override val sizeBytes: UInt
-        get() = header.sizeBytes + payload.ulimit()
+    override val sizeBytes: Int
+        get() = header.sizeBytes + payload.limit()
 
     override fun clone(): Packet {
         return SrtcpPacketForDecryption(_header.clone(), payload.clone())
@@ -53,15 +50,14 @@ class SrtcpPacketForDecryption(
     }
 }
 
-@ExperimentalUnsignedTypes
 class SrtcpPacket(
     header: RtcpHeader = RtcpHeader(),
     private var srtcpPayload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
 
-    override val sizeBytes: UInt
-        get() = header.sizeBytes + srtcpPayload.ulimit()
+    override val sizeBytes: Int
+        get() = header.sizeBytes + srtcpPayload.limit()
 
     fun prepareForDecryption(): SrtcpPacketForDecryption {
         //TODO: do we need to expose the backing buffer in RtcpPacket
@@ -70,7 +66,7 @@ class SrtcpPacket(
     }
 
     fun getAuthTag(tagLen: Int): ByteBuffer =
-        srtcpPayload.subBuffer(srtcpPayload.ulimit() - tagLen.toUInt())
+        srtcpPayload.subBuffer(srtcpPayload.limit() - tagLen)
 
     fun getSrtcpIndex(tagLen: Int): Int =
         srtcpPayload.getInt(srtcpPayload.limit() - (4 + tagLen)) and SRTCP_INDEX_MASK

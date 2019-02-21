@@ -40,7 +40,6 @@ import java.nio.ByteBuffer
  *    Note that an RTCP FB packet re-interprets the standard report count
  *    (RC) field of the RTCP header as a FMT field
  */
-@ExperimentalUnsignedTypes
 abstract class RtcpFbPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
@@ -49,8 +48,8 @@ abstract class RtcpFbPacket(
 ) : RtcpPacket(header, backingBuffer) {
     private var dirty: Boolean = true
 
-    final override val sizeBytes: UInt
-        get() = header.sizeBytes + 4u + fci.sizeBytes
+    final override val sizeBytes: Int
+        get() = header.sizeBytes + 4 + fci.sizeBytes
 
     var mediaSourceSsrc: Long by SerializedField(mediaSourceSsrc, ::dirty)
 
@@ -62,7 +61,7 @@ abstract class RtcpFbPacket(
 
     companion object {
         val PACKET_TYPES = listOf(205, 206)
-        val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4u
+        const val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4
 
         fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toLong()
         fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Int) {

@@ -36,12 +36,11 @@ interface Serializable {
     fun serializeTo(buf: ByteBuffer)
 }
 
-@ExperimentalUnsignedTypes
 abstract class SerializableData : Serializable {
-    abstract val sizeBytes: UInt
+    abstract val sizeBytes: Int
 
     override fun getBuffer(): ByteBuffer {
-        val b = allocateByteBuffer(sizeBytes)
+        val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
 
         return b.rewind() as ByteBuffer
@@ -50,7 +49,6 @@ abstract class SerializableData : Serializable {
 
 //TODO(brian): i don't think cloning RTCP makes much sense.  can we get away
 // without it?
-@ExperimentalUnsignedTypes
 abstract class Packet : SerializableData(), kotlin.Cloneable {
     public abstract override fun clone(): Packet
 }
@@ -60,7 +58,7 @@ open class UnparsedPacket(
     private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : Packet() {
 
-    override val sizeBytes: UInt = buf.limit().toUInt()
+    override val sizeBytes: Int = buf.limit()
 
     override fun clone(): Packet = UnparsedPacket(buf.clone())
 

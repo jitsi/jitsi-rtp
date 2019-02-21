@@ -15,17 +15,14 @@
  */
 package org.jitsi.rtp
 
-import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.getBitAsBool
 import org.jitsi.rtp.extensions.getBits
 import org.jitsi.rtp.extensions.putBitAsBoolean
 import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.util.ByteBufferUtils
-import toUInt
-import unsigned.toUInt
-import unsigned.toULong
-import unsigned.toUShort
 import java.nio.ByteBuffer
 
 
@@ -187,16 +184,16 @@ open class RtpHeader(
         const val FIXED_SIZE_BYTES = 12
         const val CSRC_SIZE_BYTES = 4
 
-        fun getVersion(buf: ByteBuffer): Int = buf.get(0).getBits(0, 2).toUInt()
+        fun getVersion(buf: ByteBuffer): Int = buf.get(0).getBits(0, 2).toPositiveInt()
         fun setVersion(buf: ByteBuffer, version: Int) = buf.putBits(0, 0, version.toByte(), 2)
 
         fun hasPadding(buf: ByteBuffer): Boolean = buf.get(0).getBitAsBool(2)
-        fun setPadding(buf: ByteBuffer, hasPadding: Boolean) = buf.putBitAsBoolean(0, 3, hasPadding)
+        fun setPadding(buf: ByteBuffer, hasPadding: Boolean) = buf.putBitAsBoolean(0, 2, hasPadding)
 
         fun getExtension(buf: ByteBuffer): Boolean = buf.get(0).getBitAsBool(3)
         fun setExtension(buf: ByteBuffer, hasExtension: Boolean) = buf.putBitAsBoolean(0, 3, hasExtension)
 
-        fun getCsrcCount(buf: ByteBuffer): Int = buf.get(0).getBits(4, 4).toUInt()
+        fun getCsrcCount(buf: ByteBuffer): Int = buf.get(0).getBits(4, 4).toPositiveInt()
         fun setCsrcCount(buf: ByteBuffer, csrcCount: Int) {
             buf.putBits(0, 4, csrcCount.toByte(), 4)
         }
@@ -206,34 +203,34 @@ open class RtpHeader(
             buf.putBitAsBoolean(1, 0, isSet)
         }
 
-        fun getPayloadType(buf: ByteBuffer): Int = buf.get(1).getBits(1, 7).toUInt()
+        fun getPayloadType(buf: ByteBuffer): Int = buf.get(1).getBits(1, 7).toPositiveInt()
         fun setPayloadType(buf: ByteBuffer, payloadType: Int) {
             buf.putBits(1, 1, payloadType.toByte(), 7)
         }
 
-        fun getSequenceNumber(buf: ByteBuffer): Int = buf.getShort(2).toUInt()
+        fun getSequenceNumber(buf: ByteBuffer): Int = buf.getShort(2).toPositiveInt()
         fun setSequenceNumber(buf: ByteBuffer, sequenceNumber: Int) {
-            buf.putShort(2, sequenceNumber.toUShort())
+            buf.putShort(2, sequenceNumber.toShort())
         }
 
-        fun getTimestamp(buf: ByteBuffer): Long = buf.getInt(4).toULong()
+        fun getTimestamp(buf: ByteBuffer): Long = buf.getInt(4).toPositiveLong()
         fun setTimestamp(buf: ByteBuffer, timestamp: Long) {
-            buf.putInt(4, timestamp.toUInt())
+            buf.putInt(4, timestamp.toInt())
         }
 
-        fun getSsrc(buf: ByteBuffer): Long = buf.getInt(8).toULong()
+        fun getSsrc(buf: ByteBuffer): Long = buf.getInt(8).toPositiveLong()
         fun setSsrc(buf: ByteBuffer, ssrc: Long) {
-            buf.putInt(8, ssrc.toUInt())
+            buf.putInt(8, ssrc.toInt())
         }
 
         fun getCsrcs(buf: ByteBuffer, csrcCount: Int): MutableList<Long> {
             return (0 until csrcCount).map {
-                buf.getInt(12 + (it * RtpHeader.CSRC_SIZE_BYTES)).toULong()
+                buf.getInt(12 + (it * RtpHeader.CSRC_SIZE_BYTES)).toPositiveLong()
             }.toMutableList()
         }
         fun setCsrcs(buf: ByteBuffer, csrcs: List<Long>) {
             csrcs.forEachIndexed { index, csrc ->
-                buf.putInt(12 + (index * RtpHeader.CSRC_SIZE_BYTES), csrc.toUInt())
+                buf.putInt(12 + (index * RtpHeader.CSRC_SIZE_BYTES), csrc.toInt())
             }
         }
 

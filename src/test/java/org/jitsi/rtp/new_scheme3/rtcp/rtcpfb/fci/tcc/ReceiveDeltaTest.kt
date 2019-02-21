@@ -21,7 +21,6 @@ import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
-import io.kotlintest.shouldThrowUnit
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
@@ -72,7 +71,7 @@ internal class ReceiveDeltaTest : ShouldSpec() {
             "from an invalid buffer" {
                 should("throw an exception") {
                     shouldThrow<Exception> {
-                        ReceiveDelta.parse(byteBufferOf(0x00, 0x28, 0x29), 3u)
+                        ReceiveDelta.parse(byteBufferOf(0x00, 0x28, 0x29), 3)
                     }
                 }
             }

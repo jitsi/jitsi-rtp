@@ -26,12 +26,11 @@ import java.nio.ByteBuffer
  * more.  Will work correctly even if [buf] does not
  * contain multiple compound RTCP packets.
  */
-@ExperimentalUnsignedTypes
 class RtcpIterator(buf: ByteBuffer) {
     private val buf = buf.slice()
 
     fun hasNext(): Boolean {
-        return buf.remaining() >= RtcpHeader.SIZE_BYTES.toInt()
+        return buf.remaining() >= RtcpHeader.SIZE_BYTES
     }
 
     fun next(): RtcpPacket {
@@ -45,7 +44,7 @@ class RtcpIterator(buf: ByteBuffer) {
             // packet.size, because packet.size will give us the size the packet
             // will be serialized to, not necessarily the size it was in the given
             // buffer (tcc packets, for example)
-            buf.position(buf.position() + (packet.header.length.toInt() + 1) * 4)
+            buf.position(buf.position() + (packet.header.length + 1) * 4)
             return packet
         } catch (e: Exception) {
             println("Exception parsing packet in RTCPIterator: $e.  sub buf limit: ${subBuf.limit()}\n" +

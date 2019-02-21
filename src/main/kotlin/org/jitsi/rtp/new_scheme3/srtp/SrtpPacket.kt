@@ -17,15 +17,13 @@
 package org.jitsi.rtp.new_scheme3.srtp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.unsigned.subBuffer
-import org.jitsi.rtp.extensions.unsigned.ulimit
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtp.RtpHeader
 import org.jitsi.rtp.new_scheme3.rtp.RtpPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 class SrtpPacket(
     header: RtpHeader = RtpHeader(),
     payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
@@ -33,7 +31,7 @@ class SrtpPacket(
 ) : RtpPacket(header, payload, backingBuffer) {
 
     fun getAuthTag(tagLen: Int): ByteBuffer =
-        payload.subBuffer(payload.ulimit() - tagLen.toUInt())
+        payload.subBuffer(payload.limit() - tagLen)
 
     fun removeAuthTag(tagLen: Int) {
         modifyPayload {

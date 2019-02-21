@@ -16,23 +16,21 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
-import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
 import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 abstract class ReceiveDelta : SerializableData() {
     abstract var deltaMs: Double //TODO: should we be able to hold this as a long? don't think a double makes sense?
 
     final override fun getBuffer(): ByteBuffer {
-        val b = allocateByteBuffer(sizeBytes)
+        val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
 
         return b.rewind() as ByteBuffer
     }
 
     companion object {
-        fun parse(buf: ByteBuffer, deltaSizeBytes: UInt): ReceiveDelta {
+        fun parse(buf: ByteBuffer, deltaSizeBytes: Int): ReceiveDelta {
             return when (deltaSizeBytes) {
                 EightBitReceiveDelta.SIZE_BYTES -> EightBitReceiveDelta(buf)
                 SixteenBitReceiveDelta.SIZE_BYTES -> SixteenBitReceiveDelta(buf)
@@ -60,14 +58,13 @@ abstract class ReceiveDelta : SerializableData() {
  * to recv delta list, representing a delta in the range [0, 63.75]
  * ms.
  */
-@ExperimentalUnsignedTypes
 class EightBitReceiveDelta : ReceiveDelta {
     override var deltaMs: Double
 
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
     companion object {
-        const val SIZE_BYTES: UInt = 1u
+        const val SIZE_BYTES = 1
 
         /**
          * The value written in the field is represented as multiples of 250us
@@ -103,14 +100,13 @@ class EightBitReceiveDelta : ReceiveDelta {
  * appended to recv delta list, representing a delta in the range
  * [-8192.0, 8191.75] ms.
  */
-@ExperimentalUnsignedTypes
 class SixteenBitReceiveDelta : ReceiveDelta {
     override var deltaMs: Double
 
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
     companion object {
-        const val SIZE_BYTES: UInt = 2u
+        const val SIZE_BYTES = 2
 
         /**
          * The value written in the field is represented as multiples of 250us

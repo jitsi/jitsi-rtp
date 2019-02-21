@@ -19,7 +19,6 @@ package org.jitsi.rtp.new_scheme3.rtcp
 import org.jitsi.rtp.extensions.get3Bytes
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.new_scheme3.SerializableData
-import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 import java.util.Objects
 
@@ -40,7 +39,6 @@ import java.util.Objects
  * |                   delay since last SR (DLSR)                  |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-@ExperimentalUnsignedTypes
 class RtcpReportBlock(
     /**
      * SSRC_n (source identifier): 32 bits
@@ -192,11 +190,10 @@ class RtcpReportBlock(
     val extendedHighestSeqNum: Long
         get() = (seqNumCycles.shl(16) or seqNum).toLong()
 
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
-    @ExperimentalUnsignedTypes
     companion object {
-        const val SIZE_BYTES: UInt = 24u
+        const val SIZE_BYTES = 24
 
         fun fromBuffer(buf: ByteBuffer): RtcpReportBlock {
             val ssrc = RtcpReportBlock.getSsrc(buf)

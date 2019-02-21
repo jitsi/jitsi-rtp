@@ -48,14 +48,13 @@ import java.nio.ByteBuffer
  *        |                  profile-specific extensions                  |
  *        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-@ExperimentalUnsignedTypes
 class RtcpRrPacket(
     header: RtcpHeader = RtcpHeader(),
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
 ) : RtcpPacket(header, backingBuffer) {
-    override val sizeBytes: UInt
-        get() = header.sizeBytes + (reportBlocks.size.toUInt() * RtcpReportBlock.SIZE_BYTES).toUInt()
+    override val sizeBytes: Int
+        get() = header.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
 
     override fun serializeTo(buf: ByteBuffer) {
         super.serializeTo(buf)

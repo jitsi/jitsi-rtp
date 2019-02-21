@@ -16,10 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
-import org.jitsi.rtp.extensions.unsigned.getUByte
-import org.jitsi.rtp.extensions.unsigned.getUInt
-import org.jitsi.rtp.extensions.unsigned.putUByte
-import org.jitsi.rtp.extensions.unsigned.putUInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import java.nio.ByteBuffer
 
 /**
@@ -35,35 +33,31 @@ import java.nio.ByteBuffer
  * The SSRC field in the FIR FCI block is used to set the media sender
  * SSRC, the media source SSRC field in the RTCPFB header is unsed for FIR packets.
  */
-@ExperimentalUnsignedTypes
 class Fir(
-    ssrc: UInt = 0u,
-    seqNum: UByte = 0u
+    ssrc: Long = -1,
+    seqNum: Int = -1
 ) : FeedbackControlInformation() {
-    override val sizeBytes: UInt = SIZE_BYTES
+    override val sizeBytes: Int = SIZE_BYTES
 
-    var ssrc: UInt = ssrc
+    var ssrc: Long = ssrc
         private set
 
-    var seqNum: UByte = seqNum
+    var seqNum: Int = seqNum
         private set
-
-    //TODO: legacy constructor until other types are moved over to unsigned
-    constructor(ssrc: Long = -1, seqNum: Int = -1) : this(ssrc.toUInt(), seqNum.toUByte())
 
     override fun serializeTo(buf: ByteBuffer) {
-        buf.putUInt(ssrc)
-        buf.putUByte(seqNum)
+        buf.putInt(ssrc.toInt())
+        buf.put(seqNum.toByte())
         // Add padding for the reserved chunk
         repeat (3) { buf.put(0x00) }
     }
 
     companion object {
-        const val SIZE_BYTES: UInt = 8u
+        const val SIZE_BYTES = 8
 
         fun fromBuffer(buf: ByteBuffer): Fir {
-            val ssrc = buf.getUInt()
-            val seqNum = buf.getUByte()
+            val ssrc = buf.getInt().toPositiveLong()
+            val seqNum = buf.get().toPositiveInt()
             // Parse passed the reserved chunk
             repeat (3) { buf.get() }
 

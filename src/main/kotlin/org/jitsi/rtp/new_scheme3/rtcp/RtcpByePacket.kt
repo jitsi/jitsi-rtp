@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
 import org.jitsi.rtp.extensions.unsigned.getUInt
 import org.jitsi.rtp.extensions.unsigned.putUInt
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
@@ -25,13 +24,12 @@ import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-@ExperimentalUnsignedTypes
 data class RtcpByeData(
-    var ssrcs: MutableList<UInt> = mutableListOf(),
+    var ssrcs: MutableList<Long> = mutableListOf(),
     var reason: String? = null
 ) : SerializableData(), kotlin.Cloneable {
 
-    override val sizeBytes: UInt
+    override val sizeBytes: Int
         get() {
             val dataSize = ssrcs.size * 4
             val reasonSize: Int = reason?.let {
@@ -43,11 +41,11 @@ data class RtcpByeData(
                 fieldSize + paddingSize
             } ?: 0
 
-            return (dataSize + reasonSize).toUInt()
+            return dataSize + reasonSize
         }
 
     override fun getBuffer(): ByteBuffer {
-        val b = allocateByteBuffer(sizeBytes)
+        val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
 
         return b.rewind() as ByteBuffer
@@ -55,7 +53,8 @@ data class RtcpByeData(
 
     override fun serializeTo(buf: ByteBuffer) {
         ssrcs.stream()
-                .forEach { buf.putUInt(it) }
+                .map(Long::toInt)
+                .forEach { buf.putInt(it) }
         reason?.let {
             val reasonBuf = ByteBuffer.wrap(it.toByteArray(StandardCharsets.US_ASCII))
             buf.put(reasonBuf.limit().toByte())
@@ -73,7 +72,8 @@ data class RtcpByeData(
     companion object {
         fun create(buf: ByteBuffer, remainingSsrcCount: Int, hasReason: Boolean): RtcpByeData {
             val ssrcs = (1..remainingSsrcCount)
-                    .map { buf.getUInt() }
+                    .map(buf::getInt)
+                    .map(Int::toLong)
                     .toMutableList()
 
             val reason = if (hasReason) {
@@ -87,7 +87,6 @@ data class RtcpByeData(
     }
 }
 
-@ExperimentalUnsignedTypes
 class RtcpByePacket internal constructor(
     header: RtcpHeader = RtcpHeader(),
     private val byeData: RtcpByeData = RtcpByeData(),
@@ -96,16 +95,16 @@ class RtcpByePacket internal constructor(
 
     // Can't use an ImmutableAlias here because we have to combine the value with the one
     // in the header
-    val ssrcs: List<UInt> get() = byeData.ssrcs + listOf(header.senderSsrc)
+    val ssrcs: List<Long> get() = byeData.ssrcs + listOf(header.senderSsrc)
 
     val reason: String? by ImmutableAlias(byeData::reason)
 
-    override val sizeBytes: UInt get() = header.sizeBytes + byeData.sizeBytes
+    override val sizeBytes: Int get() = header.sizeBytes + byeData.sizeBytes
 
     constructor(
         header: RtcpHeader = RtcpHeader(),
         // Not including the one in the header
-        ssrcs: MutableList<UInt> = mutableListOf(),
+        ssrcs: MutableList<Long> = mutableListOf(),
         reason: String? = null,
         backingBuffer: ByteBuffer? = null
     ) : this (header, RtcpByeData(ssrcs, reason), backingBuffer)
@@ -121,7 +120,7 @@ class RtcpByePacket internal constructor(
     fun modify(block: RtcpByeData.() -> Unit) {
         with (byeData) {
             block()
-//            payloadModified()
+            payloadModified()
         }
     }
 
@@ -131,7 +130,7 @@ class RtcpByePacket internal constructor(
             val header = RtcpHeader.create(buf)
             val hasReason = run {
                 val packetLength = header.length
-                val headerAndSsrcsLength = header.sizeBytes + ((header.reportCount - 1) * 4).toUInt()
+                val headerAndSsrcsLength = header.sizeBytes + (header.reportCount - 1) * 4
                 headerAndSsrcsLength < packetLength
             }
             val byeData = RtcpByeData.create(buf, header.reportCount - 1, hasReason)

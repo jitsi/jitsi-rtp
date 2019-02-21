@@ -101,14 +101,13 @@ const val NOT_RECEIVED_TS: Long = -1
  * |           recv delta          |  recv delta   | zero padding  |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-@ExperimentalUnsignedTypes
 class Tcc(
     feedbackPacketCount: Int = -1,
     referenceTimeMs: Long = -1,
     packetInfo: PacketMap = PacketMap()
 ): FeedbackControlInformation() {
     private var dirty = true
-    private var _sizeBytes: UInt = 0u
+    private var _sizeBytes: Int = -1
 
     var feedbackPacketCount: Int = feedbackPacketCount
         private set
@@ -122,7 +121,7 @@ class Tcc(
      */
     val numPackets: Int get() = packetInfo.size
 
-    override val sizeBytes: UInt
+    override val sizeBytes: Int
         get() {
             if (dirty) {
                 try {
@@ -141,7 +140,7 @@ class Tcc(
                     while ((dataSize + paddingSize) % 4 != 0) {
                         paddingSize++
                     }
-                    _sizeBytes = (dataSize + paddingSize).toUInt()
+                    _sizeBytes = dataSize + paddingSize
                     dirty = false
                 } catch (e: Exception) {
 //                    println("Error getting size of TCC fci: $e, buffer:\n${buf?.toHex()}")
@@ -260,7 +259,7 @@ class Tcc(
                 if (packetStatus.hasDelta()) {
                     val deltaSizeBytes = packetStatus.getDeltaSizeBytes()
                     val deltaBuf = packetStatusBuf.subBuffer(currOffset)
-                    val receiveDelta = ReceiveDelta.parse(deltaBuf, deltaSizeBytes.toUInt())
+                    val receiveDelta = ReceiveDelta.parse(deltaBuf, deltaSizeBytes)
                     packetDeltas.add(receiveDelta)
                     currOffset += deltaSizeBytes
                 }

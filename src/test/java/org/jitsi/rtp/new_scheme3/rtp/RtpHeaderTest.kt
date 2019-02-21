@@ -24,9 +24,12 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.rtp.RtpHeaderExtension
 import org.jitsi.rtp.RtpOneByteHeaderExtension
 import org.jitsi.rtp.RtpTwoByteHeaderExtension
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.toHex
+import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
 internal class RtpHeaderTest : ShouldSpec() {
@@ -69,12 +72,16 @@ internal class RtpHeaderTest : ShouldSpec() {
         0x00,           0x00,           0x00,           0x02,
         0x00,           0x00,           0x00,           0x03
     )
+    //Note that other methods of padding are possible (in between the fields themselves).  The example
+    // uses this method of padding (at the end) because that's how we serialize, so we can use it to
+    // verify serialization works correctly
     private val headerWithOneByteExtensions = ByteBuffer.wrap(headerWithExtensionBit.plus(byteArrayOf(
         // Extensions
-        0xBE.toByte(),                   0xDE.toByte(),  0x00,                          0x03,
-        idLengthByte(1, 0),   0x42,           idLengthByte(2, 1), 0x42,
-        0x42,                            0x00,           0x00,                          idLengthByte(3, 3),
-        0x42,                            0x42,           0x42,                          0x42
+        0xBE.toByte(),                   0xDE.toByte(),                 0x00,                          0x03,
+        idLengthByte(1, 0),   0x42,                          idLengthByte(2, 1), 0x42,
+        0x42,                            idLengthByte(3, 3), 0x42,                          0x42,
+        0x42,                            0x42,                          0x00,                          0x00
+
     )))
     private val headerWithTwoByteExtensions = ByteBuffer.wrap(headerWithExtensionBit.plus(byteArrayOf(
         0x10,           0x00,           0x00,           0x03,
@@ -110,8 +117,26 @@ internal class RtpHeaderTest : ShouldSpec() {
                     for (i in 1..3) {
                         val ext = header.extensions.getExtension(i)
                         ext shouldNotBe null
+                        ext as RtpHeaderExtension
                         ext.shouldBeTypeOf<RtpOneByteHeaderExtension>()
                     }
+                    val ext1 = header.extensions.getExtension(1)
+                    ext1 as RtpHeaderExtension
+                    ext1.id shouldBe 1
+                    ext1.lengthBytes shouldBe 1
+                    ext1.data.compareTo(byteBufferOf(0x42)) shouldBe 0
+
+                    val ext2 = header.extensions.getExtension(2)
+                    ext2 as RtpHeaderExtension
+                    ext2.id shouldBe 2
+                    ext2.lengthBytes shouldBe 2
+                    ext2.data.compareTo(byteBufferOf(0x42, 0x42)) shouldBe 0
+
+                    val ext3 = header.extensions.getExtension(3)
+                    ext3 as RtpHeaderExtension
+                    ext3.id shouldBe 3
+                    ext3.lengthBytes shouldBe 4
+                    ext3.data.compareTo(byteBufferOf(0x42, 0x42, 0x42, 0x42)) shouldBe 0
                 }
             }
             "a header with two byte extensions" {
