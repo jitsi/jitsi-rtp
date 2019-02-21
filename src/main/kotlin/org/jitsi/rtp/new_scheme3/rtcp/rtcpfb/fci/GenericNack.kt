@@ -16,6 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
+import org.jitsi.rtp.extensions.incrementPosition
+import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.util.RightToLeftBufferUtils
 import java.nio.ByteBuffer
@@ -38,18 +40,14 @@ class GenericNack(
     val missingSeqNums: List<Int> = listOf(packetId) + genericNackBlp.lostPacketOffsets.map { it + packetId }
 
     override fun serializeTo(buf: ByteBuffer) {
-        setPacketId(buf, packetId)
+        buf.putShort(packetId.toShort())
         genericNackBlp.serializeTo(buf)
     }
 
     companion object {
         const val SIZE_BYTES = 2 + GenericNackBlp.SIZE_BYTES
-        fun getPacketId(buf: ByteBuffer): Int = buf.short.toInt()
-        fun setPacketId(buf: ByteBuffer, packetId: Int) {
-            buf.putShort(packetId.toShort())
-        }
         fun fromBuffer(buf: ByteBuffer): GenericNack {
-            val packetId = getPacketId(buf)
+            val packetId = buf.short.toInt()
             val blp = GenericNackBlp.parse(buf)
             return GenericNack(packetId, blp)
         }
@@ -74,7 +72,8 @@ class GenericNackBlp(
     override val sizeBytes: Int = SIZE_BYTES
 
     override fun serializeTo(buf: ByteBuffer) {
-        setLostPacketOffsets(buf, lostPacketOffsets)
+        setLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES), lostPacketOffsets)
+        buf.incrementPosition(SIZE_BYTES)
     }
 
     companion object {
@@ -91,14 +90,15 @@ class GenericNackBlp(
 
         fun setLostPacketOffsets(buf: ByteBuffer, lostPacketOffsets: List<Int>) {
             lostPacketOffsets.forEach { packetOffset ->
-                // We substract 1 here because the least significant bit (index 0) holds a packet offset of '1', since
+                // We subtract 1 here because the least significant bit (index 0) holds a packet offset of '1', since
                 // the packet id is already used to encode a lost packet (with offset 0: the packet id itself)
                 RightToLeftBufferUtils.putBit(buf, packetOffset - 1, true)
             }
         }
 
         fun parse(buf: ByteBuffer): GenericNackBlp {
-            val lostPacketOffsets = getLostPacketOffsets(buf)
+            val lostPacketOffsets = getLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES))
+            buf.incrementPosition(SIZE_BYTES)
             return GenericNackBlp(lostPacketOffsets)
         }
     }
