@@ -27,8 +27,7 @@ import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 abstract class ImmutableRtcpHeader internal constructor(
-    protected val headerData: RtcpHeaderData = RtcpHeaderData(),
-    protected var backingBuffer: ByteBuffer? = null
+    protected val headerData: RtcpHeaderData = RtcpHeaderData()
 ) : SerializableData(), kotlin.Cloneable {
     override val sizeBytes: Int
         get() = headerData.sizeBytes
@@ -48,11 +47,10 @@ abstract class ImmutableRtcpHeader internal constructor(
         reportCount: Int = 0,
         packetType: Int = 0,
         length: Int = 0,
-        senderSsrc: Long = 0,
-        backingBuffer: ByteBuffer? = null
+        senderSsrc: Long = 0
     ) : this(RtcpHeaderData(
         version, hasPadding, reportCount,
-        packetType, length, senderSsrc), backingBuffer)
+        packetType, length, senderSsrc))
 
     protected fun doModify(block: RtcpHeaderData.() -> Unit) {
         with (headerData) {
@@ -61,21 +59,14 @@ abstract class ImmutableRtcpHeader internal constructor(
         dirty = true
     }
 
-    override fun getBuffer(): ByteBuffer {
-        if (dirty) {
-            val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
-            headerData.serializeTo(b)
-            dirty = false
-            backingBuffer = b
-        }
-        return backingBuffer!!.asReadOnlyBuffer()
+    override fun serializeTo(buf: ByteBuffer) {
+        headerData.serializeTo(buf)
     }
 }
 
 class RtcpHeader(
-    headerData: RtcpHeaderData = RtcpHeaderData(),
-    backingBuffer: ByteBuffer? = null
-) : ImmutableRtcpHeader(headerData, backingBuffer) {
+    headerData: RtcpHeaderData = RtcpHeaderData()
+) : ImmutableRtcpHeader(headerData) {
 
     public override fun clone(): RtcpHeader =
             RtcpHeader(headerData.clone())
@@ -92,7 +83,7 @@ class RtcpHeader(
         const val SIZE_BYTES = RtcpHeaderData.SIZE_BYTES
         fun create(buf: ByteBuffer): RtcpHeader {
             val headerData = RtcpHeaderData.create(buf)
-            return RtcpHeader(headerData, buf)
+            return RtcpHeader(headerData)
         }
 
         fun fromValues(
@@ -101,12 +92,11 @@ class RtcpHeader(
             reportCount: Int = 0,
             packetType: Int = 0,
             length: Int = 0,
-            senderSsrc: Long = 0,
-            backingBuffer: ByteBuffer? = null
+            senderSsrc: Long = 0
         ) : RtcpHeader {
             return RtcpHeader(RtcpHeaderData(
                 version, hasPadding, reportCount,
-                packetType, length, senderSsrc), backingBuffer)
+                packetType, length, senderSsrc))
         }
 
         fun getVersion(buf: ByteBuffer): Int = buf.get(0).getBits(0, 2).toInt()
