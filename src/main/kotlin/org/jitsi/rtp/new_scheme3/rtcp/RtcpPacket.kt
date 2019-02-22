@@ -58,7 +58,25 @@ abstract class RtcpPacket(
 ) : Packet() {
     private var dirty: Boolean = true
 
+    //TODO: we should handle adding padding and setting the hasPadding
+    // bit (only) here in rtcppacket
+
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
+
+    /**
+     * How many padding bytes are needed, if any
+     * TODO: should sizeBytes be exposed publicly?  because it doesn't
+     * include padding it could be misleading
+     */
+    private val numPaddingBytes: Int
+        get() {
+            //TODO: maybe we can only update this when dirty = true
+            var paddingBytes = 0
+            while ((sizeBytes + paddingBytes) % 4 != 0) {
+                paddingBytes++
+            }
+            return paddingBytes
+        }
 
     //TODO(brian): it'd be nice to not expose header data here.  maybe
     // RtcpHeader should add its own layer for each variabl
@@ -68,10 +86,31 @@ abstract class RtcpPacket(
     }
 
     fun prepareForEncryption(): RtcpPacketForCrypto {
-        return RtcpPacketForCrypto(_header, getBuffer().subBuffer(_header.sizeBytes), backingBuffer)
+        return RtcpPacketForCrypto(_header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
+    }
+
+    /**
+     * [sizeBytes] MUST including padding (i.e. it should be 32-bit word aligned)
+     */
+    private fun calculateLengthFieldValue(sizeBytes: Int): Int {
+        if (sizeBytes % 4 != 0) {
+            throw Exception("Invalid RTCP size value")
+        }
+        return (sizeBytes / 4) - 1
+    }
+
+    private fun updateHeaderFields() {
+        _header.modify {
+            //TODO: is this the right way to keep these in sync?  we need to do this for RTP as well.
+            // other fields which are type-specific (like report count) will need to be updated
+            // at lower layers
+            hasPadding = numPaddingBytes > 0
+            length = calculateLengthFieldValue(this@RtcpPacket.sizeBytes + numPaddingBytes)
+        }
     }
 
     protected fun payloadModified() {
+        //TODO: do we want to call updateHeaderFields here?
         dirty = true
     }
 
@@ -81,7 +120,8 @@ abstract class RtcpPacket(
 
     final override fun getBuffer(): ByteBuffer {
         if (dirty) {
-            val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
+            updateHeaderFields()
+            val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes + numPaddingBytes)
             serializeTo(b)
             b.rewind()
 
@@ -105,6 +145,17 @@ abstract class RtcpPacket(
                 RtcpByePacket.PT -> RtcpByePacket.create(buf)
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
+            }
+        }
+        fun addPadding(buf: ByteBuffer) {
+            while (buf.position() % 4 != 0) {
+                buf.put(0x00)
+            }
+        }
+
+        fun consumePadding(buf: ByteBuffer) {
+            while (buf.position() % 4 != 0) {
+                buf.put(0x00)
             }
         }
     }

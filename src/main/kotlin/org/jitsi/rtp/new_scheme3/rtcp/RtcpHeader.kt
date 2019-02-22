@@ -33,6 +33,9 @@ abstract class ImmutableRtcpHeader internal constructor(
     val reportCount: Int by ImmutableAlias(headerData::reportCount)
     val packetType: Int by ImmutableAlias(headerData::packetType)
     val length: Int by ImmutableAlias(headerData::length)
+    // The length field in the RTCP header is given as the number of
+    // 32-bit words - 1, we'll expose the actual length in bytes here
+    val lengthBytes: Int get() = (length + 1) * 4
     val senderSsrc: Long by ImmutableAlias(headerData::senderSsrc)
 
     private var dirty: Boolean = true

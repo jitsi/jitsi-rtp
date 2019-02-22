@@ -16,125 +16,90 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.extensions.unsigned.getUInt
-import org.jitsi.rtp.extensions.unsigned.putUInt
-import org.jitsi.rtp.new_scheme3.ImmutableAlias
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.Packet
-import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-data class RtcpByeData(
-    var ssrcs: MutableList<Long> = mutableListOf(),
-    var reason: String? = null
-) : SerializableData(), kotlin.Cloneable {
+/**
+ * https://tools.ietf.org/html/rfc3550#section-6.6
+ *
+ *       0                   1                   2                   3
+ *       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *       |V=2|P|    SC   |   PT=BYE=203  |             length            |
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *       |                           SSRC/CSRC                           |
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *       :                              ...                              :
+ *       +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
+ * (opt) |     length    |               reason for leaving            ...
+ *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
+class RtcpByePacket(
+    header: RtcpHeader = RtcpHeader(),
+    // Not including the one in the header
+    private val additionalSsrcs: List<Long> = listOf(),
+    val reason: String? = null,
+    backingBuffer: ByteBuffer? = null
+) : RtcpPacket(header, backingBuffer) {
 
     override val sizeBytes: Int
         get() {
-            val dataSize = ssrcs.size * 4
+            val dataSize = additionalSsrcs.size * 4
             val reasonSize: Int = reason?.let {
                 val fieldSize = it.toByteArray(StandardCharsets.US_ASCII).size
-                var paddingSize = 0
-                while (fieldSize + paddingSize % 4 != 0) {
-                    paddingSize++
-                }
-                fieldSize + paddingSize
+                // Plus 1 for the reason length field
+                fieldSize + 1
             } ?: 0
-
-            return dataSize + reasonSize
+            return header.sizeBytes + dataSize + reasonSize
         }
 
-    override fun getBuffer(): ByteBuffer {
-        val b = ByteBuffer.allocate(sizeBytes)
-        serializeTo(b)
-
-        return b.rewind() as ByteBuffer
-    }
+    val ssrcs: List<Long> = listOf(header.senderSsrc) + additionalSsrcs
 
     override fun serializeTo(buf: ByteBuffer) {
-        ssrcs.stream()
+        super.serializeTo(buf)
+        additionalSsrcs.stream()
                 .map(Long::toInt)
                 .forEach { buf.putInt(it) }
         reason?.let {
             val reasonBuf = ByteBuffer.wrap(it.toByteArray(StandardCharsets.US_ASCII))
             buf.put(reasonBuf.limit().toByte())
             buf.put(reasonBuf)
-            while (buf.position() % 4 != 0) {
-                buf.put(0x00)
-            }
         }
-    }
-
-    public override fun clone(): RtcpByeData =
-        RtcpByeData(ssrcs.toMutableList(), reason?.plus(""))
-
-    @ExperimentalUnsignedTypes
-    companion object {
-        fun create(buf: ByteBuffer, remainingSsrcCount: Int, hasReason: Boolean): RtcpByeData {
-            val ssrcs = (1..remainingSsrcCount)
-                    .map(buf::getInt)
-                    .map(Int::toLong)
-                    .toMutableList()
-
-            val reason = if (hasReason) {
-                val reasonLength = buf.get().toInt()
-                String(buf.array(), buf.position(), reasonLength)
-            } else {
-                null
-            }
-            return RtcpByeData(ssrcs, reason)
-        }
-    }
-}
-
-class RtcpByePacket internal constructor(
-    header: RtcpHeader = RtcpHeader(),
-    private val byeData: RtcpByeData = RtcpByeData(),
-    backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header, backingBuffer) {
-
-    // Can't use an ImmutableAlias here because we have to combine the value with the one
-    // in the header
-    val ssrcs: List<Long> get() = byeData.ssrcs + listOf(header.senderSsrc)
-
-    val reason: String? by ImmutableAlias(byeData::reason)
-
-    override val sizeBytes: Int get() = header.sizeBytes + byeData.sizeBytes
-
-    constructor(
-        header: RtcpHeader = RtcpHeader(),
-        // Not including the one in the header
-        ssrcs: MutableList<Long> = mutableListOf(),
-        reason: String? = null,
-        backingBuffer: ByteBuffer? = null
-    ) : this (header, RtcpByeData(ssrcs, reason), backingBuffer)
-
-    override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
-        byeData.serializeTo(buf)
+        addPadding(buf)
     }
 
     override fun clone(): Packet =
-        RtcpByePacket(_header.clone(), byeData.clone())
-
-    fun modify(block: RtcpByeData.() -> Unit) {
-        with (byeData) {
-            block()
-            payloadModified()
-        }
-    }
+        RtcpByePacket(_header.clone(), additionalSsrcs.toList(), reason?.plus(""))
 
     companion object {
         const val PT: Int = 203
         fun create(buf: ByteBuffer): RtcpByePacket {
             val header = RtcpHeader.create(buf)
             val hasReason = run {
-                val packetLength = header.length
-                val headerAndSsrcsLength = header.sizeBytes + (header.reportCount - 1) * 4
-                headerAndSsrcsLength < packetLength
+                val packetLengthBytes = header.lengthBytes
+                val headerAndSsrcsLengthBytes = header.sizeBytes + (header.reportCount - 1) * 4
+                headerAndSsrcsLengthBytes < packetLengthBytes
             }
-            val byeData = RtcpByeData.create(buf, header.reportCount - 1, hasReason)
-            return RtcpByePacket(header, byeData, buf)
+            val ssrcs = (0 until header.reportCount - 1)
+                    .map(buf::getInt)
+                    .map(Int::toPositiveLong)
+                    .toList()
+
+            val reason = if (hasReason) {
+                val reasonLength = buf.get().toInt()
+                val reasonStr = String(buf.array(), buf.position(), reasonLength)
+                buf.incrementPosition(reasonLength)
+                reasonStr
+            } else {
+                null
+            }
+            if (header.hasPadding) {
+                consumePadding(buf)
+            }
+            return RtcpByePacket(header, ssrcs, reason, buf)
         }
-    }
+   }
 }
