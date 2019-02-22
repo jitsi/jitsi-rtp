@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.SerializedField
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
@@ -55,16 +56,20 @@ abstract class RtcpFbPacket(
 
     final override fun serializeTo(buf: ByteBuffer) {
         super.serializeTo(buf)
+        buf.putInt(mediaSourceSsrc.toInt())
         fci.serializeTo(buf)
     }
 
     companion object {
-        val PACKET_TYPES = listOf(205, 206)
-        const val FCI_OFFSET = RtcpHeader.SIZE_BYTES + 4
+        val PACKET_TYPES = listOf(TransportLayerFbPacket.PT, PayloadSpecificFbPacket.PT)
+        /**
+         * The RTCP fixed-header size + the media source SSRC size
+         */
+        const val FIXED_HEADER_SIZE = RtcpHeader.SIZE_BYTES + 4
 
-        fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toLong()
-        fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Int) {
-            buf.putInt(mediaSourceSsrc)
+        fun getMediaSourceSsrc(buf: ByteBuffer): Long = buf.int.toPositiveLong()
+        fun setMediaSourceSsrc(buf: ByteBuffer, mediaSourceSsrc: Long) {
+            buf.putInt(mediaSourceSsrc.toInt())
         }
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbPacket {

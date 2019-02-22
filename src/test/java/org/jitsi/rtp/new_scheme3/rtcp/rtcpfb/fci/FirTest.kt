@@ -21,6 +21,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.extensions.unsigned.getUByte
 import org.jitsi.rtp.extensions.unsigned.getUInt
+import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbFirPacket
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
@@ -44,14 +45,14 @@ internal class FirTest : ShouldSpec() {
                 }
                 "and then serializing to an existing buffer" {
                     val existingBuf = ByteBuffer.allocate(20)
-                    existingBuf.position(10)
+                    existingBuf.position(8)
                     fir.serializeTo(existingBuf)
                     should("serialize it to the proper place") {
-                        existingBuf.getInt(10) shouldBe 123
-                        existingBuf.get(14) shouldBe 220.toByte()
+                        existingBuf.getInt(8) shouldBe 123
+                        existingBuf.get(12) shouldBe 220.toByte()
                     }
                     should("leave the buffer's position after the field it just wrote") {
-                        existingBuf.position() shouldBe 18
+                        existingBuf.position() shouldBe (8 + Fir.SIZE_BYTES)
                     }
                 }
             }
@@ -67,7 +68,7 @@ internal class FirTest : ShouldSpec() {
                     fir.seqNum shouldBe 220
                 }
                 should("leave the buffer's position after its data") {
-                    buf.position() shouldBe 8
+                    buf.position() shouldBe Fir.SIZE_BYTES
                 }
             }
         }

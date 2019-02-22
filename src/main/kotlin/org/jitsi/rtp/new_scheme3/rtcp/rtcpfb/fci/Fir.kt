@@ -52,7 +52,7 @@ class Fir(
         repeat (3) { buf.put(0x00) }
     }
 
-    override fun clone(): Fir =
+    public override fun clone(): Fir =
         Fir(ssrc, seqNum)
 
     companion object {
