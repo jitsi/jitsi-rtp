@@ -173,3 +173,16 @@ fun ByteBuffer.compareToFromBeginning(other: ByteBuffer): Int {
     val otherRewound = other.duplicate().rewind() as ByteBuffer
     return thisRewound.compareTo(otherRewound)
 }
+
+/**
+ * Return a new ByteBuffer that includes the contents of this one
+ * plus [other]
+ */
+operator fun ByteBuffer.plus(other: ByteBuffer): ByteBuffer {
+    val newBuf = ByteBuffer.allocate(limit() + other.limit())
+    newBuf.put(duplicate().rewind() as ByteBuffer)
+    newBuf.put(other.duplicate().rewind() as ByteBuffer)
+    newBuf.flip()
+
+    return newBuf
+}
