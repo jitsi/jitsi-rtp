@@ -61,8 +61,11 @@ class RtcpRrPacket(
         reportBlocks.forEach { it.serializeTo(buf) }
     }
 
-    override fun clone(): Packet {
-        TODO()
+    override fun clone(): RtcpRrPacket {
+        val clonedReportBlocks = reportBlocks
+                .map(RtcpReportBlock::clone)
+                .toList()
+        return RtcpRrPacket(_header.clone(), clonedReportBlocks)
     }
 
     companion object {
