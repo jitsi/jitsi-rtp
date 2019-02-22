@@ -19,7 +19,10 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 import org.jitsi.rtp.extensions.getBit
 import org.jitsi.rtp.extensions.getBits
 import org.jitsi.rtp.extensions.putBits
-import unsigned.toUInt
+import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 import kotlin.experimental.and
 
@@ -34,30 +37,7 @@ enum class PacketStatusChunkType(val value: Int) {
     }
 }
 
-internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol> {
-    companion object {
-        const val SIZE_BYTES = 2
-        fun getChunkType(buf: ByteBuffer): PacketStatusChunkType = PacketStatusChunkType.fromInt(buf.get(0).getBit(0))
-        fun setChunkType(buf: ByteBuffer, chunkType: PacketStatusChunkType) {
-            buf.putBits(0, 0, chunkType.value.toByte(), 1)
-        }
-
-        /**
-         * Note that the returned [PacketStatusChunk] will parse a status for every
-         * available position in the status chunk.  Meaning that a [PacketStatusChunk]
-         * doesn't know if the last N of the statuses it parses are actually invalid
-         * (as can be the case with the last [PacketStatusChunk] in the list).  The
-         * packet status count should always be used in determining how many valid
-         * statuses are contained within a chunk.
-         */
-        fun parse(buf: ByteBuffer): PacketStatusChunk {
-            return when (getChunkType(buf)) {
-                PacketStatusChunkType.RUN_LENGTH_CHUNK -> RunLengthChunk(buf)
-                PacketStatusChunkType.STATUS_VECTOR_CHUNK -> StatusVectorChunk(buf)
-                else -> throw Exception("Unrecognized packet status chunk type: ${getChunkType(buf)}")
-            }
-        }
-    }
+internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol>, SerializableData() {
 
     class PacketStatusChunkIterator(private val p: PacketStatusChunk) : Iterator<PacketStatusSymbol> {
         private var currSymbolIndex: Int = 0
@@ -80,7 +60,29 @@ internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol> {
      */
     abstract fun getStatusByIndex(index: Int): PacketStatusSymbol
 
-    abstract fun getBuffer(): ByteBuffer
+    companion object {
+        const val SIZE_BYTES = 2
+        fun getChunkType(buf: ByteBuffer): PacketStatusChunkType = PacketStatusChunkType.fromInt(buf.get(0).getBit(0))
+        fun setChunkType(buf: ByteBuffer, chunkType: PacketStatusChunkType) {
+            buf.putBits(0, 0, chunkType.value.toByte(), 1)
+        }
+
+        /**
+         * Note that the returned [PacketStatusChunk] will parse a status for every
+         * available position in the status chunk.  Meaning that a [PacketStatusChunk]
+         * doesn't know if the last N of the statuses it parses are actually invalid
+         * (as can be the case with the last [PacketStatusChunk] in the list).  The
+         * packet status count should always be used in determining how many valid
+         * statuses are contained within a chunk.
+         */
+        fun parse(buf: ByteBuffer): PacketStatusChunk {
+            return when (getChunkType(buf)) {
+                PacketStatusChunkType.RUN_LENGTH_CHUNK -> RunLengthChunk.fromBuffer(buf)
+                PacketStatusChunkType.STATUS_VECTOR_CHUNK -> StatusVectorChunk.fromBuffer(buf)
+                else -> throw Exception("Unrecognized packet status chunk type: ${getChunkType(buf)}")
+            }
+        }
+    }
 }
 
 /**
@@ -93,48 +95,11 @@ internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol> {
  * T = 0
  * Uses a single 2-bit symbol
  */
-internal class RunLengthChunk : PacketStatusChunk {
-    var buf: ByteBuffer? = null
-    var statusSymbol: PacketStatusSymbol
-    var runLength: Int
-    companion object {
-        fun getStatusSymbol(buf: ByteBuffer): PacketStatusSymbol = TwoBitPacketStatusSymbol.fromInt(buf.get(0).getBits(1, 2).toUInt())
-        fun setStatusSymbol(buf: ByteBuffer, statusSymbol: PacketStatusSymbol) {
-            buf.putBits(0, 1, statusSymbol.value.toByte(), 2)
-        }
-
-        fun getRunLength(buf: ByteBuffer): Int {
-            val byte0 = buf.get(0) and 0x1F.toByte()
-            val byte1 = buf.get(1)
-
-            return (byte0.toUInt() shl 8) or (byte1.toUInt())
-        }
-        fun setRunLength(buf: ByteBuffer, runLength: Int) {
-            val byte0 = ((runLength ushr 8) and 0x1F).toByte()
-            val byte0val = (buf.get(0).toUInt() or byte0.toUInt()).toByte()
-            val byte1 = (runLength and 0x00).toByte()
-
-            buf.put(0, byte0val)
-            buf.put(1, byte1)
-        }
-    }
-
-    constructor(buf: ByteBuffer) {
-        this.buf = buf.slice()
-        if (getChunkType(buf) != PacketStatusChunkType.RUN_LENGTH_CHUNK) {
-            throw Exception("Invalid RunLengthChunk type ${getChunkType(buf)}")
-        }
-        this.statusSymbol = RunLengthChunk.getStatusSymbol(buf)
-        this.runLength = RunLengthChunk.getRunLength(buf)
-    }
-
-    constructor(
-        statusSymbol: PacketStatusSymbol = UnknownSymbol,
-        runLength: Int = 0
-    ) {
-        this.statusSymbol = statusSymbol
-        this.runLength = runLength
-    }
+internal class RunLengthChunk(
+    val statusSymbol: PacketStatusSymbol = UnknownSymbol,
+    val runLength: Int = -1
+) : PacketStatusChunk() {
+    override val sizeBytes: Int = SIZE_BYTES
 
     override fun getChunkType(): PacketStatusChunkType = PacketStatusChunkType.RUN_LENGTH_CHUNK
     override fun numPacketStatuses(): Int = this.runLength
@@ -143,15 +108,44 @@ internal class RunLengthChunk : PacketStatusChunk {
      */
     override fun getStatusByIndex(index: Int): PacketStatusSymbol = statusSymbol
 
-    override fun getBuffer(): ByteBuffer {
-        if (this.buf == null) {
-            this.buf = ByteBuffer.allocate(PacketStatusChunk.SIZE_BYTES)
-        }
-        setChunkType(buf!!, PacketStatusChunkType.RUN_LENGTH_CHUNK)
-        setStatusSymbol(buf!!, statusSymbol)
-        setRunLength(buf!!, runLength)
+    override fun serializeTo(buf: ByteBuffer) {
+        // The setter methods below assume buf's position 0 is where they should
+        // start writing.  That may not be the case, so just create a temporary
+        // buffer which has its position 0 at buf's current position
+        val serializeBuf = buf.subBuffer(buf.position())
+        setChunkType(serializeBuf, PacketStatusChunkType.RUN_LENGTH_CHUNK)
+        setStatusSymbol(serializeBuf, statusSymbol)
+        setRunLength(serializeBuf, runLength)
+        buf.incrementPosition(SIZE_BYTES)
+    }
 
-        return buf!!.rewind() as ByteBuffer
+    companion object {
+        fun fromBuffer(buf: ByteBuffer): RunLengthChunk {
+            val statusSymbol = RunLengthChunk.getStatusSymbol(buf)
+            val runLength = RunLengthChunk.getRunLength(buf)
+            buf.incrementPosition(SIZE_BYTES)
+            return RunLengthChunk(statusSymbol, runLength)
+        }
+        fun getStatusSymbol(buf: ByteBuffer): PacketStatusSymbol =
+            TwoBitPacketStatusSymbol.fromInt(buf.get(0).getBits(1, 2).toPositiveInt())
+        fun setStatusSymbol(buf: ByteBuffer, statusSymbol: PacketStatusSymbol) {
+            buf.putBits(0, 1, statusSymbol.value.toByte(), 2)
+        }
+
+        fun getRunLength(buf: ByteBuffer): Int {
+            val byte0 = buf.get(0) and 0x1F.toByte()
+            val byte1 = buf.get(1)
+
+            return (byte0.toPositiveInt() shl 8) or (byte1.toPositiveInt())
+        }
+        fun setRunLength(buf: ByteBuffer, runLength: Int) {
+            val byte0 = ((runLength ushr 8) and 0x1F).toByte()
+            val byte0val = (buf.get(0).toPositiveInt() or byte0.toPositiveInt()).toByte()
+            val byte1 = (runLength and 0x00FF).toByte()
+
+            buf.put(0, byte0val)
+            buf.put(1, byte1)
+        }
     }
 }
 
@@ -164,19 +158,48 @@ internal class RunLengthChunk : PacketStatusChunk {
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  * T = 1
  */
-internal class StatusVectorChunk : PacketStatusChunk {
-    var buf: ByteBuffer? = null
+internal class StatusVectorChunk(
     /**
      * How big each contained symbol size is, in bits
      * (Note that this is different from the symbol size
      * bit itself, which uses a '0' to denote 1 bit symbols
      * and a '1' to denote 2 bit symbols)
      */
-    val symbolSizeBits: Int
-    val packetStatusSymbols: List<PacketStatusSymbol>
+    val symbolSizeBits: Int = 0,
+    val packetStatusSymbols: List<PacketStatusSymbol> = listOf()
+) : PacketStatusChunk() {
+    override val sizeBytes: Int = SIZE_BYTES
+
+    override fun getChunkType(): PacketStatusChunkType = PacketStatusChunkType.STATUS_VECTOR_CHUNK
+    override fun numPacketStatuses(): Int {
+        return when (symbolSizeBits) {
+            1 -> 14
+            2 -> 7
+            else -> throw Exception("Unrecognized symbol size: $symbolSizeBits")
+        }
+    }
+    override fun getStatusByIndex(index: Int): PacketStatusSymbol = packetStatusSymbols[index]
+
+    override fun serializeTo(buf: ByteBuffer) {
+        // The setter methods below assume buf's position 0 is where they should
+        // start writing.  That may not be the case, so just create a temporary
+        // buffer which has its position 0 at buf's current position
+        val serializeBuf = buf.subBuffer(buf.position())
+        setChunkType(serializeBuf, PacketStatusChunkType.STATUS_VECTOR_CHUNK)
+        setSymbolSizeBits(serializeBuf, symbolSizeBits)
+        setSymbolList(serializeBuf, packetStatusSymbols, symbolSizeBits)
+        buf.incrementPosition(SIZE_BYTES)
+    }
+
     companion object {
+        fun fromBuffer(buf: ByteBuffer): StatusVectorChunk {
+            val symbolSizeBits = getSymbolsSizeBits(buf)
+            val packetStatusSymbols = getSymbolList(buf)
+            buf.incrementPosition(SIZE_BYTES)
+            return StatusVectorChunk(symbolSizeBits, packetStatusSymbols)
+        }
         fun getSymbolsSizeBits(buf: ByteBuffer): Int {
-            val symbolSizeBit = buf.get(0).getBits(1, 1).toUInt()
+            val symbolSizeBit = buf.get(0).getBits(1, 1).toPositiveInt()
             return when (symbolSizeBit) {
                 0 -> 1
                 1 -> 2
@@ -199,8 +222,8 @@ internal class StatusVectorChunk : PacketStatusChunk {
                 val currByte = if (bitIndex <= 7) 0 else 1
                 val bitInByteIndex = if (bitIndex <= 7) bitIndex else bitIndex - 8
                 val symbol = when (symbolsSize) {
-                    1 -> OneBitPacketStatusSymbol.fromInt((buf.get(currByte).getBits(bitInByteIndex, symbolsSize)).toUInt())
-                    2 -> TwoBitPacketStatusSymbol.fromInt((buf.get(currByte).getBits(bitInByteIndex, symbolsSize)).toUInt())
+                    1 -> OneBitPacketStatusSymbol.fromInt((buf.get(currByte).getBits(bitInByteIndex, symbolsSize)).toPositiveInt())
+                    2 -> TwoBitPacketStatusSymbol.fromInt((buf.get(currByte).getBits(bitInByteIndex, symbolsSize)).toPositiveInt())
                     else -> TODO()
                 }
                 symbols.add(symbol)
@@ -216,40 +239,5 @@ internal class StatusVectorChunk : PacketStatusChunk {
                 buf.putBits(byteIndex, bitInByteIndex, symbol.value.toByte(), symbolSizeBits)
             }
         }
-    }
-
-    constructor(buf: ByteBuffer) : super() {
-        this.buf = buf.slice()
-        this.symbolSizeBits = getSymbolsSizeBits(buf)
-        this.packetStatusSymbols = getSymbolList(buf)
-    }
-
-    constructor(
-        symbolSize: Int = 0,
-        packetStatusSymbols: List<PacketStatusSymbol> = listOf()
-    ) {
-        this.symbolSizeBits = symbolSize
-        this.packetStatusSymbols = packetStatusSymbols
-    }
-
-    override fun getChunkType(): PacketStatusChunkType = PacketStatusChunkType.STATUS_VECTOR_CHUNK
-    override fun numPacketStatuses(): Int {
-        return when (symbolSizeBits) {
-            1 -> 14
-            2 -> 7
-            else -> throw Exception("Unrecognized symbol size: $symbolSizeBits")
-        }
-    }
-    override fun getStatusByIndex(index: Int): PacketStatusSymbol = packetStatusSymbols[index]
-
-    override fun getBuffer(): ByteBuffer {
-        if (this.buf == null) {
-            this.buf = ByteBuffer.allocate(PacketStatusChunk.SIZE_BYTES)
-        }
-        setChunkType(buf!!, PacketStatusChunkType.STATUS_VECTOR_CHUNK)
-        setSymbolSizeBits(buf!!, symbolSizeBits)
-        setSymbolList(buf!!, packetStatusSymbols, symbolSizeBits)
-
-        return buf!!.rewind() as ByteBuffer
     }
 }
