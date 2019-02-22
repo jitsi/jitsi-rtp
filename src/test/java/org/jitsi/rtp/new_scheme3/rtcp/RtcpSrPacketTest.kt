@@ -24,7 +24,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
 import java.nio.ByteBuffer
 
 internal class RtcpSrPacketTest : ShouldSpec() {

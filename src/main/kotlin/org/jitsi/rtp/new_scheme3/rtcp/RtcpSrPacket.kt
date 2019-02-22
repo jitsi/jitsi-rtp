@@ -203,7 +203,6 @@ class SenderInfo(
  */
 class RtcpSrPacket(
     header: RtcpHeader = RtcpHeader(),
-    //TODO: need to tweak things to enforce modifying senderinfo happens in a modifySenderInfo block
     val senderInfo: SenderInfo = SenderInfo(),
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
@@ -240,45 +239,12 @@ class RtcpSrPacket(
     companion object {
         const val PT: Int = 200
 
-        /**
-         * [buf] should point to the start of the SR packet (i.e. the start of the header)
-         */
-        fun getSenderInfo(buf: ByteBuffer): SenderInfo {
-            return SenderInfo.fromBuffer(buf.subBuffer(RtcpHeader.SIZE_BYTES, SenderInfo.SIZE_BYTES))
-        }
-
-        /**
-         * [buf] should point to the start of the SR packet (i.e. the start of the header)
-         */
-        fun setSenderInfo(buf: ByteBuffer, senderInfo: SenderInfo) {
-            val senderInfoBuf = buf.subBuffer(RtcpHeader.SIZE_BYTES)
-            senderInfoBuf.put(senderInfo.getBuffer())
-        }
-
-        /**
-         * [buf] should point to the start of the SR packet (i.e. the start of the header)
-         */
-        fun getReportBlocks(buf: ByteBuffer, numReportBlocks: Int): MutableList<RtcpReportBlock> {
-            return (1..numReportBlocks)
-                    .map { RtcpReportBlock.fromBuffer(buf) }
-                    .toMutableList()
-        }
-
-        /**
-         * [buf] should point to the start of the SR packet (i.e. the start of the header)
-         */
-        fun setReportBlocks(buf: ByteBuffer, reportBlocks: List<RtcpReportBlock>) {
-            val reportBlockStartPos = RtcpHeader.SIZE_BYTES + SenderInfo.SIZE_BYTES
-            val reportBlockBuf = buf.subBuffer(reportBlockStartPos)
-            reportBlocks.forEach { reportBlock ->
-                reportBlockBuf.put(reportBlock.getBuffer())
-            }
-        }
-
         fun fromBuffer(buf: ByteBuffer): RtcpSrPacket {
             val header = RtcpHeader.create(buf)
             val senderInfo = SenderInfo.fromBuffer(buf)
-            val reportBlocks = getReportBlocks(buf, header.reportCount)
+            val reportBlocks = (0 until header.reportCount)
+                    .map { RtcpReportBlock.fromBuffer(buf) }
+                    .toMutableList()
             return RtcpSrPacket(header, senderInfo, reportBlocks, buf)
         }
     }
