@@ -87,7 +87,7 @@ abstract class RtcpPacket(
         dirty = true
     }
 
-    fun prepareForEncryption(): RtcpPacketForCrypto {
+    fun prepareForCrypto(): RtcpPacketForCrypto {
         return RtcpPacketForCrypto(_header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
     }
 
