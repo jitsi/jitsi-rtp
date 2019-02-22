@@ -28,7 +28,7 @@ import java.util.TreeMap
  * Map the tcc sequence number to the timestamp at which that packet
  * was received
  */
-class PacketMap : TreeMap<Int, Long>(RtpUtils.rtpSeqNumComparator) {
+class PacketMap : TreeMap<Int, Long>(RtpUtils.rtpSeqNumComparator), Cloneable {
     // Only does TwoBitPacketStatusSymbols since that's all we use
     fun getStatusSymbol(tccSeqNum: Int, referenceTime: Long): PacketStatusSymbol {
         val deltaMs = getDeltaMs(tccSeqNum, referenceTime) ?: return TwoBitPacketStatusSymbol.NOT_RECEIVED
@@ -54,6 +54,12 @@ class PacketMap : TreeMap<Int, Long>(RtpUtils.rtpSeqNumComparator) {
         }
 //        println("packet $tccSeqNum has delta $deltaMs (ts $timestamp, prev ts $previousTimestamp)")
         return deltaMs.toDouble()
+    }
+
+    override fun clone(): PacketMap {
+        val newMap = PacketMap()
+        newMap.putAll(this)
+        return newMap
     }
 
     /**
@@ -182,6 +188,10 @@ class Tcc(
             println("tcc detected size: ${this.sizeBytes}, buffer capacity: ${buf.capacity()}")
             throw e
         }
+    }
+
+    public override fun clone(): Tcc {
+        return Tcc(feedbackPacketCount, referenceTimeMs, packetInfo.clone())
     }
 
     companion object {

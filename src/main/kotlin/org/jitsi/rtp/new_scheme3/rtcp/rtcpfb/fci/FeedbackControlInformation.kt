@@ -18,4 +18,4 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
 import org.jitsi.rtp.new_scheme3.SerializableData
 
-abstract class FeedbackControlInformation : SerializableData()
+abstract class FeedbackControlInformation : SerializableData(), Cloneable
