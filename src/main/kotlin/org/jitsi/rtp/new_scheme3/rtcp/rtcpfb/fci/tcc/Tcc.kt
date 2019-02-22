@@ -213,9 +213,7 @@ class Tcc(
          * How far into the FCI block the packet chunks start
          */
         private const val PACKET_CHUNK_OFFSET = 8
-        /**
-         * [buf]'s current position should be at the start of the FCI block
-         */
+
         fun fromBuffer(buf: ByteBuffer): Tcc {
             val feedbackPacketCount = getFeedbackPacketCount(buf)
             val referenceTimeMs = getReferenceTimeMs(buf)
@@ -274,7 +272,7 @@ class Tcc(
             var numPacketStatusProcessed = 0
             var currOffset = 0
             while (numPacketStatusProcessed < packetStatusCount) {
-                val packetChunkBuf = packetStatusBuf.subBuffer(currOffset)
+                val packetChunkBuf = packetStatusBuf.subBuffer(currOffset, PacketStatusChunk.SIZE_BYTES)
                 val packetStatusChunk = PacketStatusChunk.parse(packetChunkBuf)
                 packetStatusChunk.forEach { packetStatus ->
                     if (numPacketStatusProcessed >= packetStatusCount) {
@@ -309,6 +307,8 @@ class Tcc(
             val baseSeqNum = getBaseSeqNum(buf)
             val packetStatusCount = getPacketStatusCount(buf)
             val referenceTimeMs = getReferenceTimeMs(buf)
+            // Increment buf's position to the start of the packet chunks
+            buf.incrementPosition(Tcc.PACKET_CHUNK_OFFSET)
 
             val (packetStatuses, packetDeltas, bytesRead) =
                 getPacketChunksAndDeltas(buf.subBuffer(buf.position()), packetStatusCount)
@@ -328,7 +328,7 @@ class Tcc(
                 }
                 packetInfo[seqNum] = timestamp
             }
-            buf.incrementPosition(PACKET_CHUNK_OFFSET + bytesRead)
+            buf.incrementPosition(bytesRead)
             return packetInfo
         }
 

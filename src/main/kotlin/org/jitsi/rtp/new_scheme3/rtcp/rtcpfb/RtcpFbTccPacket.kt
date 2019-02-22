@@ -16,6 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
+import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc.Tcc
 import java.nio.ByteBuffer
@@ -74,10 +76,19 @@ class RtcpFbTccPacket(
         fun fromBuffer(buf: ByteBuffer): RtcpFbTccPacket {
             val header = RtcpHeader.create(buf)
             val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
-            val fci = Tcc.fromBuffer(buf)
-            if (header.hasPadding) {
+            // TCC FCI's parse wants the buffer to start at the beginning of
+            // the FCI block, so create a wrapper buffer for it to make
+            // that the case
+            val fciBuf = buf.subBuffer(buf.position())
+            val fci = Tcc.fromBuffer(fciBuf)
+            // Increment buf's position by however much was parsed from fciBu
+            buf.incrementPosition(fciBuf.position())
+            //NOTE(brian): in my pcap replays I'm seeing instances
+            // of TCC packets with padding without the padding bit
+            // being set in the header
+//            if (header.hasPadding) {
                 consumePadding(buf)
-            }
+//            }
 
             return RtcpFbTccPacket(header, mediaSourceSsrc, fci, buf)
         }
