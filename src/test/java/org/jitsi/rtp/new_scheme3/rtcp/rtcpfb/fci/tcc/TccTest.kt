@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
 import io.kotlintest.IsolationMode
 import io.kotlintest.fail
+import io.kotlintest.matchers.numerics.shouldBeGreaterThan
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
@@ -151,201 +152,93 @@ internal class TccTest : ShouldSpec() {
     }
 
     init {
-        "TCC FCI" {
-            "Parsing a TCC FCI from a buffer" {
-                "with one bit and two bit symbols" {
-                    val tcc = Tcc.fromBuffer(fci)
-                    should("parse the values correctly") {
-                        // Based on the values in the packet above
-                        tcc.referenceTimeMs shouldBe 174179328L
-                        tcc.feedbackPacketCount shouldBe 1
-                        // 5929 total packet statuses
-                        tcc.numPackets shouldBe 5929
-                        // We should have 14 deltas
-                        getNumDeltasInTcc(tcc) shouldBe 14
-                    }
-                    should("leave the buffer's position after the parsed data") {
-                        fci.position() shouldBe fci.limit()
-                    }
+        "Parsing a TCC FCI from a buffer" {
+            "with one bit and two bit symbols" {
+                val tcc = Tcc.fromBuffer(fci)
+                should("parse the values correctly") {
+                    // Based on the values in the packet above
+                    tcc.referenceTimeMs shouldBe 174179328L
+                    tcc.feedbackPacketCount shouldBe 1
+                    // 5929 total packet statuses
+                    tcc.numPackets shouldBe 5929
+                    // We should have 14 deltas
+                    getNumDeltasInTcc(tcc) shouldBe 14
                 }
-                "with all 2 bit symbols" {
-                    val tcc = Tcc.fromBuffer(fciAll2BitVectorChunks)
-                    val buf = tcc.getBuffer()
-                    should("write the data to the buffer correctly") {
-                        buf should haveSameContentAs(fciAll2BitVectorChunks)
-                    }
-                }
-                "with a negative delta" { // has a negative delta
-                    val b = ByteBuffer.wrap(byteArrayOf(
-                        0x00.toByte(), 0x0C.toByte(), 0x00.toByte(), 0xEC.toByte(),
-                        0x15.toByte(), 0xF8.toByte(), 0xF7.toByte(), 0x00.toByte(),
-                        0xBF.toByte(), 0xFE.toByte(), 0xA5.toByte(), 0x29.toByte(),
-                        0x92.toByte(), 0x4A.toByte(), 0x94.toByte(), 0xF5.toByte(),
-                        0xAC.toByte(), 0xCE.toByte(), 0xB3.toByte(), 0x33.toByte(),
-                        0xAC.toByte(), 0xDA.toByte(), 0xB6.toByte(), 0x9B.toByte(),
-                        0xAD.toByte(), 0x73.toByte(), 0xA7.toByte(), 0x66.toByte(),
-                        0xB5.toByte(), 0xCE.toByte(), 0x9D.toByte(), 0xCE.toByte(),
-                        0xB6.toByte(), 0xED.toByte(), 0x8D.toByte(), 0xCF.toByte(),
-                        0x9C.toByte(), 0xED.toByte(), 0xAE.toByte(), 0x73.toByte(),
-                        0xD1.toByte(), 0x19.toByte(), 0xD4.toByte(), 0x50.toByte(),
-                        0xCC.toByte(), 0x00.toByte(), 0x00.toByte(), 0x04.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x04.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x04.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x04.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x04.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
-                        0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x04.toByte(),
-                        0xFF.toByte(), 0xFC.toByte(), 0x2C.toByte(), 0x04.toByte(),
-                        0x00.toByte(), 0x18.toByte(), 0x00.toByte(), 0x00.toByte()
-                    ))
-                    //TODO (and probably create a simpler buffer to check this)
-                    val t = Tcc.fromBuffer(b)
-                    t.getBuffer()
+                should("leave the buffer's position after the parsed data") {
+                    fci.position() shouldBe fci.limit()
                 }
             }
-            "Creating a TCC packet from values" {
-                "which include a delta value on the border of the symbol size (64ms)" {
-                    val tcc = Tcc(feedbackPacketCount = 136)
-                    val seqNumsAndTimestamps = mapOf(
-                        2585 to 1537916094447,
-                        2586 to 1537916094452,
-                        2587 to 1537916094475,
-                        2588 to 1537916094475,
-                        2589 to 1537916094481,
-                        2590 to 1537916094481,
-                        2591 to 1537916094486,
-                        2592 to 1537916094504,
-                        2593 to 1537916094504,
-                        2594 to 1537916094509,
-                        2595 to 1537916094509,
-                        2596 to 1537916094515,
-                        2597 to 1537916094536,
-                        2598 to 1537916094536,
-                        2599 to 1537916094542,
-                        2600 to 1537916094543,
-                        2601 to 1537916094607,
-                        2602 to 1537916094607,
-                        2603 to 1537916094613,
-                        2604 to 1537916094614
-                    )
-                    seqNumsAndTimestamps.forEach { seqNum, ts ->
-                        tcc.addPacket(seqNum, ts)
-                    }
-                    should("serialize correctly") {
-                        // We know parsing from a buffer works, so we test serialization by parsing it again and
-                        //  comparing.
+            "with all 2 bit symbols" {
+                val tcc = Tcc.fromBuffer(fciAll2BitVectorChunks)
+                val buf = tcc.getBuffer()
+                should("write the data to the buffer correctly") {
+                    buf should haveSameContentAs(fciAll2BitVectorChunks)
+                }
+            }
+        }
+        "Creating a TCC FCI from values" {
+            "which include a delta value on the border of the symbol size (64ms)" {
+                val tcc = Tcc(feedbackPacketCount = 136)
+                val seqNumsAndTimestamps = mapOf(
+                    2585 to 1537916094447,
+                    2586 to 1537916094452,
+                    2587 to 1537916094475,
+                    2588 to 1537916094475,
+                    2589 to 1537916094481,
+                    2590 to 1537916094481,
+                    2591 to 1537916094486,
+                    2592 to 1537916094504,
+                    2593 to 1537916094504,
+                    2594 to 1537916094509,
+                    2595 to 1537916094509,
+                    2596 to 1537916094515,
+                    2597 to 1537916094536,
+                    2598 to 1537916094536,
+                    2599 to 1537916094542,
+                    2600 to 1537916094543,
+                    2601 to 1537916094607,
+                    2602 to 1537916094607,
+                    2603 to 1537916094613,
+                    2604 to 1537916094614
+                )
+                seqNumsAndTimestamps.forEach { seqNum, ts ->
+                    tcc.addPacket(seqNum, ts)
+                }
+                "and then serializing it" {
+                    "by asking it for a buffer" {
                         val buf = tcc.getBuffer()
-                        val parsedTcc = Tcc.fromBuffer(buf)
-                        parsedTcc.numPackets shouldBe seqNumsAndTimestamps.size
-                        parsedTcc.forEach { seqNum, ts ->
-                            //TODO: it isn't this easy, as the timestamps are masked and shifted so they won't
-                            // match the originals, but the deltas should (roughly) match?
-//                            seqNumsAndTimestamps.shouldContain(seqNum, ts)
+                        should("serialize the data correctly") {
+                            //TODO: hard to check
+                        }
+                    }
+                    "to an existing buffer" {
+                        val existingBuf = ByteBuffer.allocate(1024)
+                        existingBuf.position(8)
+                        tcc.serializeTo(existingBuf)
+                        should("write the data to the correct place") {
+                            //TODO: again, hard to verify, but we can at least make sure
+                            // it didn't write to the first 8 bytes
+                            for (i in 0..7) { existingBuf.get(i) shouldBe 0x00.toByte() }
+                        }
+                        should("leave the buffer's position at the end of the written data") {
+                            existingBuf.position() shouldBe (8 + tcc.sizeBytes)
                         }
                     }
                 }
             }
-        }
-        "PacketStatusChunk" {
-            "parsing a vector chunk with 1 bit symbols" {
-                // vector, 1-bit symbols, 1xR + 13xNR, 14 pkts (1 received)
-                val chunkData = ByteBuffer.wrap(byteArrayOf(0xa0.toByte(), 0x00.toByte()))
-                val chunk = PacketStatusChunk.parse(chunkData)
-                should("parse the values correctly") {
-                    chunk.getChunkType() shouldBe PacketStatusChunkType.STATUS_VECTOR_CHUNK
-                    chunk.numPacketStatuses() shouldBe 14
-                    chunk.forEachIndexed { index, status ->
-                        when (index) {
-                            0 -> status shouldBe OneBitPacketStatusSymbol.RECEIVED
-                            in 1..13 -> status shouldBe OneBitPacketStatusSymbol.NOT_RECEIVED
-                            else -> fail("Unexpected packet status, index: $index")
-                        }
-                    }
-                }
-            }
-            "parsing a vector chunk with 2 bit symbols" {
-                // vector, 2-bit symbols, 1x large delta + 6x small delta, 7 packets
-                // (7 received)
-                val chunkData = ByteBuffer.wrap(byteArrayOf(0xe5.toByte(), 0x55.toByte()))
-                val chunk = PacketStatusChunk.parse(chunkData)
-                should("parse the values correctly") {
-                    chunk.getChunkType() shouldBe PacketStatusChunkType.STATUS_VECTOR_CHUNK
-                    chunk.numPacketStatuses() shouldBe 7
-                    chunk.forEachIndexed { index, status ->
-                        when (index) {
-                            0 -> status shouldBe TwoBitPacketStatusSymbol.RECEIVED_LARGE_OR_NEGATIVE_DELTA
-                            in 1..6 -> status shouldBe TwoBitPacketStatusSymbol.RECEIVED_SMALL_DELTA
-                            else -> fail("Unexpected packet status, index: $index")
-                        }
-                    }
-                }
-            }
-            "parsing a vector chunk with 1 bit symbols and 'extra' statuses" {
-                // vector, 1-bit symbols, 3xR + 2NR + 1R + 1NR + 1R [packets over, 6 remaining 0 bits] (5 received)
-                val chunkData = ByteBuffer.wrap(byteArrayOf(0xb9.toByte(), 0x40.toByte()))
-                val chunk = PacketStatusChunk.parse(chunkData)
-                should("parse the values correctly") {
-                    chunk.getChunkType() shouldBe PacketStatusChunkType.STATUS_VECTOR_CHUNK
-                    // Even though there are 'extra' statuses in the last few bits, the PacketStatusChunk
-                    // doesn't know/care about that, so it should parse all of them
-                    chunk.numPacketStatuses() shouldBe 14
-                    chunk.forEachIndexed { index, status ->
-                        when (index) {
-                            in 0..2 -> status shouldBe OneBitPacketStatusSymbol.RECEIVED
-                            3, 4 -> status shouldBe OneBitPacketStatusSymbol.NOT_RECEIVED
-                            5 -> status shouldBe OneBitPacketStatusSymbol.RECEIVED
-                            6 -> status shouldBe OneBitPacketStatusSymbol.NOT_RECEIVED
-                            7 -> status shouldBe OneBitPacketStatusSymbol.RECEIVED
-                            in 8..14 -> Unit
-                            else -> fail("Unexpected packet status, index: $index")
-                        }
-                    }
-                }
-            }
-            "parsing a run length chunk" {
-                val chunkData = ByteBuffer.wrap(byteArrayOf(0x16.toByte(), 0xfe.toByte()))
-                // RLE, not received: 5886
-                val chunk = PacketStatusChunk.parse(chunkData)
-                should("parse the values correctly") {
-                    chunk.getChunkType() shouldBe PacketStatusChunkType.RUN_LENGTH_CHUNK
-                    chunk.numPacketStatuses() shouldBe 5886
-                    chunk.forEach { status ->
-                        status shouldBe TwoBitPacketStatusSymbol.NOT_RECEIVED
-                    }
-                }
-            }
-        }
-        "ReceiveDelta" {
-            "EightBitReceiveDelta" {
+            "bit by bit" {
+                val tcc = Tcc()
+                should("update the size with each change") {
+                    val size1 = tcc.sizeBytes
 
+                    tcc.addPacket(10, 100L)
+                    val size2 = tcc.sizeBytes
+                    size2 shouldBeGreaterThan size1
+
+                    tcc.addPacket(11, 200L)
+                    val size3 = tcc.sizeBytes
+                    size3 shouldBeGreaterThan size2
+                }
             }
         }
     }

@@ -58,6 +58,11 @@ abstract class RtcpFbPacket(
         super.serializeTo(buf)
         buf.putInt(mediaSourceSsrc.toInt())
         fci.serializeTo(buf)
+
+        // TCC packet may require padding, so call addPadding here
+        // to add it if needed.  It should be a no-op for packets
+        // which don't need it
+        addPadding(buf)
     }
 
     companion object {

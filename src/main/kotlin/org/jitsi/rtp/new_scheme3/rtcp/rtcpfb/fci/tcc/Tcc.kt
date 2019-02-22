@@ -113,7 +113,12 @@ class Tcc(
     referenceTimeMs: Long = -1,
     packetInfo: PacketMap = PacketMap()
 ): FeedbackControlInformation() {
-    private var dirty = true
+    /**
+     * Because calculating the size of the TCC FCI is complicated, we
+     * use a dirty flag to denote when something has changed (and the
+     * size value should be recalculated)
+     */
+    private var sizeNeedsToBeRecalculated = true
     private var _sizeBytes: Int = -1
 
     var feedbackPacketCount: Int = feedbackPacketCount
@@ -130,7 +135,7 @@ class Tcc(
 
     override val sizeBytes: Int
         get() {
-            if (dirty) {
+            if (sizeNeedsToBeRecalculated) {
                 try {
                     val deltaBlocksSize = packetInfo.keys
                             .map { tccSeqNum -> packetInfo.getStatusSymbol(tccSeqNum, referenceTimeMs) }
@@ -151,7 +156,7 @@ class Tcc(
                         paddingSize++
                     }
                     _sizeBytes = dataSize + paddingSize
-                    dirty = false
+                    sizeNeedsToBeRecalculated = false
                 } catch (e: Exception) {
 //                    println("Error getting size of TCC fci: $e, buffer:\n${buf?.toHex()}")
                     throw e
@@ -166,7 +171,7 @@ class Tcc(
             this.referenceTimeMs = timestamp
         }
         packetInfo[seqNum] = timestamp
-        dirty = true
+        sizeNeedsToBeRecalculated = true
     }
 
     /**
@@ -175,23 +180,26 @@ class Tcc(
     fun forEach(action: (Int, Long) -> Unit) = packetInfo.forEach(action)
 
     override fun serializeTo(buf: ByteBuffer) {
+        // The methods below use aboslute positions to write the data, assuming
+        // that buf's position 0 is the start of the FCI block.  Since that may
+        // not be the case, create a temp buffer here which starts at buf's
+        // current position
+        val absBuf = buf.subBuffer(buf.position())
         try {
-            setFeedbackPacketCount(buf, this.feedbackPacketCount)
+            setFeedbackPacketCount(absBuf, this.feedbackPacketCount)
             try {
-                setPacketInfo(buf, this.packetInfo, referenceTimeMs)
+                setPacketInfo(absBuf, this.packetInfo, referenceTimeMs)
             } catch (e: Exception) {
                 println("BRIAN exception setting packet info to buffer: $e, buffer size: ${buf.limit()}, needed size: ${this.sizeBytes}\n" +
                         "the FCI was: $this")
                 throw e
-            }
-            while (buf.position() % 4 != 0) {
-                buf.put(0x00)
             }
         } catch (e: Exception) {
             println("Exception getting tcc buffer: $e")
             println("tcc detected size: ${this.sizeBytes}, buffer capacity: ${buf.capacity()}")
             throw e
         }
+        buf.incrementPosition(sizeBytes)
     }
 
     public override fun clone(): Tcc {

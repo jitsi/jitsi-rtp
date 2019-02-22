@@ -25,7 +25,6 @@ import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 internal class ReceiveDeltaTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
@@ -131,6 +130,9 @@ internal class ReceiveDeltaTest : ShouldSpec() {
                 val eightBitReceiveDelta = EightBitReceiveDelta(buf)
                 should("parse the value correctly") {
                     eightBitReceiveDelta.deltaMs shouldBe 10.0
+                }
+                should("leave the buffer's position after the parsed data") {
+                    buf.position() shouldBe buf.limit()
                 }
             }
         }

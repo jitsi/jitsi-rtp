@@ -20,21 +20,48 @@ import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc.Tcc
 import java.nio.ByteBuffer
 
+/**
+ *
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |V=2|P|  FMT=15 |    PT=205     |           length              |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                     SSRC of packet sender                     |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                      SSRC of media source                     |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      base sequence number     |      packet status count      |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                 reference time                | fb pkt. count |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |          packet chunk         |         packet chunk          |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * .                                                               .
+ * .                                                               .
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |         packet chunk          |  recv delta   |  recv delta   |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * .                                                               .
+ * .                                                               .
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |           recv delta          |  recv delta   | zero padding  |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ */
 class RtcpFbTccPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
-    //TODO(brian): expose tcc fci as read-only except for in modifyFci
-    val fci: Tcc = Tcc(),
+    private val fci: Tcc = Tcc(),
     backingBuffer: ByteBuffer? = null
 ) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
 
     val numPackets: Int get() = fci.numPackets
 
     fun modifyFci(block: Tcc.() -> Unit) {
-        //TODO: dirty
         with (fci) {
             block()
         }
+        payloadModified()
     }
 
     override fun clone(): RtcpFbTccPacket {
@@ -48,6 +75,9 @@ class RtcpFbTccPacket(
             val header = RtcpHeader.create(buf)
             val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
             val fci = Tcc.fromBuffer(buf)
+            if (header.hasPadding) {
+                consumePadding(buf)
+            }
 
             return RtcpFbTccPacket(header, mediaSourceSsrc, fci, buf)
         }
