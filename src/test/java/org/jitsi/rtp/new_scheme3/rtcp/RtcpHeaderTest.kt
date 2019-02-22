@@ -26,6 +26,24 @@ import java.nio.ByteBuffer
 internal class RtcpHeaderTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
+    companion object {
+        fun rtcpHeaderEquals(left: ImmutableRtcpHeader?, right: ImmutableRtcpHeader?): Boolean {
+            if (left === right) {
+                return true
+            }
+            if (left == null || right == null) {
+                return false
+            }
+            return (left.sizeBytes == right.sizeBytes &&
+                    left.version == right.version &&
+                    left.hasPadding == right.hasPadding &&
+                    left.reportCount == right.reportCount &&
+                    left.packetType == right.packetType &&
+                    left.length == right.length &&
+                    left.senderSsrc == right.senderSsrc)
+        }
+    }
+
     private val headerBuf = with(ByteBuffer.allocate(8)) {
         val bitBuffer = BitBuffer(this)
         bitBuffer.putBits(2.toByte(), 2) // version

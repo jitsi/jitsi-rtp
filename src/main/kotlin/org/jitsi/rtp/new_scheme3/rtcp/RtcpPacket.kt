@@ -18,6 +18,7 @@ package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -91,8 +92,7 @@ abstract class RtcpPacket(
     }
 
     override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
-        buf.position(_header.sizeBytes)
+        header.serializeTo(buf)
     }
 
     companion object {

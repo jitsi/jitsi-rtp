@@ -17,9 +17,9 @@
 package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.SerializableData
-import unsigned.toULong
 import java.nio.ByteBuffer
 import java.util.Objects
 
@@ -111,25 +111,10 @@ class SenderInfo(
         get() = ntpTimestamp.and(0x0000FFFFFFFF0000).shr(16)
 
     override fun serializeTo(buf: ByteBuffer) {
-        //these use absolute positions which isn't what we want here
-        //TODO: change helpers to not use absolute positioning
         buf.putLong(ntpTimestamp)
         buf.putInt(rtpTimestamp.toInt())
         buf.putInt(sendersPacketCount.toInt())
         buf.putInt(sendersOctetCount.toInt())
-    }
-
-    override fun getBuffer(): ByteBuffer {
-        TODO()
-//        if (buf == null) {
-//            buf = ByteBuffer.allocate(SenderInfo.SIZE_BYTES)
-//        }
-//        SenderInfo.setNtpTimestamp(buf!!, ntpTimestamp)
-//        SenderInfo.setRtpTimestamp(buf!!, rtpTimestamp)
-//        SenderInfo.setSendersPacketCount(buf!!, sendersPacketCount)
-//        SenderInfo.setSendersOctetCount(buf!!, sendersOctetCount)
-//
-//        return buf!!
     }
 
     public override fun clone(): SenderInfo =
@@ -169,23 +154,12 @@ class SenderInfo(
         const val SIZE_BYTES = 20
         fun fromBuffer(buf: ByteBuffer): SenderInfo {
             val ntpTimestamp = buf.getLong()
-            val rtpTimestamp = buf.getInt().toLong()
-            val sendersPacketCount = buf.getInt().toLong()
-            val sendersOctetCount = buf.getInt().toLong()
+            val rtpTimestamp = buf.getInt().toPositiveLong()
+            val sendersPacketCount = buf.getInt().toPositiveLong()
+            val sendersOctetCount = buf.getInt().toPositiveLong()
 
             return SenderInfo(ntpTimestamp, rtpTimestamp, sendersPacketCount, sendersOctetCount)
         }
-        fun getNtpTimestamp(buf: ByteBuffer): Long = buf.getLong(0)
-        fun setNtpTimestamp(buf: ByteBuffer, ntpTimestamp: Long) { buf.putLong(0, ntpTimestamp) }
-
-        fun getRtpTimestamp(buf: ByteBuffer): Long = buf.getInt(8).toULong()
-        fun setRtpTimestamp(buf: ByteBuffer, rtpTimestamp: Long) { buf.putInt(8, rtpTimestamp.toInt()) }
-
-        fun getSendersPacketCount(buf: ByteBuffer): Long = buf.getInt(12).toULong()
-        fun setSendersPacketCount(buf: ByteBuffer, sendersPacketCount: Long) { buf.putInt(12, sendersPacketCount.toInt()) }
-
-        fun getSendersOctetCount(buf: ByteBuffer): Long = buf.getInt(16).toULong()
-        fun setSendersOctetCount(buf: ByteBuffer, sendersOctetCount: Long) { buf.putInt(16, sendersOctetCount.toInt()) }
     }
 }
 
@@ -285,15 +259,9 @@ class RtcpSrPacket(
          * [buf] should point to the start of the SR packet (i.e. the start of the header)
          */
         fun getReportBlocks(buf: ByteBuffer, numReportBlocks: Int): MutableList<RtcpReportBlock> {
-            val reportBlocks = mutableListOf<RtcpReportBlock>()
-            val reportBlockStartPos = RtcpHeader.SIZE_BYTES + SenderInfo.SIZE_BYTES
-            repeat (numReportBlocks) { reportBlockIndex ->
-                val currReportBlockBuf =
-                    buf.subBuffer(reportBlockStartPos + (reportBlockIndex * RtcpReportBlock.SIZE_BYTES))
-                val reportBlock = RtcpReportBlock.fromBuffer(currReportBlockBuf)
-                reportBlocks.add(reportBlock)
-            }
-            return reportBlocks
+            return (1..numReportBlocks)
+                    .map { RtcpReportBlock.fromBuffer(buf) }
+                    .toMutableList()
         }
 
         /**
@@ -309,7 +277,7 @@ class RtcpSrPacket(
 
         fun fromBuffer(buf: ByteBuffer): RtcpSrPacket {
             val header = RtcpHeader.create(buf)
-            val senderInfo = getSenderInfo(buf)
+            val senderInfo = SenderInfo.fromBuffer(buf)
             val reportBlocks = getReportBlocks(buf, header.reportCount)
             return RtcpSrPacket(header, senderInfo, reportBlocks, buf)
         }
