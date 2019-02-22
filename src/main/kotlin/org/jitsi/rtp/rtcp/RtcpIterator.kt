@@ -47,7 +47,7 @@ class RtcpIterator(buf: ByteBuffer) {
             return packet
         } catch (e: Exception) {
             println("Exception parsing packet in RTCPIterator: $e.  sub buf limit: ${subBuf.limit()}\n" +
-                    "Entire packet buffer (limit ${buf.limit()} is:\n" + buf.toHex())
+                    "Entire packet buffer (limit ${buf.limit()}) is:\n" + buf.toHex())
             throw e
         }
     }

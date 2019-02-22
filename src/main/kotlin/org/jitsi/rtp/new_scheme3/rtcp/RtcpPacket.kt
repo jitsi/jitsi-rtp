@@ -34,7 +34,7 @@ class RtcpPacketForCrypto(
     fun getPayload(): ByteBuffer {
         // We assume that if the payload is retrieved that it's being modified
         payloadModified()
-        return payload
+        return payload.duplicate()
     }
 
     override val sizeBytes: Int
@@ -57,15 +57,6 @@ abstract class RtcpPacket(
 ) : Packet() {
     private var dirty: Boolean = true
 
-//    protected val _payload: ByteBuffer
-//        get() = getBuffer().subBuffer(_header.sizeBytes)
-
-    /**
-     * The serialized version of everything else in this [RtcpPacket] after the
-     * [RtcpHeader]
-     */
-//    val payload: ByteBuffer get() = _payload.duplicate().asReadOnlyBuffer()
-
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
     //TODO(brian): it'd be nice to not expose header data here.  maybe
@@ -79,13 +70,6 @@ abstract class RtcpPacket(
         return RtcpPacketForCrypto(_header, getBuffer().subBuffer(_header.sizeBytes), backingBuffer)
     }
 
-//    fun modifyPayload(block: ByteBuffer.() -> Unit) {
-//        with(_payload) {
-//            block()
-//        }
-//        dirty = true
-//    }
-//
     protected fun payloadModified() {
         dirty = true
     }
@@ -113,7 +97,7 @@ abstract class RtcpPacket(
 
     companion object {
         fun parse(buf: ByteBuffer): RtcpPacket {
-            val packetType = org.jitsi.rtp.rtcp.RtcpHeader.getPacketType(buf)
+            val packetType = RtcpHeaderData.getPacketType(buf)
             return when (packetType) {
                 RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
                 RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)

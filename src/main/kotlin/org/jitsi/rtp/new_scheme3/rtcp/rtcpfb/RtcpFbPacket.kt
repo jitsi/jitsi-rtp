@@ -54,8 +54,7 @@ abstract class RtcpFbPacket(
     var mediaSourceSsrc: Long by SerializedField(mediaSourceSsrc, ::dirty)
 
     final override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
-        buf.putInt(mediaSourceSsrc.toInt())
+        super.serializeTo(buf)
         fci.serializeTo(buf)
     }
 
