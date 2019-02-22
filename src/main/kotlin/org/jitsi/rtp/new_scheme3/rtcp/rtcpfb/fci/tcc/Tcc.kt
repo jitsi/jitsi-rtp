@@ -20,6 +20,7 @@ import org.jitsi.rtp.extensions.get3Bytes
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.incrementPosition
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import org.jitsi.rtp.util.RtpUtils
 import java.nio.ByteBuffer
@@ -226,13 +227,13 @@ class Tcc(
         /**
          * [buf] should start at the beginning of the FCI block
          */
-        fun getBaseSeqNum(buf: ByteBuffer): Int = buf.getShort(0).toInt()
+        fun getBaseSeqNum(buf: ByteBuffer): Int = buf.getShort(0).toPositiveInt()
 
         fun setBaseSeqNum(buf: ByteBuffer, baseSeqNum: Int) {
             buf.putShort(0, baseSeqNum.toShort())
         }
 
-        fun getPacketStatusCount(buf: ByteBuffer): Int = buf.getShort(2).toInt()
+        fun getPacketStatusCount(buf: ByteBuffer): Int = buf.getShort(2).toPositiveInt()
         fun setPacketStatusCount(buf: ByteBuffer, packetStatusCount: Int) {
             buf.putShort(2, packetStatusCount.toShort())
         }
@@ -253,7 +254,7 @@ class Tcc(
             buf.put3Bytes(4, (referenceTime.toInt() shr 6) and 0xFFFFFF)
         }
 
-        fun getFeedbackPacketCount(buf: ByteBuffer): Int = buf.get(7).toInt()
+        fun getFeedbackPacketCount(buf: ByteBuffer): Int = buf.get(7).toPositiveInt()
         fun setFeedbackPacketCount(buf: ByteBuffer, feedbackPacketCount: Int) {
             buf.put(7, feedbackPacketCount.toByte())
         }
@@ -310,7 +311,7 @@ class Tcc(
             val referenceTimeMs = getReferenceTimeMs(buf)
 
             val (packetStatuses, packetDeltas, bytesRead) =
-                getPacketChunksAndDeltas(buf.subBuffer(PACKET_CHUNK_OFFSET), packetStatusCount)
+                getPacketChunksAndDeltas(buf.subBuffer(buf.position()), packetStatusCount)
 
             val packetInfo = PacketMap()
             val deltaIter = packetDeltas.iterator()
