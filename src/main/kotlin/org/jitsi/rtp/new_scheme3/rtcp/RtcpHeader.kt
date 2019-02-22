@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -78,6 +79,7 @@ class RtcpHeader(
         const val SIZE_BYTES = RtcpHeaderData.SIZE_BYTES
         fun create(buf: ByteBuffer): RtcpHeader {
             val headerData = RtcpHeaderData.create(buf)
+            buf.incrementPosition(RtcpHeader.SIZE_BYTES)
             return RtcpHeader(headerData)
         }
 

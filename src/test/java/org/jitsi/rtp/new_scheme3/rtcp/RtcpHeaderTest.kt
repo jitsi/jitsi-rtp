@@ -38,54 +38,56 @@ internal class RtcpHeaderTest : ShouldSpec() {
     }
 
     init {
-//        "creation" {
-//            "from a buffer" {
-//                val header = RtcpHeader.create(headerBuf)
-//                should("parse the values correctly") {
-//                    header.version shouldBe 2
-//                    header.hasPadding shouldBe false
-//                    header.reportCount shouldBe 1
-//                    header.packetType shouldBe 200
-//                    header.length shouldBe 0xFFFF
-//                    header.senderSsrc shouldBe 0xFFFFFFFF
-//                }
-//            }
-//            "from a complete set of values" {
-//                val header = RtcpHeader(
-//                    version = 2,
-//                    hasPadding = false,
-//                    reportCount = 1,
-//                    packetType = 200,
-//                    length = 0xFFFF,
-//                    senderSsrc = 0xFFFFFFFF
-//                )
-//                should("set everything correctly") {
-//                    header.version shouldBe 2
-//                    header.hasPadding shouldBe false
-//                    header.reportCount shouldBe 1
-//                    header.packetType shouldBe 200
-//                    header.length shouldBe 0xFFFF
-//                    header.senderSsrc shouldBe 0xFFFFFFFF
-//                }
-//            }
-//            "passing a subset of values in the constructor" {
-//                val header = RtcpHeader(senderSsrc = 12345L)
-//                should("set the passed values") {
-//                    header.senderSsrc shouldBe 12345L
-//                }
-//
-//                should("set the default version") {
-//                    header.version shouldBe 2
-//
-//                }
-//            }
-//        }
-//        "serialization" {
-//            val header = RtcpHeader(headerBuf)
-//            val newBuf = header.getBuffer()
-//            should("write the correct data to the buffer") {
-//                newBuf.rewind() shouldBe headerBuf.rewind()
-//            }
-//        }
+        "creation" {
+            "from a buffer" {
+                val header = RtcpHeader.create(headerBuf)
+                should("parse the values correctly") {
+                    header.version shouldBe 2
+                    header.hasPadding shouldBe false
+                    header.reportCount shouldBe 1
+                    header.packetType shouldBe 200
+                    header.length shouldBe 0xFFFF
+                    header.senderSsrc shouldBe 0xFFFFFFFF
+                }
+                should("leave the buffer's position after the parsed data") {
+                    headerBuf.position() shouldBe RtcpHeader.SIZE_BYTES
+                }
+            }
+            "from a complete set of values" {
+                val header = RtcpHeader.fromValues(
+                    version = 2,
+                    hasPadding = false,
+                    reportCount = 1,
+                    packetType = 200,
+                    length = 0xFFFF,
+                    senderSsrc = 0xFFFFFFFF
+                )
+                should("set everything correctly") {
+                    header.version shouldBe 2
+                    header.hasPadding shouldBe false
+                    header.reportCount shouldBe 1
+                    header.packetType shouldBe 200
+                    header.length shouldBe 0xFFFF
+                    header.senderSsrc shouldBe 0xFFFFFFFF
+                }
+            }
+            "passing a subset of values in the constructor" {
+                val header = RtcpHeader.fromValues(senderSsrc = 12345L)
+                should("set the passed values") {
+                    header.senderSsrc shouldBe 12345L
+                }
+
+                should("set the default version") {
+                    header.version shouldBe 2
+                }
+            }
+        }
+        "serialization" {
+            val header = RtcpHeader.create(headerBuf)
+            val newBuf = header.getBuffer()
+            should("write the correct data to the buffer") {
+                newBuf.rewind() shouldBe headerBuf.rewind()
+            }
+        }
     }
 }
