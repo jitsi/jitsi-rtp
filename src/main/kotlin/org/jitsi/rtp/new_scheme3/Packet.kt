@@ -53,7 +53,6 @@ abstract class Packet : SerializableData(), kotlin.Cloneable {
     public abstract override fun clone(): Packet
 }
 
-@ExperimentalUnsignedTypes
 open class UnparsedPacket(
     private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : Packet() {
@@ -70,7 +69,6 @@ open class UnparsedPacket(
     }
 }
 
-@ExperimentalUnsignedTypes
 class DtlsProtocolPacket(
     buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : UnparsedPacket(buf)

@@ -31,7 +31,6 @@ class RtxPacket internal constructor(
     backingBuffer: ByteBuffer? = null
 ) : RtpPacket(header, payload, backingBuffer) {
 
-    @ExperimentalUnsignedTypes
     companion object {
         fun fromRtpPacket(rtpPacket: RtpPacket): RtxPacket {
             return rtpPacket.toOtherRtpPacketType { rtpHeader, payload, backingBuffer ->

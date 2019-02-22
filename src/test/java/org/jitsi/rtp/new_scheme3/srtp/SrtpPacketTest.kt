@@ -21,7 +21,6 @@ import io.kotlintest.specs.BehaviorSpec
 import org.jitsi.rtp.new_scheme3.rtp.RtpHeader
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 internal class SrtpPacketTest : BehaviorSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 

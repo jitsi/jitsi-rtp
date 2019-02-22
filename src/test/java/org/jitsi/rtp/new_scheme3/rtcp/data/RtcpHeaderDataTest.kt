@@ -23,7 +23,6 @@ import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.util.BitBuffer
 import java.nio.ByteBuffer
 
-@ExperimentalUnsignedTypes
 internal class RtcpHeaderDataTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 

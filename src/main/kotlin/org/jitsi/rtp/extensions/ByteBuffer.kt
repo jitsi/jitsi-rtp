@@ -150,10 +150,6 @@ fun ByteBuffer.subBuffer(startPosition: Int): ByteBuffer {
     return (duplicate().position(startPosition) as ByteBuffer).slice()
 }
 
-@ExperimentalUnsignedTypes
-val Collection<*>.usize
-    get(): UInt = size.toUInt()
-
 /**
  * Put [buf] into this buffer starting at [index]
  */
