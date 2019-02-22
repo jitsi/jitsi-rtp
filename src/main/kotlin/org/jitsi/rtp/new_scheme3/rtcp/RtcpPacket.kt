@@ -139,8 +139,10 @@ abstract class RtcpPacket(
 
     companion object {
         fun parse(buf: ByteBuffer): RtcpPacket {
+            val bufStartPosition = buf.position()
             val packetType = RtcpHeaderData.getPacketType(buf)
-            return when (packetType) {
+            val packetLengthBytes = (RtcpHeaderData.getLength(buf) + 1) * 4
+            val packet = when (packetType) {
                 RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
                 RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)
 //                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
@@ -148,6 +150,10 @@ abstract class RtcpPacket(
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
             }
+            if (buf.position() != bufStartPosition + packetLengthBytes) {
+                throw Exception("Didn't parse until the end of the RTCP packet!")
+            }
+            return packet
         }
         fun addPadding(buf: ByteBuffer) {
             while (buf.position() % 4 != 0) {
