@@ -19,6 +19,7 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 import org.jitsi.rtp.extensions.get3Bytes
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import org.jitsi.rtp.util.RtpUtils
 import java.nio.ByteBuffer
@@ -143,6 +144,9 @@ class Tcc(
                             ((packetInfo.size + 6) / 7) * PacketStatusChunk.SIZE_BYTES +
                             deltaBlocksSize
                     var paddingSize = 0
+                    //TODO: should we worry about padding here?  this is the padding at the
+                    // entire RTCP packet level, would be nice if we could handle it there,
+                    // but i think that would involve changing the way we implement sizeBytes
                     while ((dataSize + paddingSize) % 4 != 0) {
                         paddingSize++
                     }
@@ -196,6 +200,13 @@ class Tcc(
 
     companion object {
         const val FMT = 15
+        /**
+         * How far into the FCI block the packet chunks start
+         */
+        private const val PACKET_CHUNK_OFFSET = 8
+        /**
+         * [buf]'s current position should be at the start of the FCI block
+         */
         fun fromBuffer(buf: ByteBuffer): Tcc {
             val feedbackPacketCount = getFeedbackPacketCount(buf)
             val referenceTimeMs = getReferenceTimeMs(buf)
@@ -241,13 +252,15 @@ class Tcc(
 
         /**
          * Given a buffer which starts at the beginning of the packet status chunks and the
-         * packet status count, return a [Pair] containing 1) the list of [PacketStatusChunk]s
-         * and 2) the list of [ReceiveDelta]s
+         * packet status count, return a [Triple] containing:
+         * 1) the list of [PacketStatusChunk]s
+         * 2) the list of [ReceiveDelta]s
+         * 3) the amount of bytes processed in the buffer
          */
         private fun getPacketChunksAndDeltas(
             packetStatusBuf: ByteBuffer,
             packetStatusCount: Int
-        ): Pair<List<PacketStatusSymbol>, List<ReceiveDelta>> {
+        ): Triple<List<PacketStatusSymbol>, List<ReceiveDelta>, Int> {
             val packetStatuses = mutableListOf<PacketStatusSymbol>()
             var numPacketStatusProcessed = 0
             var currOffset = 0
@@ -275,7 +288,7 @@ class Tcc(
                 }
             }
 
-            return Pair(packetStatuses, packetDeltas)
+            return Triple(packetStatuses, packetDeltas, currOffset)
         }
 
         /**
@@ -288,8 +301,8 @@ class Tcc(
             val packetStatusCount = getPacketStatusCount(buf)
             val referenceTimeMs = getReferenceTimeMs(buf)
 
-            val (packetStatuses, packetDeltas) =
-                getPacketChunksAndDeltas(buf.subBuffer(8), packetStatusCount)
+            val (packetStatuses, packetDeltas, bytesRead) =
+                getPacketChunksAndDeltas(buf.subBuffer(PACKET_CHUNK_OFFSET), packetStatusCount)
 
             val packetInfo = PacketMap()
             val deltaIter = packetDeltas.iterator()
@@ -306,6 +319,7 @@ class Tcc(
                 }
                 packetInfo[seqNum] = timestamp
             }
+            buf.incrementPosition(PACKET_CHUNK_OFFSET + bytesRead)
             return packetInfo
         }
 

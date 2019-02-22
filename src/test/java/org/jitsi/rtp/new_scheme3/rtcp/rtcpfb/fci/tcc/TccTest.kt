@@ -20,39 +20,43 @@ import io.kotlintest.IsolationMode
 import io.kotlintest.fail
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
+import org.jitsi.rtp.extensions.compareToFromBeginning
+import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 
 internal class TccTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val fci = ByteBuffer.wrap(byteArrayOf(
+    private val fci = byteBufferOf(
         // base=4, pkt status count=0x1729=5929
-        0x00.toByte(), 0x04.toByte(), 0x17.toByte(), 0x29.toByte(),
+        0x00, 0x04, 0x17, 0x29,
         // ref time=0x298710 (174179328L ms), fbPktCount=1
-        0x29.toByte(), 0x87.toByte(), 0x10.toByte(), 0x01.toByte(),
+        0x29, 0x87, 0x10, 0x01,
 
         // Chunks:
         // vector, 1-bit symbols, 1xR + 13xNR, 14 pkts (1 received)
-        0xa0.toByte(), 0x00.toByte(),
+        0xa0, 0x00,
         // vector, 1-bit symbols, 1xR + 13xNR, 14 pkts (1 received)
-        0xa0.toByte(), 0x00.toByte(),
+        0xa0, 0x00,
         // RLE, not received: 5886
-        0x16.toByte(), 0xfe.toByte(),
+        0x16, 0xfe,
         // vector, 2-bit symbols, 1x large delta + 6x small delta, 7 packets
         // (7 received)
-        0xe5.toByte(), 0x55.toByte(),
+        0xe5, 0x55,
         // vector, 1-bit symbols, 3xR + 2NR + 1R + 1NR + 1R [packets over, 6 remaining 0 bits]
         // (5 received)
-        0xb9.toByte(), 0x40.toByte(),
+        0xb9, 0x40,
 
         // deltas: Sx2, L, Sx11 (15 bytes)
-        0x2c.toByte(), 0x78.toByte(),
-        // the large one
-        0xff.toByte(), 0x64.toByte(),
-        0x04.toByte(), 0x04.toByte(), 0x00.toByte(), 0x00.toByte(),
-        0x04.toByte(), 0x00.toByte(), 0x04.toByte(), 0x04.toByte(),
-        0x00.toByte(), 0x1c.toByte(), 0x34.toByte()
-    ))
+        // 2 small
+        0x2c, 0x78,
+        // 1 large
+        0xff, 0x64,
+        // 11 small
+        0x04, 0x04, 0x00, 0x00,
+        0x04, 0x00, 0x04, 0x04,
+        0x00, 0x1c, 0x34
+    )
 
     private val fciAll2BitVectorChunks = ByteBuffer.wrap(byteArrayOf(
         // base=4, pkt status count=0x1E=30
@@ -149,8 +153,8 @@ internal class TccTest : ShouldSpec() {
         "TCC FCI" {
             "Parsing a TCC FCI from a buffer" {
                 "with one bit and two bit symbols" {
+                    val tcc = Tcc.fromBuffer(fci)
                     should("parse the values correctly") {
-                        val tcc = Tcc.fromBuffer(fci)
                         // Based on the values in the packet above
                         tcc.referenceTimeMs shouldBe 174179328L
                         tcc.feedbackPacketCount shouldBe 1
@@ -159,12 +163,15 @@ internal class TccTest : ShouldSpec() {
                         // We should have 14 deltas
                         getNumDeltasInTcc(tcc) shouldBe 14
                     }
+                    should("leave the buffer's position after the parsed data") {
+                        fci.position() shouldBe fci.limit()
+                    }
                 }
                 "with all 2 bit symbols" {
                     val tcc = Tcc.fromBuffer(fciAll2BitVectorChunks)
                     val buf = tcc.getBuffer()
                     should("write the data to the buffer correctly") {
-                        buf.compareTo(fciAll2BitVectorChunks) shouldBe 0
+                        buf.compareToFromBeginning(fciAll2BitVectorChunks) shouldBe 0
                     }
                 }
                 "with a negative delta" { // has a negative delta
