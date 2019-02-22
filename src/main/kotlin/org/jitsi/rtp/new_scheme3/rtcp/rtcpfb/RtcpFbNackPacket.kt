@@ -23,7 +23,21 @@ import java.nio.ByteBuffer
 
 /**
  * https://tools.ietf.org/html/rfc4585#section-6.2.1
+ *
+ *  0                   1                   2                   3
+ *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |V=2|P|   FMT   |       PT      |          length               |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                  SSRC of packet sender                        |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                  SSRC of media source                         |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |            PID                |             BLP               |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *
  */
+//TODO: can we have multiple NACK FCIs?
 class RtcpFbNackPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
@@ -31,17 +45,17 @@ class RtcpFbNackPacket(
     backingBuffer: ByteBuffer? = null
 ) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
 
-    val missingSeqNums
-        get() = fci.missingSeqNums
+    val missingSeqNums: List<Int> get() = fci.missingSeqNums
 
     constructor(mediaSourceSsrc: Long, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
 
     override fun clone(): RtcpFbNackPacket {
-        TODO()
+        return RtcpFbNackPacket(cloneMutableHeader(), mediaSourceSsrc, fci.clone())
     }
 
     companion object {
         const val FMT = 1
+        const val SIZE_BYTES = RtcpFbPacket.FIXED_HEADER_SIZE + 4
         fun fromBuffer(buf: ByteBuffer): RtcpFbNackPacket {
             val bufStartPosition = buf.position()
             val header = RtcpHeader.create(buf)
@@ -50,12 +64,12 @@ class RtcpFbNackPacket(
 
             return RtcpFbNackPacket(header, mediaSourceSsrc, fci, buf.subBuffer(bufStartPosition, buf.position()))
         }
-        fun fromFields(
+        fun fromValues(
             header: RtcpHeader = RtcpHeader(),
             mediaSourceSsrc: Long = -1,
             missingSeqNums: List<Int> = listOf()
         ): RtcpFbNackPacket {
-            val fci = GenericNack.fromFields(missingSeqNums)
+            val fci = GenericNack.fromValues(missingSeqNums)
             return RtcpFbNackPacket(header, mediaSourceSsrc, fci)
         }
     }

@@ -44,7 +44,7 @@ class GenericNack(
         genericNackBlp.serializeTo(buf)
     }
 
-    override fun clone(): GenericNack =
+    public override fun clone(): GenericNack =
         GenericNack(packetId, genericNackBlp.clone())
 
     companion object {
@@ -54,7 +54,7 @@ class GenericNack(
             val blp = GenericNackBlp.parse(buf)
             return GenericNack(packetId, blp)
         }
-        fun fromFields(missingSeqNums: List<Int>): GenericNack {
+        fun fromValues(missingSeqNums: List<Int>): GenericNack {
             val packetId = missingSeqNums.first()
             val lostPacketOffsets = missingSeqNums.drop(1)
                     .map { it - packetId }
@@ -76,6 +76,8 @@ class GenericNackBlp(
 
     override fun serializeTo(buf: ByteBuffer) {
         setLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES), lostPacketOffsets)
+        // setLostPacketOffsets doesn't increment the buffer as it goes, so increment it
+        // manually here
         buf.incrementPosition(SIZE_BYTES)
     }
 
@@ -104,6 +106,8 @@ class GenericNackBlp(
 
         fun parse(buf: ByteBuffer): GenericNackBlp {
             val lostPacketOffsets = getLostPacketOffsets(buf.subBuffer(buf.position(), SIZE_BYTES))
+            // getLostPacketOffsets doesn't increment the buffer as it goes, so increment it
+            // manually here
             buf.incrementPosition(SIZE_BYTES)
             return GenericNackBlp(lostPacketOffsets)
         }

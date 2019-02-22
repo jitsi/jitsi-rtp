@@ -20,7 +20,6 @@ import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.collections.shouldContainExactly
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.toHex
 import org.jitsi.rtp.util.RightToLeftBufferUtils
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
@@ -32,7 +31,7 @@ internal class GenericNackTest : ShouldSpec() {
         "Creating a GenericNack" {
             "from values" {
                 val missingSeqNums = listOf(10, 11, 13, 15, 17, 19, 21, 23, 26)
-                val genericNack = GenericNack.fromFields(missingSeqNums)
+                val genericNack = GenericNack.fromValues(missingSeqNums)
                 should("set the missing seq nums correctly") {
                     genericNack.missingSeqNums shouldContainExactly missingSeqNums
                 }
