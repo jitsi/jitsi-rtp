@@ -38,7 +38,7 @@ class RtcpFbTccPacket(
     }
 
     override fun clone(): RtcpFbTccPacket {
-        return RtcpFbTccPacket(_header.clone(), mediaSourceSsrc, fci.clone())
+        return RtcpFbTccPacket(cloneMutableHeader(), mediaSourceSsrc, fci.clone())
     }
 
     companion object {

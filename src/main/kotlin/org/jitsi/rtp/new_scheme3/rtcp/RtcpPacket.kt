@@ -42,7 +42,7 @@ class RtcpPacketForCrypto(
         get() = header.sizeBytes + payload.limit()
 
     override fun clone(): Packet {
-        return RtcpPacketForCrypto(_header.clone(), payload.clone())
+        return RtcpPacketForCrypto(cloneMutableHeader(), payload.clone())
     }
 
     override fun serializeTo(buf: ByteBuffer) {
@@ -53,13 +53,10 @@ class RtcpPacketForCrypto(
 }
 
 abstract class RtcpPacket(
-    protected val _header: RtcpHeader,
+    private val _header: RtcpHeader,
     private var backingBuffer: ByteBuffer?
 ) : Packet() {
     private var dirty: Boolean = true
-
-    //TODO: we should handle adding padding and setting the hasPadding
-    // bit (only) here in rtcppacket
 
     val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
@@ -77,6 +74,11 @@ abstract class RtcpPacket(
             }
             return paddingBytes
         }
+
+    // We don't expose _header to subclasses so that we can ensure we know
+    // when it has been modified.  The one thing they do need it for
+    // is cloning themselves, so allow them to call this to clone
+    protected fun cloneMutableHeader(): RtcpHeader = _header.clone()
 
     //TODO(brian): it'd be nice to not expose header data here.  maybe
     // RtcpHeader should add its own layer for each variabl

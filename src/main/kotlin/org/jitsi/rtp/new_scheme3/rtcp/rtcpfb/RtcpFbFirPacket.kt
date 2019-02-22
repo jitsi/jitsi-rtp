@@ -29,7 +29,7 @@ class RtcpFbFirPacket(
     backingBuffer: ByteBuffer? = null
 ) : PayloadSpecificFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
 
-    override fun clone(): Packet {
+    override fun clone(): RtcpFbFirPacket {
         TODO()
     }
 

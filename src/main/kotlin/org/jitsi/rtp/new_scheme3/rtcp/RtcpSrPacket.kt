@@ -221,7 +221,7 @@ class RtcpSrPacket(
         val clonedReportBlocks = reportBlocks
                 .map(RtcpReportBlock::clone)
                 .toList()
-        return RtcpSrPacket(_header.clone(), senderInfo.clone(), clonedReportBlocks)
+        return RtcpSrPacket(cloneMutableHeader(), senderInfo.clone(), clonedReportBlocks)
     }
 
     override fun toString(): String {

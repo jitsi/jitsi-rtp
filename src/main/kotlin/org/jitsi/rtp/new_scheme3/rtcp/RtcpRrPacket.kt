@@ -65,7 +65,7 @@ class RtcpRrPacket(
         val clonedReportBlocks = reportBlocks
                 .map(RtcpReportBlock::clone)
                 .toList()
-        return RtcpRrPacket(_header.clone(), clonedReportBlocks)
+        return RtcpRrPacket(cloneMutableHeader(), clonedReportBlocks)
     }
 
     companion object {

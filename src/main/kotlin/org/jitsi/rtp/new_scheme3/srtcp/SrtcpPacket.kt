@@ -34,12 +34,6 @@ class SrtcpPacket(
     override val sizeBytes: Int
         get() = header.sizeBytes + srtcpPayload.limit()
 
-    fun prepareForDecryption(): RtcpPacketForCrypto {
-        //TODO: do we need to expose the backing buffer in RtcpPacket
-        // so we can pass it here?
-        return RtcpPacketForCrypto(_header, srtcpPayload)
-    }
-
     fun getAuthTag(tagLen: Int): ByteBuffer =
         srtcpPayload.subBuffer(srtcpPayload.limit() - tagLen)
 
@@ -67,16 +61,16 @@ class SrtcpPacket(
     }
 
     override fun clone(): Packet =
-        SrtcpPacket(_header.clone(), srtcpPayload.clone())
+        SrtcpPacket(cloneMutableHeader(), srtcpPayload.clone())
 
     override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
+        header.serializeTo(buf)
         srtcpPayload.rewind()
         //TODO(brian): _header.serialize uses absolute positioning, so we
         // need to manually set the buffer's position here.  in the future
         // i think we'll change everything to relative positioning when
         // serializing
-        buf.position(_header.sizeBytes)
+        buf.position(header.sizeBytes)
         buf.put(srtcpPayload.duplicate())
     }
 

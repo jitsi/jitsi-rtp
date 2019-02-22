@@ -72,7 +72,7 @@ class RtcpByePacket(
     }
 
     override fun clone(): Packet =
-        RtcpByePacket(_header.clone(), additionalSsrcs.toList(), reason?.plus(""))
+        RtcpByePacket(cloneMutableHeader(), additionalSsrcs.toList(), reason?.plus(""))
 
     companion object {
         const val PT: Int = 203
