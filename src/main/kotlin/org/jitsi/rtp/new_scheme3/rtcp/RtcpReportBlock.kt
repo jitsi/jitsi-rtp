@@ -176,7 +176,7 @@ class RtcpReportBlock(
      *             Figure 2: Example for round-trip time computation
      */
     val delaySinceLastSr: Long = 0
-) : SerializableData() {
+) : SerializableData(), Cloneable {
     /**
      * extended highest sequence number received: 32 bits
      *     The low 16 bits contain the highest sequence number received in an
@@ -270,6 +270,10 @@ class RtcpReportBlock(
 
     override fun serializeTo(buf: ByteBuffer) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    public override fun clone(): RtcpReportBlock {
+        return RtcpReportBlock(ssrc, fractionLost, cumulativePacketsLost, seqNumCycles, seqNum, interarrivalJitter, lastSrTimestamp, delaySinceLastSr)
     }
 
     override fun toString(): String {

@@ -96,7 +96,7 @@ class SenderInfo(
      *     payload data rate.
      */
     val sendersOctetCount: Long = -1
-) : SerializableData() {
+) : SerializableData(), Cloneable {
     override val sizeBytes: Int = SIZE_BYTES
 
     /**
@@ -131,6 +131,9 @@ class SenderInfo(
 //
 //        return buf!!
     }
+
+    public override fun clone(): SenderInfo =
+        SenderInfo(ntpTimestamp, rtpTimestamp, sendersPacketCount, sendersOctetCount)
 
     override fun toString(): String {
         return with (StringBuffer()) {
@@ -242,7 +245,10 @@ class RtcpSrPacket(
     }
 
     override fun clone(): Packet {
-        TODO()
+        val clonedReportBlocks = reportBlocks
+                .map(RtcpReportBlock::clone)
+                .toList()
+        return RtcpSrPacket(_header.clone(), senderInfo.clone(), clonedReportBlocks)
     }
 
     override fun toString(): String {
