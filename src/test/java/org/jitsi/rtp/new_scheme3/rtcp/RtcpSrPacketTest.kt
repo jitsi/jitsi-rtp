@@ -22,8 +22,8 @@ import io.kotlintest.matchers.haveSize
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class RtcpSrPacketTest : ShouldSpec() {
@@ -148,7 +148,7 @@ internal class RtcpSrPacketTest : ShouldSpec() {
                 srPacket.serializeTo(existingBuf)
                 should("write the data to the proper place") {
                     val subBuf = existingBuf.subBuffer(10, expectedBuf.limit())
-                    subBuf.compareToFromBeginning(expectedBuf) shouldBe 0
+                    subBuf should haveSameContentAs(expectedBuf)
                 }
                 should("leave the buffer's position after the field it just wrote") {
                     existingBuf.position() shouldBe (10 + expectedBuf.limit())

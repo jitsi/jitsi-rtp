@@ -16,11 +16,12 @@
 
 package org.jitsi.rtp.rtcp
 
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.compareToFromBeginning
-import org.jitsi.rtp.util.byteBufferOf
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import toUInt
 import java.nio.ByteBuffer
 
@@ -70,7 +71,7 @@ internal class SdesChunkTest : ShouldSpec() {
                 "and then serializing it" {
                     val buf = sdesChunk.getBuffer()
                     should("write all the data correctly") {
-                        buf.compareToFromBeginning(originalBuf) shouldBe 0
+                        buf should haveSameContentAs(originalBuf)
                     }
                 }
             }

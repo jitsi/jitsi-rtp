@@ -17,13 +17,12 @@
 package org.jitsi.rtp.new_scheme3.rtcp
 
 import io.kotlintest.IsolationMode
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
-import org.junit.jupiter.api.Assertions.*
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class RtcpReportBlockTest : ShouldSpec() {
@@ -102,14 +101,14 @@ internal class RtcpReportBlockTest : ShouldSpec() {
             )
             val newBuf = reportBlock.getBuffer()
             should("write the values correctly") {
-                newBuf.compareToFromBeginning(reportBlockData) shouldBe 0
+                newBuf should haveSameContentAs(reportBlockData)
             }
             "to an existing buffer" {
                 val existingBuf = ByteBuffer.allocate(RtcpReportBlock.SIZE_BYTES + 20)
                 existingBuf.position(10)
                 reportBlock.serializeTo(existingBuf)
                 should("write the data to the correct place") {
-                    existingBuf.subBuffer(10, RtcpReportBlock.SIZE_BYTES).compareToFromBeginning(reportBlockData) shouldBe 0
+                    existingBuf.subBuffer(10, RtcpReportBlock.SIZE_BYTES) should haveSameContentAs(reportBlockData)
                 }
                 should("set the buffer position to the end of the written data") {
                     existingBuf.position() shouldBe (10 + RtcpReportBlock.SIZE_BYTES)

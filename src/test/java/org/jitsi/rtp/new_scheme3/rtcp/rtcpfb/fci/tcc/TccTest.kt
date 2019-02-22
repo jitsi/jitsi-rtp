@@ -18,10 +18,11 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
 import io.kotlintest.IsolationMode
 import io.kotlintest.fail
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.util.byteBufferOf
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class TccTest : ShouldSpec() {
@@ -171,7 +172,7 @@ internal class TccTest : ShouldSpec() {
                     val tcc = Tcc.fromBuffer(fciAll2BitVectorChunks)
                     val buf = tcc.getBuffer()
                     should("write the data to the buffer correctly") {
-                        buf.compareToFromBeginning(fciAll2BitVectorChunks) shouldBe 0
+                        buf should haveSameContentAs(fciAll2BitVectorChunks)
                     }
                 }
                 "with a negative delta" { // has a negative delta

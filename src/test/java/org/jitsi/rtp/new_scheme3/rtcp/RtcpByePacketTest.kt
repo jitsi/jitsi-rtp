@@ -19,13 +19,13 @@ package org.jitsi.rtp.new_scheme3.rtcp
 import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.collections.shouldContain
 import io.kotlintest.matchers.collections.shouldHaveSize
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.plus
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
 import org.jitsi.rtp.util.byteBufferOf
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
@@ -84,7 +84,7 @@ internal class RtcpByePacketTest : ShouldSpec() {
                         "via requesting a new buffer" {
                             val serializedBuf = packet.getBuffer()
                             should("write all values correctly") {
-                                serializedBuf.compareToFromBeginning(rtcpByeWithReason) shouldBe 0
+                                serializedBuf should haveSameContentAs(rtcpByeWithReason)
                             }
                         }
                         "to an existing buffer" {
@@ -93,7 +93,7 @@ internal class RtcpByePacketTest : ShouldSpec() {
                             packet.serializeTo(existingBuf)
                             should("write the data to the proper place") {
                                 val subBuf = existingBuf.subBuffer(8, rtcpByeWithReason.limit())
-                                subBuf.compareToFromBeginning(rtcpByeWithReason) shouldBe 0
+                                subBuf should haveSameContentAs(rtcpByeWithReason)
                             }
                             should("leave the buffer's position after the field it just wrote") {
                                 existingBuf.position() shouldBe (8 + rtcpByeWithReason.limit())

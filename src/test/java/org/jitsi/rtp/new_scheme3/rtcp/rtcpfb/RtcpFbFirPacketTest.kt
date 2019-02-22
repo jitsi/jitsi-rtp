@@ -17,11 +17,12 @@
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
 import io.kotlintest.IsolationMode
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class RtcpFbFirPacketTest : ShouldSpec() {
@@ -63,7 +64,7 @@ internal class RtcpFbFirPacketTest : ShouldSpec() {
                     "by requesting a buffer" {
                         val buf = rtcpFbFirPacket.getBuffer()
                         should("serialize the data correctly") {
-                            buf.compareToFromBeginning(sampleRtcpFbFirPacketBuf) shouldBe 0
+                            buf should haveSameContentAs(sampleRtcpFbFirPacketBuf)
                         }
                     }
                     "to an existing buffer" {
@@ -71,7 +72,7 @@ internal class RtcpFbFirPacketTest : ShouldSpec() {
                         existingBuf.position(8)
                         rtcpFbFirPacket.serializeTo(existingBuf)
                         should("write the data to the correct place") {
-                            existingBuf.subBuffer(8).compareToFromBeginning(sampleRtcpFbFirPacketBuf) shouldBe 0
+                            existingBuf.subBuffer(8) should haveSameContentAs(sampleRtcpFbFirPacketBuf)
                         }
                         should("leave the buffer's position after the written data") {
                             existingBuf.position() shouldBe existingBuf.limit()

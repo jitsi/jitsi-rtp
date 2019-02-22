@@ -18,12 +18,12 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
 import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.collections.shouldContainExactly
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
 import org.jitsi.rtp.util.byteBufferOf
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class PacketStatusChunkTest : ShouldSpec() {
@@ -86,7 +86,7 @@ internal class PacketStatusChunkTest : ShouldSpec() {
                 "and then getting its buffer" {
                     val serializedBuf = runLengthChunk.getBuffer()
                     should("serialize the fields correctly") {
-                        serializedBuf.compareToFromBeginning(runLengthChunkSample1.buffer) shouldBe 0
+                        serializedBuf should haveSameContentAs(runLengthChunkSample1.buffer)
                     }
                 }
                 "and then serializing it to an existing buffer" {
@@ -94,8 +94,8 @@ internal class PacketStatusChunkTest : ShouldSpec() {
                     existingBuf.position(5)
                     runLengthChunk.serializeTo(existingBuf)
                     should("write the values to the right place") {
-                        existingBuf.subBuffer(5, PacketStatusChunk.SIZE_BYTES)
-                                .compareToFromBeginning(runLengthChunkSample1.buffer) shouldBe 0
+                        existingBuf.subBuffer(5, PacketStatusChunk.SIZE_BYTES) should
+                                haveSameContentAs(runLengthChunkSample1.buffer)
                     }
                     should("leave the buffer's position after the written data") {
                         existingBuf.position() shouldBe (5 + PacketStatusChunk.SIZE_BYTES)
@@ -123,7 +123,7 @@ internal class PacketStatusChunkTest : ShouldSpec() {
                 "and then getting its buffer" {
                     val serializedBuf = statusVectorChunk.getBuffer()
                     should("serialize the fields correctly") {
-                        serializedBuf.compareToFromBeginning(statusVectorChunkSample1.buffer) shouldBe 0
+                        serializedBuf should haveSameContentAs(statusVectorChunkSample1.buffer)
                     }
                 }
                 "and then serializing it to an existing buffer" {
@@ -131,8 +131,8 @@ internal class PacketStatusChunkTest : ShouldSpec() {
                     existingBuf.position(5)
                     statusVectorChunk.serializeTo(existingBuf)
                     should("write the values to the right place") {
-                        existingBuf.subBuffer(5, PacketStatusChunk.SIZE_BYTES)
-                                .compareToFromBeginning(statusVectorChunkSample1.buffer) shouldBe 0
+                        existingBuf.subBuffer(5, PacketStatusChunk.SIZE_BYTES) should
+                                haveSameContentAs(statusVectorChunkSample1.buffer)
                     }
                     should("leave the buffer's position after the written data") {
                         existingBuf.position() shouldBe (5 + PacketStatusChunk.SIZE_BYTES)

@@ -17,13 +17,10 @@
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
 import io.kotlintest.IsolationMode
-import io.kotlintest.matchers.collections.shouldBeOneOf
 import io.kotlintest.matchers.collections.shouldContainInOrder
-import io.kotlintest.matchers.containExactly
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.GenericNackBlp
@@ -76,7 +73,7 @@ internal class RtcpFbNackPacketTest : ShouldSpec() {
                         existingBuf.position(8)
                         nackPacket.serializeTo(existingBuf)
                         should("write the data to the correct place") {
-                            existingBuf.subBuffer(8).compareToFromBeginning(sampleRtcpFbNackPacketBuf) shouldBe 0
+                            existingBuf.subBuffer(8) should haveSameContentAs(sampleRtcpFbNackPacketBuf)
                         }
                         should("leave the buffer's position after the written data") {
                             existingBuf.position() shouldBe existingBuf.limit()
