@@ -18,13 +18,13 @@ package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.get3Bytes
 import org.jitsi.rtp.extensions.put3Bytes
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer
 import java.util.Objects
 
 /**
- * [buf] is a buffer which points to the start of a report
- * block
  * +=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+=+
  * |                 SSRC_1 (SSRC of first source)                 |
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -188,7 +188,7 @@ class RtcpReportBlock(
      *     sequence number if their start times differ significantly.
      */
     val extendedHighestSeqNum: Long
-        get() = (seqNumCycles.shl(16) or seqNum).toLong()
+        get() = (seqNumCycles.shl(16) or seqNum).toPositiveLong()
 
     override val sizeBytes: Int = SIZE_BYTES
 
@@ -196,80 +196,29 @@ class RtcpReportBlock(
         const val SIZE_BYTES = 24
 
         fun fromBuffer(buf: ByteBuffer): RtcpReportBlock {
-            val ssrc = RtcpReportBlock.getSsrc(buf)
-            val fractionLost = RtcpReportBlock.getFractionLost(buf)
-            val cumulativePacketsLost = RtcpReportBlock.getCumulativeLost(buf)
-            val extendedHighestSeqNum = RtcpReportBlock.getExtendedHighestSeqNum(buf)
-            val seqNumCycles = extendedHighestSeqNum.ushr(16).toInt()
-            val seqNum = (extendedHighestSeqNum and (0x0000FFFF)).toInt()
-            val interarrivalJitter = RtcpReportBlock.getInterarrivalJitter(buf)
-            val lastSrTimestamp = RtcpReportBlock.getLastSrTimestamp(buf)
-            val delaySinceLastSr = RtcpReportBlock.getDelaySinceLastSr(buf)
+            val ssrc = buf.getInt().toPositiveLong()
+            val fractionLost = buf.get().toPositiveInt()
+            val cumulativePacketsLost = buf.get3Bytes()
+            val seqNumCycles = buf.getShort().toPositiveInt()
+            val seqNum = buf.getShort().toPositiveInt()
+            val interarrivalJitter = buf.getInt().toPositiveLong()
+            val lastSrTimestamp = buf.getInt().toPositiveLong()
+            val delaySinceLastSr = buf.getInt().toPositiveLong()
 
             return RtcpReportBlock(ssrc, fractionLost, cumulativePacketsLost, seqNumCycles,
                 seqNum, interarrivalJitter, lastSrTimestamp, delaySinceLastSr)
         }
-
-        fun getSsrc(buf: ByteBuffer): Long = buf.getInt(0).toLong()
-        fun setSsrc(buf: ByteBuffer, ssrc: Long) {
-            buf.putInt(0, ssrc.toInt())
-        }
-
-        fun getFractionLost(buf: ByteBuffer): Int = buf.get(4).toInt()
-        fun setFractionLost(buf: ByteBuffer, fractionLost: Int) {
-            buf.put(4, fractionLost.toByte())
-        }
-
-        fun getCumulativeLost(buf: ByteBuffer): Int = buf.get3Bytes(5)
-        fun setCumulativeLost(buf: ByteBuffer, cumulativeLost: Int) {
-            buf.put3Bytes(5, cumulativeLost)
-        }
-
-        fun getExtendedHighestSeqNum(buf: ByteBuffer): Long = buf.getInt(8).toLong()
-
-        fun getSeqNumCycles(buf: ByteBuffer): Int = buf.getShort(8).toInt()
-        fun setSeqNumCycles(buf: ByteBuffer, seqNumCycles: Int) {
-            buf.putShort(8, seqNumCycles.toShort())
-        }
-
-        fun getSeqNum(buf: ByteBuffer): Int = buf.getShort(10).toInt()
-        fun setSeqNum(buf: ByteBuffer, seqNum: Int) {
-            buf.putShort(10, seqNum.toShort())
-        }
-
-        fun getInterarrivalJitter(buf: ByteBuffer): Long = buf.getInt(12).toLong()
-        fun setInterarrivalJitter(buf: ByteBuffer, interarrivalJitter: Long) = buf.putInt(12, interarrivalJitter.toInt())
-
-        fun getLastSrTimestamp(buf: ByteBuffer): Long = buf.getInt(16).toLong()
-        fun setLastSrTimestamp(buf: ByteBuffer, lastSrTimestamp: Long) = buf.putInt(16, lastSrTimestamp.toInt())
-
-        fun getDelaySinceLastSr(buf: ByteBuffer): Long = buf.getInt(20).toLong()
-        fun setDelaySinceLastSr(buf: ByteBuffer, delaySinceLastSr: Long) = buf.putInt(20, delaySinceLastSr.toInt())
-    }
-
-    override fun getBuffer(): ByteBuffer {
-        TODO()
-//        val b = ByteBufferUtils.ensureCapacity(buf, RtcpReportBlock.SIZE_BYTES)
-//        b.rewind()
-//        b.limit(RtcpReportBlock.SIZE_BYTES)
-//
-//        RtcpReportBlock.setSsrc(b, this.ssrc)
-//        RtcpReportBlock.setFractionLost(b, this.fractionLost)
-//        RtcpReportBlock.setCumulativeLost(b, this.cumulativePacketsLost)
-//        RtcpReportBlock.setSeqNumCycles(b, this.seqNumCycles)
-//        RtcpReportBlock.setSeqNum(b, this.seqNum)
-//        RtcpReportBlock.setInterarrivalJitter(b, this.interarrivalJitter)
-//        RtcpReportBlock.setLastSrTimestamp(b, this.lastSrTimestamp)
-//        RtcpReportBlock.setDelaySinceLastSr(b, this.delaySinceLastSr)
-//
-//        b.rewind()
-//        buf = b
-//
-//        return b
     }
 
     override fun serializeTo(buf: ByteBuffer) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        buf.putInt(ssrc.toInt())
+        buf.put(fractionLost.toByte())
+        buf.put3Bytes(cumulativePacketsLost)
+        buf.putShort(seqNumCycles.toShort())
+        buf.putShort(seqNum.toShort())
+        buf.putInt(interarrivalJitter.toInt())
+        buf.putInt(lastSrTimestamp.toInt())
+        buf.putInt(delaySinceLastSr.toInt())
     }
 
     public override fun clone(): RtcpReportBlock {
