@@ -63,14 +63,11 @@ class SrtcpPacket(
     override fun clone(): Packet =
         SrtcpPacket(cloneMutableHeader(), srtcpPayload.clone())
 
+    override fun shouldUpdateHeaderAndAddPadding(): Boolean = false
+
     override fun serializeTo(buf: ByteBuffer) {
         header.serializeTo(buf)
         srtcpPayload.rewind()
-        //TODO(brian): _header.serialize uses absolute positioning, so we
-        // need to manually set the buffer's position here.  in the future
-        // i think we'll change everything to relative positioning when
-        // serializing
-        buf.position(header.sizeBytes)
         buf.put(srtcpPayload.duplicate())
     }
 

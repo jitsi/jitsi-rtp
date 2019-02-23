@@ -18,7 +18,6 @@ package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
@@ -40,6 +39,8 @@ class RtcpPacketForCrypto(
 
     override val sizeBytes: Int
         get() = header.sizeBytes + payload.limit()
+
+    override fun shouldUpdateHeaderAndAddPadding(): Boolean = false
 
     override fun clone(): Packet {
         return RtcpPacketForCrypto(cloneMutableHeader(), payload.clone())
@@ -120,10 +121,18 @@ abstract class RtcpPacket(
     fun <OtherType : RtcpPacket>toOtherRtcpPacketType(factory: (RtcpHeader, backingBuffer: ByteBuffer?) -> RtcpPacket): OtherType
         = factory(_header, backingBuffer) as OtherType
 
+    //NOTE: This method should almost NEVER be overridden by subclasses.  The exception
+    // is SrtcpPacket, whose header values will be inconsistent with the data due to
+    // the auth tag and SRTCP index (and it should not be padded)
+    protected open fun shouldUpdateHeaderAndAddPadding(): Boolean = true
+
     final override fun getBuffer(): ByteBuffer {
         if (dirty) {
-            updateHeaderFields()
-            val b = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes + numPaddingBytes)
+            if (shouldUpdateHeaderAndAddPadding()) {
+                updateHeaderFields()
+            }
+            val neededSize = if (shouldUpdateHeaderAndAddPadding()) sizeBytes + numPaddingBytes else sizeBytes
+            val b = ByteBufferUtils.ensureCapacity(backingBuffer, neededSize)
             serializeTo(b)
             b.rewind()
 
