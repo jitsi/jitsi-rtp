@@ -22,11 +22,11 @@ import org.jitsi.rtp.extensions.compareToFromBeginning
 import org.jitsi.rtp.extensions.toHex
 import java.nio.ByteBuffer
 
-fun haveSameContentAs(other: ByteBuffer) = object : Matcher<ByteBuffer> {
+fun haveSameContentAs(expected: ByteBuffer) = object : Matcher<ByteBuffer> {
     override fun test(value: ByteBuffer): Result {
-        return Result(value.compareToFromBeginning(other) == 0,
-            "Buffer\n${value.toHex()} should have equaled buffer\n${other.toHex()}",
-            "Buffer\n${value.toHex()} should not have equaled buffer\n${other.toHex()}"
+        return Result(value.compareToFromBeginning(expected) == 0,
+            "Buffer\n${value.toHex()}\nwas supposed to be:\n${expected.toHex()}",
+            "Buffer\n${value.toHex()}\nshould not have equaled buffer\n${expected.toHex()}"
         )
     }
 }
