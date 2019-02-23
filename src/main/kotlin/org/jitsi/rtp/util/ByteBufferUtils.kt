@@ -24,7 +24,9 @@ class ByteBufferUtils {
         /**
          * Returns [buf] if it is non-null and its capacity is large enough to hold
          * [requiredCapacity] bytes.  If not, allocate and return a new ByteBuffer of
-         * size [requiredCapacity]
+         * size [requiredCapacity].
+         * Note that, in the case of allocating a new buffer, the content of the
+         * original buffer ([buf]) is NOT copied over.
          */
         fun ensureCapacity(buf: ByteBuffer?, requiredCapacity: Int): ByteBuffer {
             val newBuf = if (buf == null || buf.capacity() < requiredCapacity) {
@@ -35,6 +37,27 @@ class ByteBufferUtils {
             newBuf.rewind()
             newBuf.limit(requiredCapacity)
             return newBuf
+        }
+
+        /**
+         * 'Grow' the given buffer, if needed.  This means that, if [buf]'s
+         * capacity is not >= [requiredCapacity], allocate a new buffer of
+         * size [requiredCapacity] and copy all of [buf]'s content into it
+         * (starting at position 0 [buf] and the newly-allocated buffer).
+         *
+         * The returned buffer will have capacity/limit [requiredCapacity]
+         * and be at position 0.
+         */
+        fun growIfNeeded(buf: ByteBuffer, requiredCapacity: Int): ByteBuffer {
+            return if (buf.capacity() < requiredCapacity) {
+                val newBuf = ByteBuffer.allocate(requiredCapacity)
+                buf.rewind()
+                newBuf.put(buf)
+
+                newBuf.rewind() as ByteBuffer
+            } else {
+                buf.rewind() as ByteBuffer
+            }
         }
 
         /**

@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3.srtcp
 
 import org.jitsi.rtp.extensions.clone
+import org.jitsi.rtp.extensions.put
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
@@ -43,20 +44,26 @@ class SrtcpPacket(
     fun isEncrypted(tagLen: Int): Boolean =
         (srtcpPayload.getInt(srtcpPayload.limit() - (4 + tagLen)) and IS_ENCRYPTED_MASK) == IS_ENCRYPTED_MASK
 
-    //TODO: could we work all the auth tag/index operations into modifyPayload?
-    //TODO: do we need to re-assign srtcpPayload after each of these operations?
     fun removeAuthTagAndSrtcpIndex(tagLen: Int) {
         srtcpPayload.limit(srtcpPayload.limit() - (4 + tagLen))
         payloadModified()
     }
 
+    // NOTE: both the SRTCP index and the auth tag will be added to
+    // the end of the payload, meaning that they must be added in
+    // the proper order (SRTCP index first then auth tag)
+    // TODO: have one method to add both?
     fun addAuthTag(authTag: ByteBuffer) {
-        TODO()
+        val buf = ByteBufferUtils.growIfNeeded(srtcpPayload, srtcpPayload.limit() + authTag.limit())
+        buf.put(buf.limit() - authTag.limit(), authTag)
+        srtcpPayload = buf
         payloadModified()
     }
 
-    fun addSrtcpIndex(srtcpIndex: Int, tagLen: Int) {
-        TODO()
+    fun addSrtcpIndex(srtcpIndex: Int) {
+        val buf = ByteBufferUtils.growIfNeeded(srtcpPayload, srtcpPayload.limit() + 4)
+        buf.putInt(buf.limit() - 4, srtcpIndex)
+        srtcpPayload = buf
         payloadModified()
     }
 
