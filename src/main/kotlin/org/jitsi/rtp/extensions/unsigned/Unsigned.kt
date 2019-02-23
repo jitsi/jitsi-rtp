@@ -83,6 +83,11 @@ fun ByteBuffer.putULong(index: Int, value: ULong) = putLong(index, value.toLong(
 fun ByteBuffer.incrementPosition(value: Int) {
     position(position() + value)
 }
+fun ByteBuffer.decrementPosition(value: Int) {
+    position(position() - value)
+}
+
+
 @ExperimentalUnsignedTypes
 fun ByteBuffer.incrementPosition(value: UInt) {
     incrementPosition(value.toInt())

@@ -25,17 +25,6 @@ import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-/**
- * Returns [num] but aligned to the next [alignment] amount
- */
-fun align(num: Int, alignment: Int = 4): Int {
-    var aligned = num
-    while (aligned % alignment != 0) {
-        aligned++
-    }
-    return aligned
-}
-
 internal class SdesChunkTest : ShouldSpec() {
 
     private val sampleCnameString = "Hello, world"
