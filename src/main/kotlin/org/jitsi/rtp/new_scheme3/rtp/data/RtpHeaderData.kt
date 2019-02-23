@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3.rtp.data
 
 import org.jitsi.rtp.RtpHeader
+import org.jitsi.rtp.RtpHeaderExtension
 import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.SerializableData
@@ -74,6 +75,8 @@ data class RtpHeaderData(
             extensions
         )
     }
+
+    fun addExtension(id: Int, extension: RtpHeaderExtension) = extensions.addExtension(id, extension)
 
     override fun toString(): String = with (StringBuffer()) {
         appendln("size: $sizeBytes")
