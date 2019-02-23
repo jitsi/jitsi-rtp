@@ -40,14 +40,15 @@ class SrtpPacket(
     }
 
     fun addAuthTag(authTag: ByteBuffer) {
-        //TODO(brian)
+        growPayloadIfNeeded(payload.limit() + authTag.limit())
         modifyPayload {
-
+            position(limit() - authTag.limit())
+            put(authTag)
         }
     }
 
     override fun clone(): Packet {
-        return SrtpPacket(_header.clone(), _payload.clone())
+        return SrtpPacket(cloneMutableHeader(), cloneMutablePayload())
     }
 
     companion object {

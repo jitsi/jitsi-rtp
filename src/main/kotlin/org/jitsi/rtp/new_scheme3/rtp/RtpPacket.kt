@@ -24,8 +24,8 @@ import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 open class RtpPacket(
-    protected val _header: RtpHeader = RtpHeader(),
-    protected val _payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    private val _header: RtpHeader = RtpHeader(),
+    private var _payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     private var backingBuffer: ByteBuffer? = null
 ) : Packet() {
     val payload: ByteBuffer get() = _payload.duplicate().asReadOnlyBuffer()
@@ -45,8 +45,16 @@ open class RtpPacket(
         with (_payload) {
             block()
         }
+        _payload.rewind()
         dirty = true
     }
+
+    protected fun growPayloadIfNeeded(requiredCapacity: Int) {
+        _payload = ByteBufferUtils.growIfNeeded(_payload, requiredCapacity)
+    }
+
+    protected fun cloneMutablePayload(): ByteBuffer = _payload.clone()
+    protected fun cloneMutableHeader(): RtpHeader = _header.clone()
 
     val paddingSize: Int
         get() {
