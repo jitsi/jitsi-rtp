@@ -22,18 +22,18 @@ class ByteBufferUtils {
     companion object {
         val EMPTY_BUFFER: ByteBuffer = ByteBuffer.allocate(0)
         /**
-         * Returns [buf] if it is non-null and its limit is large enough to hold
-         * [capacity] bytes.  If not, allocate and return a new ByteBuffer of
-         * size [capacity]
+         * Returns [buf] if it is non-null and its capacity is large enough to hold
+         * [requiredCapacity] bytes.  If not, allocate and return a new ByteBuffer of
+         * size [requiredCapacity]
          */
-        fun ensureCapacity(buf: ByteBuffer?, capacity: Int): ByteBuffer {
-            val newBuf = if (buf == null || buf.limit() < capacity) {
-                ByteBuffer.allocate(capacity)
+        fun ensureCapacity(buf: ByteBuffer?, requiredCapacity: Int): ByteBuffer {
+            val newBuf = if (buf == null || buf.capacity() < requiredCapacity) {
+                ByteBuffer.allocate(requiredCapacity)
             } else {
                 buf
             }
             newBuf.rewind()
-            newBuf.limit(capacity)
+            newBuf.limit(requiredCapacity)
             return newBuf
         }
 

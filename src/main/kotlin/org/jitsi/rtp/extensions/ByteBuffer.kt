@@ -15,7 +15,6 @@
  */
 package org.jitsi.rtp.extensions
 
-import unsigned.Uint
 import unsigned.toUInt
 import java.nio.ByteBuffer
 
@@ -135,20 +134,19 @@ fun ByteBuffer.toHex() : String {
 /**
  * Returns a newly constructed [ByteBuffer] whose position 0 will
  * start at [startPosition] in the current buffer and whose limit
- * will be [size]
+ * and capacity will be [size]
  */
-fun ByteBuffer.subBuffer(startPosition: Int, size: Int): ByteBuffer {
-    return (duplicate().position(startPosition) as ByteBuffer).slice().limit(size) as ByteBuffer
-}
+fun ByteBuffer.subBuffer(startPosition: Int, size: Int): ByteBuffer =
+    (duplicate().position(startPosition).limit(startPosition + size) as ByteBuffer).slice()
 
 /**
  * Returns a newly constructed [ByteBuffer] whose position 0 will
  * start at [startPosition] in the current buffer and whose limit
- * will be the end of the original buffer
+ * and capacity will be the amount of bytes between [startPosition] and
+ * the current buffer's [limit()]
  */
-fun ByteBuffer.subBuffer(startPosition: Int): ByteBuffer {
-    return (duplicate().position(startPosition) as ByteBuffer).slice()
-}
+fun ByteBuffer.subBuffer(startPosition: Int): ByteBuffer =
+    subBuffer(startPosition, limit() - startPosition)
 
 /**
  * Put [buf] into this buffer starting at [index]
