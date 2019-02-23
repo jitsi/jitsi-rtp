@@ -66,6 +66,13 @@ class RtcpFbTccPacket(
         payloadModified()
     }
 
+    val referenceTimeMs: Long get() = fci.referenceTimeMs
+
+    /**
+     * Iterate over the pairs of (sequence number, timestamp) represented by this TCC packet
+     */
+    fun forEach(action: (Int, Long) -> Unit) = fci.forEach(action)
+
     override fun clone(): RtcpFbTccPacket {
         return RtcpFbTccPacket(cloneMutableHeader(), mediaSourceSsrc, fci.clone())
     }

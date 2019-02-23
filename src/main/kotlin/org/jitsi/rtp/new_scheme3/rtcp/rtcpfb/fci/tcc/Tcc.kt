@@ -116,8 +116,8 @@ class Tcc(
 ): FeedbackControlInformation() {
     /**
      * Because calculating the size of the TCC FCI is complicated, we
-     * use a dirty flag to denote when something has changed (and the
-     * size value should be recalculated)
+     * use a flag to denote when something has changed and the
+     * size value should be recalculated
      */
     private var sizeNeedsToBeRecalculated = true
     private var _sizeBytes: Int = -1
