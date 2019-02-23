@@ -22,6 +22,7 @@ import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
 import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
+import org.jitsi.rtp.new_scheme3.rtcp.sdes.RtcpSdesPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
@@ -107,6 +108,9 @@ abstract class RtcpPacket(
             //TODO: is this the right way to keep these in sync?  we need to do this for RTP as well.
             // other fields which are type-specific (like report count) will need to be updated
             // at lower layers
+            // --> note, this will break things if the packet is already padded (therefore
+            // the number of needed padding bytes will be 0).  if hasPadding is true and
+            // numPaddingBytes == 0, we shouldn't change it.
             hasPadding = numPaddingBytes > 0
             length = calculateLengthFieldValue(this@RtcpPacket.sizeBytes + numPaddingBytes)
         }
@@ -125,6 +129,7 @@ abstract class RtcpPacket(
     // is SrtcpPacket, whose header values will be inconsistent with the data due to
     // the auth tag and SRTCP index (and it should not be padded)
     protected open fun shouldUpdateHeaderAndAddPadding(): Boolean = true
+
 
     final override fun getBuffer(): ByteBuffer {
         if (dirty) {
@@ -154,7 +159,7 @@ abstract class RtcpPacket(
             val packet = when (packetType) {
                 RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
                 RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)
-//                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
+                RtcpSdesPacket.PT -> RtcpSdesPacket.fromBuffer(buf)
                 RtcpByePacket.PT -> RtcpByePacket.create(buf)
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
