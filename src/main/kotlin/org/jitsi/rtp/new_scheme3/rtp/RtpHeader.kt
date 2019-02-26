@@ -76,8 +76,9 @@ class RtpHeader(
     headerData: RtpHeaderData = RtpHeaderData()
 ) : ImmutableRtpHeader(headerData) {
 
-    fun modify(block: RtpHeaderData.() -> Unit) {
+    fun modify(block: RtpHeaderData.() -> Unit): RtpHeader {
         doModify(block)
+        return this
     }
 
     public override fun clone(): RtpHeader =

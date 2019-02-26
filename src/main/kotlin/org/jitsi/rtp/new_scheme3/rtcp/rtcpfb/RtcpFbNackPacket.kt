@@ -43,7 +43,7 @@ class RtcpFbNackPacket(
     mediaSourceSsrc: Long = -1,
     private val fci: GenericNack = GenericNack(),
     backingBuffer: ByteBuffer? = null
-) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
+) : TransportLayerFbPacket(header.modify { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
 
     val missingSeqNums: List<Int> get() = fci.missingSeqNums
 

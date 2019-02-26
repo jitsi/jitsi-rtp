@@ -52,7 +52,7 @@ class RtcpRrPacket(
     header: RtcpHeader = RtcpHeader(),
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header, backingBuffer) {
+) : RtcpPacket(header.modify { packetType = PT}, backingBuffer) {
     override val sizeBytes: Int
         get() = header.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
 

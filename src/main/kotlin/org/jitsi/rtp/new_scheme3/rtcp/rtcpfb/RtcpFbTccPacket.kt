@@ -55,7 +55,7 @@ class RtcpFbTccPacket(
     mediaSourceSsrc: Long = -1,
     private val fci: Tcc = Tcc(),
     backingBuffer: ByteBuffer? = null
-) : TransportLayerFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
+) : TransportLayerFbPacket(header.modify { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
 
     val numPackets: Int get() = fci.numPackets
 

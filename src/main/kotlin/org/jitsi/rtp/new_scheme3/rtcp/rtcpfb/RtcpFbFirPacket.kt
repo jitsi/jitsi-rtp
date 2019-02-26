@@ -59,7 +59,7 @@ class RtcpFbFirPacket(
     header: RtcpHeader = RtcpHeader(),
     private val fci: Fir = Fir(),
     backingBuffer: ByteBuffer? = null
-) : PayloadSpecificFbPacket(header, 0, fci, backingBuffer) {
+) : PayloadSpecificFbPacket(header.modify { reportCount = FMT }, 0, fci, backingBuffer) {
 
     override fun clone(): RtcpFbFirPacket = RtcpFbFirPacket(cloneMutableHeader(), fci.clone())
 

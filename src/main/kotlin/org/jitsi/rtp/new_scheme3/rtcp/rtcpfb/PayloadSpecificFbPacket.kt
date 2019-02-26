@@ -25,7 +25,7 @@ abstract class PayloadSpecificFbPacket(
     mediaSourceSsrc: Long = -1,
     fci: FeedbackControlInformation,
     backingBuffer: ByteBuffer? = null
-) : RtcpFbPacket(header, mediaSourceSsrc, fci, backingBuffer) {
+) : RtcpFbPacket(header.modify { packetType = PT }, mediaSourceSsrc, fci, backingBuffer) {
     companion object {
         const val PT = 206
     }

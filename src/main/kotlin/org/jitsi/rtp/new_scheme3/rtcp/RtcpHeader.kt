@@ -70,8 +70,9 @@ class RtcpHeader(
     public override fun clone(): RtcpHeader =
             RtcpHeader(headerData.clone())
 
-    fun modify(block: RtcpHeaderData.() -> Unit) {
+    fun modify(block: RtcpHeaderData.() -> Unit): RtcpHeader {
         doModify(block)
+        return this
     }
 
     override fun serializeTo(buf: ByteBuffer) {

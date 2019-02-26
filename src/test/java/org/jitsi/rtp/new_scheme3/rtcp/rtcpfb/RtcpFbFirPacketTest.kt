@@ -28,7 +28,8 @@ import java.nio.ByteBuffer
 internal class RtcpFbFirPacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val sampleHeader = RtcpHeader.fromValues(length = 4)
+    private val sampleHeader =
+        RtcpHeader.fromValues(length = 4, packetType = PayloadSpecificFbPacket.PT, reportCount = RtcpFbFirPacket.FMT)
     val sampleRtcpFbFirPacketBuf = ByteBuffer.allocate(RtcpFbFirPacket.SIZE_BYTES).apply {
         put(sampleHeader.getBuffer())
         putInt(0) // Unused media source ssrc
