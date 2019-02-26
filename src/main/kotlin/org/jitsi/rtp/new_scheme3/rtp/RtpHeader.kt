@@ -16,11 +16,11 @@
 
 package org.jitsi.rtp.new_scheme3.rtp
 
-import org.jitsi.rtp.RtpHeaderExtension
-import org.jitsi.rtp.RtpHeaderExtensions
 import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtension
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtensions
 import java.nio.ByteBuffer
 
 abstract class ImmutableRtpHeader internal constructor(

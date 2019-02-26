@@ -16,11 +16,16 @@
 
 package org.jitsi.rtp.new_scheme3.rtp.data
 
-import org.jitsi.rtp.RtpHeader
-import org.jitsi.rtp.RtpHeaderExtension
-import org.jitsi.rtp.RtpHeaderExtensions
+import org.jitsi.rtp.extensions.getBitAsBool
+import org.jitsi.rtp.extensions.getBits
+import org.jitsi.rtp.extensions.putBitAsBoolean
+import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.SerializableData
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtension
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtensions
 import java.nio.ByteBuffer
 
 /**
@@ -52,8 +57,8 @@ data class RtpHeaderData(
 ) : SerializableData() {
     override val sizeBytes: Int
         get() = FIXED_HEADER_SIZE_BYTES +
-                (csrcCount * RtpHeader.CSRC_SIZE_BYTES) +
-                extensions.size
+                (csrcCount * CSRC_SIZE_BYTES) +
+                extensions.sizeBytes
 
     val hasExtension: Boolean
         get() = extensions.isNotEmpty()
@@ -106,45 +111,121 @@ data class RtpHeaderData(
     // serializing to an existing buffer which may have other stuff
     // before it
     override fun serializeTo(buf: ByteBuffer) {
-        RtpHeader.setVersion(buf, version)
-        RtpHeader.setPadding(buf, hasPadding)
-        RtpHeader.setExtension(buf, hasExtension)
-        RtpHeader.setCsrcCount(buf, csrcCount)
-        RtpHeader.setMarker(buf, marker)
-        RtpHeader.setPayloadType(buf, payloadType)
-        RtpHeader.setSequenceNumber(buf, sequenceNumber)
-        RtpHeader.setTimestamp(buf, timestamp)
-        RtpHeader.setSsrc(buf, ssrc)
-        RtpHeader.setCsrcs(buf, csrcs)
+        setVersion(buf, version)
+        setPadding(buf, hasPadding)
+        setExtension(buf, hasExtension)
+        setCsrcCount(buf, csrcCount)
+        setMarker(buf, marker)
+        setPayloadType(buf, payloadType)
+        setSequenceNumber(buf, sequenceNumber)
+        setTimestamp(buf, timestamp)
+        setSsrc(buf, ssrc)
+        setCsrcs(buf, csrcs)
         if (hasExtension) {
             // Write the generic extension header (the cookie and the length)
-            buf.position(RtpHeader.getExtensionsHeaderOffset(csrcCount))
-            RtpHeader.setExtensions(buf, extensions)
+            buf.position(getExtensionsHeaderOffset(csrcCount))
+            setExtensions(buf, extensions)
         }
     }
 
     companion object {
         const val FIXED_HEADER_SIZE_BYTES = 12
+        const val CSRC_SIZE_BYTES = 4
+
         fun create(buf: ByteBuffer): RtpHeaderData {
-            val version = RtpHeader.getVersion(buf)
-            val hasPadding = RtpHeader.hasPadding(buf)
-            val hasExtension = RtpHeader.getExtension(buf)
-            val csrcCount = RtpHeader.getCsrcCount(buf)
-            val marker = RtpHeader.getMarker(buf)
-            val payloadType = RtpHeader.getPayloadType(buf)
-            val sequenceNumber = RtpHeader.getSequenceNumber(buf)
-            val timestamp = RtpHeader.getTimestamp(buf)
-            val ssrc = RtpHeader.getSsrc(buf)
-            val csrcs = RtpHeader.getCsrcs(buf, csrcCount)
+            val version = getVersion(buf)
+            val hasPadding = hasPadding(buf)
+            val hasExtension = getExtension(buf)
+            val csrcCount = getCsrcCount(buf)
+            val marker = getMarker(buf)
+            val payloadType = getPayloadType(buf)
+            val sequenceNumber = getSequenceNumber(buf)
+            val timestamp = getTimestamp(buf)
+            val ssrc = getSsrc(buf)
+            val csrcs = getCsrcs(buf, csrcCount)
 
             val extensions = if (hasExtension) {
-                RtpHeader.getExtensions(buf.subBuffer(RtpHeader.getExtensionsHeaderOffset(csrcCount)))
+                getExtensions(buf.subBuffer(getExtensionsHeaderOffset(csrcCount)))
             } else {
                 RtpHeaderExtensions.NO_EXTENSIONS
             }
             return RtpHeaderData(
                 version, hasPadding, marker, payloadType, sequenceNumber,
                 timestamp, ssrc, csrcs, extensions)
+        }
+
+        fun getVersion(buf: ByteBuffer): Int = buf.get(0).getBits(0, 2).toPositiveInt()
+        fun setVersion(buf: ByteBuffer, version: Int) = buf.putBits(0, 0, version.toByte(), 2)
+
+        fun hasPadding(buf: ByteBuffer): Boolean = buf.get(0).getBitAsBool(2)
+        fun setPadding(buf: ByteBuffer, hasPadding: Boolean) = buf.putBitAsBoolean(0, 2, hasPadding)
+
+        fun getExtension(buf: ByteBuffer): Boolean = buf.get(0).getBitAsBool(3)
+        fun setExtension(buf: ByteBuffer, hasExtension: Boolean) = buf.putBitAsBoolean(0, 3, hasExtension)
+
+        fun getCsrcCount(buf: ByteBuffer): Int = buf.get(0).getBits(4, 4).toPositiveInt()
+        fun setCsrcCount(buf: ByteBuffer, csrcCount: Int) {
+            buf.putBits(0, 4, csrcCount.toByte(), 4)
+        }
+
+        fun getMarker(buf: ByteBuffer): Boolean = buf.get(1).getBitAsBool(0)
+        fun setMarker(buf: ByteBuffer, isSet: Boolean) {
+            buf.putBitAsBoolean(1, 0, isSet)
+        }
+
+        fun getPayloadType(buf: ByteBuffer): Int = buf.get(1).getBits(1, 7).toPositiveInt()
+        fun setPayloadType(buf: ByteBuffer, payloadType: Int) {
+            buf.putBits(1, 1, payloadType.toByte(), 7)
+        }
+
+        fun getSequenceNumber(buf: ByteBuffer): Int = buf.getShort(2).toPositiveInt()
+        fun setSequenceNumber(buf: ByteBuffer, sequenceNumber: Int) {
+            buf.putShort(2, sequenceNumber.toShort())
+        }
+
+        fun getTimestamp(buf: ByteBuffer): Long = buf.getInt(4).toPositiveLong()
+        fun setTimestamp(buf: ByteBuffer, timestamp: Long) {
+            buf.putInt(4, timestamp.toInt())
+        }
+
+        fun getSsrc(buf: ByteBuffer): Long = buf.getInt(8).toPositiveLong()
+        fun setSsrc(buf: ByteBuffer, ssrc: Long) {
+            buf.putInt(8, ssrc.toInt())
+        }
+
+        fun getCsrcs(buf: ByteBuffer, csrcCount: Int): MutableList<Long> {
+            return (0 until csrcCount).map {
+                buf.getInt(12 + (it * CSRC_SIZE_BYTES)).toPositiveLong()
+            }.toMutableList()
+        }
+        fun setCsrcs(buf: ByteBuffer, csrcs: List<Long>) {
+            csrcs.forEachIndexed { index, csrc ->
+                buf.putInt(12 + (index * CSRC_SIZE_BYTES), csrc.toInt())
+            }
+        }
+
+        /**
+         * The offset at which the generic extension header should be placed
+         */
+        fun getExtensionsHeaderOffset(csrcCount: Int): Int = FIXED_HEADER_SIZE_BYTES + (csrcCount * CSRC_SIZE_BYTES)
+
+        /**
+         * Note that the buffer passed to these two methods, unlike in most other helpers, must already
+         * begin at the start of the extensions portion of the header.  This method also
+         * assumes that the caller has already verified that there *are* extensions present
+         * (i.e. the extension bit is set) in the case of 'getExtensions' or that there is space
+         * for the extensions in the passed buffer (in the case of 'setExtensionsAndPadding')
+         */
+        /**
+         * The buffer passed here should point to the start of the generic extension header
+         */
+        fun getExtensions(extensionsBuf: ByteBuffer): RtpHeaderExtensions = RtpHeaderExtensions.fromBuffer(extensionsBuf)
+
+        /**
+         * [buf] should point to the start of the generic extension header
+         */
+        fun setExtensions(buf: ByteBuffer, extensions: RtpHeaderExtensions) {
+            buf.put(extensions.getBuffer())
         }
     }
 }

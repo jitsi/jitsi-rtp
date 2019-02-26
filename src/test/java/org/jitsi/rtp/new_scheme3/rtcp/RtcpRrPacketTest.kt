@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3.rtcp
 
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.spy
 import io.kotlintest.IsolationMode
 import io.kotlintest.matchers.containAll
 import io.kotlintest.matchers.haveSize
@@ -59,7 +60,7 @@ internal class RtcpRrPacketTest : ShouldSpec() {
             putBits(0x2, 2) // Version
             putBoolean(false) // Padding
             putBits(0x2, 5) // Report count
-            packetBuf.put(200.toByte()) // Payload type
+            packetBuf.put(201.toByte()) // Payload type
             packetBuf.putShort(0xFFFF.toShort()) // length
             packetBuf.putInt(0xFFFFFFFF.toInt()) // sender ssrc
 
@@ -89,7 +90,7 @@ internal class RtcpRrPacketTest : ShouldSpec() {
                 }
             }
             "from values" {
-                val header: RtcpHeader = mock()
+                val header: RtcpHeader = spy()
                 val reportBlocks: MutableList<RtcpReportBlock> = mutableListOf(mock(), mock())
                 val rrPacket = RtcpRrPacket(header, reportBlocks)
                 should("set all values correctly") {

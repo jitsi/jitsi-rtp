@@ -24,12 +24,12 @@ import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.RtpHeaderExtension
-import org.jitsi.rtp.RtpOneByteHeaderExtension
-import org.jitsi.rtp.RtpTwoByteHeaderExtension
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtension
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpOneByteHeaderExtension
+import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpTwoByteHeaderExtension
 import org.jitsi.rtp.util.byteBufferOf
+import org.jitsi.test_helpers.matchers.haveSameContentAs
 import java.nio.ByteBuffer
 
 internal class RtpHeaderTest : ShouldSpec() {
@@ -106,7 +106,7 @@ internal class RtpHeaderTest : ShouldSpec() {
                     header.ssrc shouldBe 1234567
                     header.csrcs should haveSize(3)
                     header.csrcs.shouldContainInOrder(listOf<Long>(1, 2, 3))
-                    header.extensions.size shouldBe 0
+                    header.extensions.sizeBytes shouldBe 0
                     // Size should match just the header parts, not the rest of the buffer
                     header.sizeBytes shouldBe 24
                 }
@@ -123,20 +123,17 @@ internal class RtpHeaderTest : ShouldSpec() {
                     val ext1 = header.extensions.getExtension(1)
                     ext1 as RtpHeaderExtension
                     ext1.id shouldBe 1
-                    ext1.lengthBytes shouldBe 1
-                    ext1.data.compareTo(byteBufferOf(0x42)) shouldBe 0
+                    ext1.data should haveSameContentAs(byteBufferOf(0x42))
 
                     val ext2 = header.extensions.getExtension(2)
                     ext2 as RtpHeaderExtension
                     ext2.id shouldBe 2
-                    ext2.lengthBytes shouldBe 2
-                    ext2.data.compareTo(byteBufferOf(0x42, 0x42)) shouldBe 0
+                    ext2.data should haveSameContentAs(byteBufferOf(0x42, 0x42))
 
                     val ext3 = header.extensions.getExtension(3)
                     ext3 as RtpHeaderExtension
                     ext3.id shouldBe 3
-                    ext3.lengthBytes shouldBe 4
-                    ext3.data.compareTo(byteBufferOf(0x42, 0x42, 0x42, 0x42)) shouldBe 0
+                    ext3.data should haveSameContentAs(byteBufferOf(0x42, 0x42, 0x42, 0x42))
                 }
             }
             "a header with two byte extensions" {
