@@ -60,7 +60,7 @@ internal class RtcpRrPacketTest : ShouldSpec() {
             putBits(0x2, 2) // Version
             putBoolean(false) // Padding
             putBits(0x2, 5) // Report count
-            packetBuf.put(201.toByte()) // Payload type
+            packetBuf.put(RtcpRrPacket.PT.toByte()) // Payload type
             packetBuf.putShort(0xFFFF.toShort()) // length
             packetBuf.putInt(0xFFFFFFFF.toInt()) // sender ssrc
 
