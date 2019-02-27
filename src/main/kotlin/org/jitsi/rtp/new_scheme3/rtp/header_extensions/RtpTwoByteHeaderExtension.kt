@@ -49,9 +49,9 @@ class RtpTwoByteHeaderExtension(
     override fun serializeTo(buf: ByteBuffer) {
         val absBuf = buf.subBuffer(buf.position())
         setId(absBuf, id)
-        setLength(buf, data.limit())
+        setLength(absBuf, data.limit())
         data.rewind()
-        setData(buf, data)
+        setData(absBuf, data)
         data.rewind()
         buf.incrementPosition(sizeBytes)
     }
