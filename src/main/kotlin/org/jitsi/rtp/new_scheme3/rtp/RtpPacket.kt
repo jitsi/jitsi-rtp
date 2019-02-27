@@ -96,7 +96,7 @@ open class RtpPacket(
     }
 
     override fun serializeTo(buf: ByteBuffer) {
-        buf.put(_header.getBuffer())
+        _header.serializeTo(buf)
         _payload.rewind()
         buf.put(_payload)
     }
