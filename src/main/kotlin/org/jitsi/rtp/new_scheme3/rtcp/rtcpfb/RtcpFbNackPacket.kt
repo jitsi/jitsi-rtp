@@ -43,14 +43,14 @@ class RtcpFbNackPacket(
     mediaSourceSsrc: Long = -1,
     private val fci: GenericNack = GenericNack(),
     backingBuffer: ByteBuffer? = null
-) : TransportLayerFbPacket(header.modify { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
+) : TransportLayerFbPacket(header.apply { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
 
     val missingSeqNums: List<Int> get() = fci.missingSeqNums
 
     constructor(mediaSourceSsrc: Long, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
 
     override fun clone(): RtcpFbNackPacket {
-        return RtcpFbNackPacket(cloneMutableHeader(), mediaSourceSsrc, fci.clone())
+        return RtcpFbNackPacket(header.clone(), mediaSourceSsrc, fci.clone())
     }
 
     companion object {
@@ -58,7 +58,7 @@ class RtcpFbNackPacket(
         const val SIZE_BYTES = RtcpFbPacket.FIXED_HEADER_SIZE + 4
         fun fromBuffer(buf: ByteBuffer): RtcpFbNackPacket {
             val bufStartPosition = buf.position()
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
             val fci = GenericNack.fromBuffer(buf)
 

@@ -55,7 +55,7 @@ class RtcpFbTccPacket(
     mediaSourceSsrc: Long = -1,
     private val fci: Tcc = Tcc(),
     backingBuffer: ByteBuffer? = null
-) : TransportLayerFbPacket(header.modify { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
+) : TransportLayerFbPacket(header.apply { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
 
     val numPackets: Int get() = fci.numPackets
 
@@ -74,14 +74,14 @@ class RtcpFbTccPacket(
     fun forEach(action: (Int, Long) -> Unit) = fci.forEach(action)
 
     override fun clone(): RtcpFbTccPacket {
-        return RtcpFbTccPacket(cloneMutableHeader(), mediaSourceSsrc, fci.clone())
+        return RtcpFbTccPacket(header.clone(), mediaSourceSsrc, fci.clone())
     }
 
     companion object {
         const val FMT = 15
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbTccPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
             // TCC FCI's parse wants the buffer to start at the beginning of
             // the FCI block, so create a wrapper buffer for it to make

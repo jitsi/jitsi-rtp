@@ -25,7 +25,7 @@ abstract class TransportLayerFbPacket(
     mediaSourceSsrc: Long = -1,
     fci: FeedbackControlInformation,
     backingBuffer: ByteBuffer? = null
-) : RtcpFbPacket(header.modify { packetType = PT }, mediaSourceSsrc, fci, backingBuffer) {
+) : RtcpFbPacket(header.apply { packetType = PT }, mediaSourceSsrc, fci, backingBuffer) {
     companion object {
         const val PT = 205
     }

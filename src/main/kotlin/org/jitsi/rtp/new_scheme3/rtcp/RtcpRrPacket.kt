@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.new_scheme3.Packet
 import java.nio.ByteBuffer
 
 /**
@@ -52,7 +51,7 @@ class RtcpRrPacket(
     header: RtcpHeader = RtcpHeader(),
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header.modify { packetType = PT; reportCount = reportBlocks.size }, backingBuffer) {
+) : RtcpPacket(header.apply { packetType = PT; reportCount = reportBlocks.size }, backingBuffer) {
     override val sizeBytes: Int
         get() = header.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
 
@@ -65,14 +64,14 @@ class RtcpRrPacket(
         val clonedReportBlocks = reportBlocks
                 .map(RtcpReportBlock::clone)
                 .toList()
-        return RtcpRrPacket(cloneMutableHeader(), clonedReportBlocks)
+        return RtcpRrPacket(header.clone(), clonedReportBlocks)
     }
 
     companion object {
         const val PT: Int = 201
 
         fun fromBuffer(buf: ByteBuffer): RtcpRrPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val reportBlocks = (1..header.reportCount)
                     .map { RtcpReportBlock.fromBuffer(buf) }
                     .toList()

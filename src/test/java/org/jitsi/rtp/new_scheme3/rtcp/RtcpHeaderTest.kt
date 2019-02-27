@@ -27,7 +27,7 @@ internal class RtcpHeaderTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     companion object {
-        fun rtcpHeaderEquals(left: ImmutableRtcpHeader?, right: ImmutableRtcpHeader?): Boolean {
+        fun rtcpHeaderEquals(left: RtcpHeader?, right: RtcpHeader?): Boolean {
             if (left === right) {
                 return true
             }
@@ -58,7 +58,7 @@ internal class RtcpHeaderTest : ShouldSpec() {
     init {
         "creation" {
             "from a buffer" {
-                val header = RtcpHeader.create(headerBuf)
+                val header = RtcpHeader.fromBuffer(headerBuf)
                 should("parse the values correctly") {
                     header.version shouldBe 2
                     header.hasPadding shouldBe false
@@ -72,7 +72,7 @@ internal class RtcpHeaderTest : ShouldSpec() {
                 }
             }
             "from a complete set of values" {
-                val header = RtcpHeader.fromValues(
+                val header = RtcpHeader(
                     version = 2,
                     hasPadding = false,
                     reportCount = 1,
@@ -90,7 +90,7 @@ internal class RtcpHeaderTest : ShouldSpec() {
                 }
             }
             "passing a subset of values in the constructor" {
-                val header = RtcpHeader.fromValues(senderSsrc = 12345L)
+                val header = RtcpHeader(senderSsrc = 12345L)
                 should("set the passed values") {
                     header.senderSsrc shouldBe 12345L
                 }
@@ -101,7 +101,7 @@ internal class RtcpHeaderTest : ShouldSpec() {
             }
         }
         "serialization" {
-            val header = RtcpHeader.create(headerBuf)
+            val header = RtcpHeader.fromBuffer(headerBuf)
             val newBuf = header.getBuffer()
             should("write the correct data to the buffer") {
                 newBuf.rewind() shouldBe headerBuf.rewind()

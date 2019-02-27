@@ -68,7 +68,7 @@ class SrtcpPacket(
     }
 
     override fun clone(): Packet =
-        SrtcpPacket(cloneMutableHeader(), srtcpPayload.clone())
+        SrtcpPacket(header.clone(), srtcpPayload.clone())
 
     override fun shouldUpdateHeaderAndAddPadding(): Boolean = false
 
@@ -82,7 +82,7 @@ class SrtcpPacket(
         private const val IS_ENCRYPTED_MASK = 0x80000000.toInt()
         private const val SRTCP_INDEX_MASK = IS_ENCRYPTED_MASK.inv()
         fun create(buf: ByteBuffer): SrtcpPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
 
             return SrtcpPacket(header, payload, buf)

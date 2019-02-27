@@ -34,7 +34,7 @@ internal class RtcpFbNackPacketTest : ShouldSpec() {
     private val sampleBlp = GenericNackBlp(listOf(1, 3, 5, 7, 9, 11, 13, 15))
     private val sampleMediaSsrc = 12345L
     private val sampleHeader =
-        RtcpHeader.fromValues(length = 3, packetType = TransportLayerFbPacket.PT,
+        RtcpHeader(length = 3, packetType = TransportLayerFbPacket.PT,
             reportCount = RtcpFbNackPacket.FMT)
     val sampleRtcpFbNackPacketBuf = ByteBuffer.allocate(16).apply {
         put(sampleHeader.getBuffer())

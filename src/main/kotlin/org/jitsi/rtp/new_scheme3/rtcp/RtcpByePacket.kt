@@ -43,7 +43,7 @@ class RtcpByePacket(
     private val additionalSsrcs: List<Long> = listOf(),
     val reason: String? = null,
     backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header, backingBuffer) {
+) : RtcpPacket(header.apply { packetType = PT }, backingBuffer) {
 
     override val sizeBytes: Int
         get() {
@@ -72,12 +72,12 @@ class RtcpByePacket(
     }
 
     override fun clone(): Packet =
-        RtcpByePacket(cloneMutableHeader(), additionalSsrcs.toList(), reason?.plus(""))
+        RtcpByePacket(header.clone(), additionalSsrcs.toList(), reason?.plus(""))
 
     companion object {
         const val PT: Int = 203
         fun create(buf: ByteBuffer): RtcpByePacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val hasReason = run {
                 val packetLengthBytes = header.lengthBytes
                 val headerAndSsrcsLengthBytes = header.sizeBytes + (header.reportCount - 1) * 4

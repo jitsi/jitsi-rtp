@@ -206,7 +206,7 @@ class RtcpSrPacket(
     val senderInfo: SenderInfo = SenderInfo(),
     val reportBlocks: List<RtcpReportBlock> = listOf(),
     backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header.modify { packetType = PT; reportCount = reportBlocks.size }, backingBuffer) {
+) : RtcpPacket(header.apply { packetType = PT; reportCount = reportBlocks.size }, backingBuffer) {
     override val sizeBytes: Int
         get() = header.sizeBytes + senderInfo.sizeBytes + (reportBlocks.size * RtcpReportBlock.SIZE_BYTES)
 
@@ -220,7 +220,7 @@ class RtcpSrPacket(
         val clonedReportBlocks = reportBlocks
                 .map(RtcpReportBlock::clone)
                 .toList()
-        return RtcpSrPacket(cloneMutableHeader(), senderInfo.clone(), clonedReportBlocks)
+        return RtcpSrPacket(header.clone(), senderInfo.clone(), clonedReportBlocks)
     }
 
     override fun toString(): String {
@@ -239,7 +239,7 @@ class RtcpSrPacket(
         const val PT: Int = 200
 
         fun fromBuffer(buf: ByteBuffer): RtcpSrPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val senderInfo = SenderInfo.fromBuffer(buf)
             val reportBlocks = (0 until header.reportCount)
                     .map { RtcpReportBlock.fromBuffer(buf) }

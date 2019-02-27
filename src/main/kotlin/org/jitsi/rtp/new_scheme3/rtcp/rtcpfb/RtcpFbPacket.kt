@@ -20,7 +20,6 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.SerializedField
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
-import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import java.nio.ByteBuffer
 
@@ -78,8 +77,8 @@ abstract class RtcpFbPacket(
         }
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbPacket {
-            val packetType = RtcpHeaderData.getPacketType(buf)
-            val fmt = RtcpHeaderData.getReportCount(buf)
+            val packetType = RtcpHeader.getPacketType(buf)
+            val fmt = RtcpHeader.getReportCount(buf)
             return when (packetType) {
                 TransportLayerFbPacket.PT -> {
                     when (fmt) {

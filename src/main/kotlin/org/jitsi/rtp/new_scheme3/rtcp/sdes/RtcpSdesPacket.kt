@@ -47,7 +47,7 @@ class RtcpSdesPacket(
     // SSRC in the header
     val sdesChunks: List<SdesChunk> = listOf(),
     backingBuffer: ByteBuffer? = null
-) : RtcpPacket(header, backingBuffer) {
+) : RtcpPacket(header.apply { packetType = PT }, backingBuffer) {
 
     // Subtract 4 since the SSRC in the header are actually part of the first
     // chunk
@@ -62,13 +62,13 @@ class RtcpSdesPacket(
     }
 
     override fun clone(): RtcpSdesPacket =
-        RtcpSdesPacket(cloneMutableHeader(), sdesChunks.toList())
+        RtcpSdesPacket(header.clone(), sdesChunks.toList())
 
     companion object {
         const val PT = 202
 
         fun fromBuffer(buf: ByteBuffer): RtcpSdesPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             // Rewind 4 bytes so we can parse the ssrc in the
             // header as part of the first chunk
             buf.decrementPosition(4)

@@ -18,9 +18,7 @@ package org.jitsi.rtp.new_scheme3.rtcp
 
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.new_scheme3.ImmutableAlias
 import org.jitsi.rtp.new_scheme3.Packet
-import org.jitsi.rtp.new_scheme3.rtcp.data.RtcpHeaderData
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.new_scheme3.rtcp.sdes.RtcpSdesPacket
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -44,7 +42,7 @@ class RtcpPacketForCrypto(
     override fun shouldUpdateHeaderAndAddPadding(): Boolean = false
 
     override fun clone(): Packet {
-        return RtcpPacketForCrypto(cloneMutableHeader(), payload.clone())
+        return RtcpPacketForCrypto(header.clone(), payload.clone())
     }
 
     override fun serializeTo(buf: ByteBuffer) {
@@ -55,12 +53,10 @@ class RtcpPacketForCrypto(
 }
 
 abstract class RtcpPacket(
-    private val _header: RtcpHeader,
+    val header: RtcpHeader,
     private var backingBuffer: ByteBuffer?
 ) : Packet() {
     private var dirty: Boolean = true
-
-    val header: ImmutableRtcpHeader by ImmutableAlias(::_header)
 
     /**
      * How many padding bytes are needed, if any
@@ -80,17 +76,17 @@ abstract class RtcpPacket(
     // We don't expose _header to subclasses so that we can ensure we know
     // when it has been modified.  The one thing they do need it for
     // is cloning themselves, so allow them to call this to clone
-    protected fun cloneMutableHeader(): RtcpHeader = _header.clone()
+//    protected fun cloneMutableHeader(): RtcpHeader = _header.clone()
 
     //TODO(brian): it'd be nice to not expose header data here.  maybe
     // RtcpHeader should add its own layer for each variabl
-    fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
-        _header.modify(block)
-        dirty = true
-    }
+//    fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
+//        _header.modify(block)
+//        dirty = true
+//    }
 
     fun prepareForCrypto(): RtcpPacketForCrypto {
-        return RtcpPacketForCrypto(_header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
+        return RtcpPacketForCrypto(header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
     }
 
     /**
@@ -104,16 +100,8 @@ abstract class RtcpPacket(
     }
 
     private fun updateHeaderFields() {
-        _header.modify {
-            //TODO: is this the right way to keep these in sync?  we need to do this for RTP as well.
-            // other fields which are type-specific (like report count) will need to be updated
-            // at lower layers
-            // --> note, this will break things if the packet is already padded (therefore
-            // the number of needed padding bytes will be 0).  if hasPadding is true and
-            // numPaddingBytes == 0, we shouldn't change it.
-            hasPadding = numPaddingBytes > 0
-            length = calculateLengthFieldValue(this@RtcpPacket.sizeBytes + numPaddingBytes)
-        }
+        header.hasPadding = numPaddingBytes > 0
+        header.length = calculateLengthFieldValue(this@RtcpPacket.sizeBytes + numPaddingBytes)
     }
 
     protected fun payloadModified() {
@@ -123,7 +111,7 @@ abstract class RtcpPacket(
 
     @Suppress("UNCHECKED_CAST")
     fun <OtherType : RtcpPacket>toOtherRtcpPacketType(factory: (RtcpHeader, backingBuffer: ByteBuffer?) -> RtcpPacket): OtherType
-        = factory(_header, backingBuffer) as OtherType
+        = factory(header, backingBuffer) as OtherType
 
     //NOTE: This method should almost NEVER be overridden by subclasses.  The exception
     // is SrtcpPacket, whose header values will be inconsistent with the data due to
@@ -132,7 +120,7 @@ abstract class RtcpPacket(
 
 
     final override fun getBuffer(): ByteBuffer {
-        if (dirty) {
+        if (dirty || header.dirty) {
             if (shouldUpdateHeaderAndAddPadding()) {
                 updateHeaderFields()
             }
@@ -154,8 +142,8 @@ abstract class RtcpPacket(
     companion object {
         fun parse(buf: ByteBuffer): RtcpPacket {
             val bufStartPosition = buf.position()
-            val packetType = RtcpHeaderData.getPacketType(buf)
-            val packetLengthBytes = (RtcpHeaderData.getLength(buf) + 1) * 4
+            val packetType = RtcpHeader.getPacketType(buf)
+            val packetLengthBytes = (RtcpHeader.getLength(buf) + 1) * 4
             val packet = when (packetType) {
                 RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
                 RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)

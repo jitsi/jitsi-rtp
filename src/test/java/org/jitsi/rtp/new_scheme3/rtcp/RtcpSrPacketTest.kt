@@ -60,7 +60,7 @@ internal class RtcpSrPacketTest : ShouldSpec() {
     private val lengthValue =
         (RtcpHeader.SIZE_BYTES + SenderInfo.SIZE_BYTES + RtcpReportBlock.SIZE_BYTES + RtcpReportBlock.SIZE_BYTES + 3) / 4 - 1
 
-    private val expectedHeader = RtcpHeader.fromValues(
+    private val expectedHeader = RtcpHeader(
         version = 2,
         hasPadding = false,
         reportCount = 2,
@@ -110,7 +110,7 @@ internal class RtcpSrPacketTest : ShouldSpec() {
             }
             "from an incomplete set of values" {
                 val srPacket = RtcpSrPacket(
-                    header = RtcpHeader.fromValues(reportCount = 2, senderSsrc = 12345),
+                    header = RtcpHeader(reportCount = 2, senderSsrc = 12345),
                     senderInfo = expectedSenderInfo,
                     reportBlocks = mutableListOf(
                         reportBlock1,

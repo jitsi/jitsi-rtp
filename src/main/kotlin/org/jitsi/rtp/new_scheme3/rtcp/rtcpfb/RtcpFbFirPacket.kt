@@ -59,9 +59,9 @@ class RtcpFbFirPacket(
     header: RtcpHeader = RtcpHeader(),
     private val fci: Fir = Fir(),
     backingBuffer: ByteBuffer? = null
-) : PayloadSpecificFbPacket(header.modify { reportCount = FMT }, 0, fci, backingBuffer) {
+) : PayloadSpecificFbPacket(header.apply { reportCount = FMT }, 0, fci, backingBuffer) {
 
-    override fun clone(): RtcpFbFirPacket = RtcpFbFirPacket(cloneMutableHeader(), fci.clone())
+    override fun clone(): RtcpFbFirPacket = RtcpFbFirPacket(header.clone(), fci.clone())
 
     val seqNum: Int get() = fci.seqNum
     val firSsrc: Long get() = fci.ssrc
@@ -80,7 +80,7 @@ class RtcpFbFirPacket(
         }
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbFirPacket {
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             // Unused, but we need to advance the buffer
             @Suppress("UNUSED_VARIABLE") val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
             val fci = Fir.fromBuffer(buf)

@@ -29,7 +29,7 @@ internal class RtcpFbFirPacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
     private val sampleHeader =
-        RtcpHeader.fromValues(length = 4, packetType = PayloadSpecificFbPacket.PT, reportCount = RtcpFbFirPacket.FMT)
+        RtcpHeader(length = 4, packetType = PayloadSpecificFbPacket.PT, reportCount = RtcpFbFirPacket.FMT)
     val sampleRtcpFbFirPacketBuf = ByteBuffer.allocate(RtcpFbFirPacket.SIZE_BYTES).apply {
         put(sampleHeader.getBuffer())
         putInt(0) // Unused media source ssrc
@@ -54,7 +54,7 @@ internal class RtcpFbFirPacketTest : ShouldSpec() {
             }
             "from values" {
                 val rtcpFbFirPacket = RtcpFbFirPacket.fromValues(
-                    header = RtcpHeader.fromValues(length = 4),
+                    header = RtcpHeader(length = 4),
                     firSsrc = 12345L, commandSeqNum = 1
                 )
                 should("set the values correctly") {

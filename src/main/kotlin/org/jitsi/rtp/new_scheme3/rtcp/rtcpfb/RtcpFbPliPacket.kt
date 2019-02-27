@@ -29,10 +29,10 @@ class RtcpFbPliPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
     backingBuffer: ByteBuffer? = null
-) : PayloadSpecificFbPacket(header.modify { reportCount = FMT }, mediaSourceSsrc, Pli(), backingBuffer) {
+) : PayloadSpecificFbPacket(header.apply { reportCount = FMT }, mediaSourceSsrc, Pli(), backingBuffer) {
 
     override fun clone(): org.jitsi.rtp.new_scheme3.Packet {
-        return RtcpFbPliPacket(cloneMutableHeader(), mediaSourceSsrc)
+        return RtcpFbPliPacket(header.clone(), mediaSourceSsrc)
     }
 
     companion object {
@@ -40,7 +40,7 @@ class RtcpFbPliPacket(
 
         fun fromBuffer(buf: ByteBuffer): RtcpFbPliPacket {
             val bufStartPosition = buf.position()
-            val header = RtcpHeader.create(buf)
+            val header = RtcpHeader.fromBuffer(buf)
             val mediaSourceSsrc = RtcpFbPacket.getMediaSourceSsrc(buf)
             return RtcpFbPliPacket(header, mediaSourceSsrc, buf.subBuffer(bufStartPosition, buf.position()))
         }

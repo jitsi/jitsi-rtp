@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets
 internal class RtcpByePacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    val rtcpByeNoReason = RtcpHeader.fromValues(
+    val rtcpByeNoReason = RtcpHeader(
         packetType = RtcpByePacket.PT,
         reportCount = 1,
         senderSsrc = 12345L,
@@ -47,7 +47,7 @@ internal class RtcpByePacketTest : ShouldSpec() {
     private val reasonSize = 1 + byeReasonData.size
     val padding = byteBufferOf(0x00, 0x00)
 
-    val rtcpByeWithReason = RtcpHeader.fromValues(
+    val rtcpByeWithReason = RtcpHeader(
         packetType = RtcpByePacket.PT,
         hasPadding = true,
         reportCount = 1,
