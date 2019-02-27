@@ -25,6 +25,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtension
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpOneByteHeaderExtension
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpTwoByteHeaderExtension
@@ -160,12 +161,11 @@ internal class RtpHeaderTest : ShouldSpec() {
             }
             "a header with one byte extensions" {
                 val header = RtpHeader.create(headerWithOneByteExtensions)
-                val newBuf = header.getBuffer()
-
-                newBuf.rewind()
-                headerWithOneByteExtensions.rewind()
-                should("match the original buffer") {
-                    newBuf.compareTo(headerWithOneByteExtensions) shouldBe 0
+                "by requesting a buffer" {
+                    val newBuf = header.getBuffer()
+                    should("match the original buffer") {
+                        newBuf should haveSameContentAs(headerWithOneByteExtensions)
+                    }
                 }
             }
         }
