@@ -17,6 +17,7 @@
 package org.jitsi.rtp.new_scheme3.rtp
 
 import io.kotlintest.IsolationMode
+import io.kotlintest.shouldBe
 import io.kotlintest.specs.BehaviorSpec
 import org.junit.jupiter.api.Assertions.*
 
@@ -30,13 +31,11 @@ internal class RtpPacketTest : BehaviorSpec() {
             `when`("we get its buffer") {
                 val buf = rtpPacket.getBuffer()
                 and("then modify its header") {
-                    rtpPacket.modifyHeader {
-                        sequenceNumber = 123
-                    }
+                    rtpPacket.header.ssrc = 123
                     and("get its buffer again") {
                         val newBuf = rtpPacket.getBuffer()
                         then("the change should be reflected") {
-
+                            RtpHeader.getSsrc(newBuf) shouldBe 123
                         }
                     }
                 }

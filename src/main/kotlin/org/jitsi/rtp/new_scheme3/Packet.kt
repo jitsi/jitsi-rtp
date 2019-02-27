@@ -61,6 +61,7 @@ open class UnparsedPacket(
 
     override fun clone(): Packet = UnparsedPacket(buf.clone())
 
+    //TODO: expose as readonly?
     override fun getBuffer(): ByteBuffer = buf
 
     override fun serializeTo(buf: ByteBuffer) {

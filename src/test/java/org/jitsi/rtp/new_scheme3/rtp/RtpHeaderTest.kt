@@ -25,7 +25,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtension
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpOneByteHeaderExtension
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpTwoByteHeaderExtension
@@ -94,7 +93,7 @@ internal class RtpHeaderTest : ShouldSpec() {
     init {
         "parsing" {
             "a header without extensions" {
-                val header = RtpHeader.create(headerNoExtensionsWithPayload)
+                val header = RtpHeader.fromBuffer(headerNoExtensionsWithPayload)
                 should("parse correctly") {
                     header.version shouldBe 2
                     header.hasPadding shouldBe true
@@ -107,41 +106,40 @@ internal class RtpHeaderTest : ShouldSpec() {
                     header.ssrc shouldBe 1234567
                     header.csrcs should haveSize(3)
                     header.csrcs.shouldContainInOrder(listOf<Long>(1, 2, 3))
-                    header.extensions.sizeBytes shouldBe 0
                     // Size should match just the header parts, not the rest of the buffer
                     header.sizeBytes shouldBe 24
                 }
             }
             "a header with one byte extensions" {
-                val header = RtpHeader.create(headerWithOneByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithOneByteExtensions)
                 should("parse correctly") {
                     for (i in 1..3) {
-                        val ext = header.extensions.getExtension(i)
+                        val ext = header.getExtension(i)
                         ext shouldNotBe null
                         ext as RtpHeaderExtension
                         ext.shouldBeTypeOf<RtpOneByteHeaderExtension>()
                     }
-                    val ext1 = header.extensions.getExtension(1)
+                    val ext1 = header.getExtension(1)
                     ext1 as RtpHeaderExtension
                     ext1.id shouldBe 1
                     ext1.data should haveSameContentAs(byteBufferOf(0x42))
 
-                    val ext2 = header.extensions.getExtension(2)
+                    val ext2 = header.getExtension(2)
                     ext2 as RtpHeaderExtension
                     ext2.id shouldBe 2
                     ext2.data should haveSameContentAs(byteBufferOf(0x42, 0x42))
 
-                    val ext3 = header.extensions.getExtension(3)
+                    val ext3 = header.getExtension(3)
                     ext3 as RtpHeaderExtension
                     ext3.id shouldBe 3
                     ext3.data should haveSameContentAs(byteBufferOf(0x42, 0x42, 0x42, 0x42))
                 }
             }
             "a header with two byte extensions" {
-                val header = RtpHeader.create(headerWithTwoByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithTwoByteExtensions)
                 should("parse correctly") {
                     for (i in 1..3) {
-                        val ext = header.extensions.getExtension(i)
+                        val ext = header.getExtension(i)
                         ext shouldNotBe null
                         ext.shouldBeTypeOf<RtpTwoByteHeaderExtension>()
                     }
@@ -151,7 +149,7 @@ internal class RtpHeaderTest : ShouldSpec() {
         "serializing" {
             "a header with no extensions" {
                 val buf = ByteBuffer.wrap(headerNoExtensions)
-                val header = RtpHeader.create(buf)
+                val header = RtpHeader.fromBuffer(buf)
                 val newBuf = header.getBuffer()
                 newBuf.rewind()
                 buf.rewind()
@@ -160,7 +158,7 @@ internal class RtpHeaderTest : ShouldSpec() {
                 }
             }
             "a header with one byte extensions" {
-                val header = RtpHeader.create(headerWithOneByteExtensions)
+                val header = RtpHeader.fromBuffer(headerWithOneByteExtensions)
                 "by requesting a buffer" {
                     val newBuf = header.getBuffer()
                     should("match the original buffer") {

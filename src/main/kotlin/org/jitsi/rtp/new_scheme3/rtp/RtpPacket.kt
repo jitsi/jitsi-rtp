@@ -19,27 +19,20 @@ package org.jitsi.rtp.new_scheme3.rtp
 import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.new_scheme3.Packet
-import org.jitsi.rtp.new_scheme3.rtp.data.RtpHeaderData
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
 open class RtpPacket(
-    private val _header: RtpHeader = RtpHeader(),
+    val header: RtpHeader = RtpHeader(),
     private var _payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     private var backingBuffer: ByteBuffer? = null
 ) : Packet() {
     val payload: ByteBuffer get() = _payload.duplicate().asReadOnlyBuffer()
-    val header: ImmutableRtpHeader get() = _header
 
     override val sizeBytes: Int
-        get() = _header.sizeBytes + _payload.limit()
+        get() = header.sizeBytes + _payload.limit()
 
     private var dirty: Boolean = true
-
-    fun modifyHeader(block: RtpHeaderData.() -> Unit) {
-        _header.modify(block)
-        dirty = true
-    }
 
     fun modifyPayload(block: ByteBuffer.() -> Unit) {
         with (_payload) {
@@ -54,7 +47,6 @@ open class RtpPacket(
     }
 
     protected fun cloneMutablePayload(): ByteBuffer = _payload.clone()
-    protected fun cloneMutableHeader(): RtpHeader = _header.clone()
 
     val paddingSize: Int
         get() {
@@ -72,19 +64,14 @@ open class RtpPacket(
 
     @Suppress("UNCHECKED_CAST")
     fun <OtherType : RtpPacket>toOtherRtpPacketType(factory: (RtpHeader, ByteBuffer, ByteBuffer?) -> RtpPacket): OtherType =
-        factory(_header, _payload, backingBuffer) as OtherType
+        factory(header, _payload, backingBuffer) as OtherType
 
     override fun clone(): Packet {
-        return RtpPacket(_header.clone(), _payload.clone())
+        return RtpPacket(header.clone(), _payload.clone())
     }
 
-    override fun getBuffer(): ByteBuffer {
-        if (dirty) {
-            //TODO: we should somehow track the original limit we were given for
-            // this buffer, so that we can do things like re-add the auth tag
-            // into the available space
-            // -> backingBuffer should always be the same.  any changes we make to
-            // it should be a duplicate so we know how much we have to work with
+    final override fun getBuffer(): ByteBuffer {
+        if (dirty || header.dirty) {
             val buf = ByteBufferUtils.ensureCapacity(backingBuffer, sizeBytes)
             serializeTo(buf)
 
@@ -95,15 +82,15 @@ open class RtpPacket(
         return backingBuffer!!
     }
 
-    override fun serializeTo(buf: ByteBuffer) {
-        _header.serializeTo(buf)
+    final override fun serializeTo(buf: ByteBuffer) {
+        header.serializeTo(buf)
         _payload.rewind()
         buf.put(_payload)
     }
 
     companion object {
         fun fromBuffer(buf: ByteBuffer): RtpPacket {
-            val header = RtpHeader.create(buf)
+            val header = RtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
             return RtpPacket(header, payload, buf)
         }

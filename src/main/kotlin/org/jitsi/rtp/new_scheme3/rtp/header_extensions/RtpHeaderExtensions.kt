@@ -42,7 +42,7 @@ import java.nio.ByteBuffer
  */
 class RtpHeaderExtensions(
     private val extensionMap: MutableMap<Int, RtpHeaderExtension> = mutableMapOf()
-) : SerializableData() {
+) : SerializableData(), Cloneable {
     private var sizeNeedsToBeRecalculated = true
 
     private var _sizeBytes: Int = 0
@@ -90,6 +90,9 @@ class RtpHeaderExtensions(
         setExtensionsAndPadding(absBuf, extensionMap.values)
         buf.incrementPosition(sizeBytes)
     }
+
+    public override fun clone(): RtpHeaderExtensions =
+        RtpHeaderExtensions(extensionMap.toMutableMap())
 
     override fun toString(): String = extensionMap.toString()
 

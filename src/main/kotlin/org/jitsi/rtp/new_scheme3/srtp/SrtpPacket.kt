@@ -48,12 +48,12 @@ class SrtpPacket(
     }
 
     override fun clone(): Packet {
-        return SrtpPacket(cloneMutableHeader(), cloneMutablePayload())
+        return SrtpPacket(header.clone(), cloneMutablePayload())
     }
 
     companion object {
         fun create(buf: ByteBuffer): SrtpPacket {
-            val header = RtpHeader.create(buf)
+            val header = RtpHeader.fromBuffer(buf)
             val payload = buf.subBuffer(header.sizeBytes)
             return SrtpPacket(header, payload, buf)
         }

@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtp
 
+import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.util.ByteBufferUtils
@@ -34,10 +35,15 @@ class RtxPacket internal constructor(
 
     companion object {
         // Create an RTX packet (to be sent out) from a previously-sent
-        // RTP packet
+        // RTP packet.  NOTE: we do NOT want to modify the given RTP
+        // packet, as it could be cached and we may want to do other
+        // things with it in the future (including, for example, creating
+        // another RTX packet from it)
+        // TODO(brian): this is a good use case for being able to mark a
+        // packet as immutable (at least to throw at runtime)
         fun fromRtpPacket(rtpPacket: RtpPacket): RtxPacket {
             return rtpPacket.toOtherRtpPacketType { rtpHeader, payload, backingBuffer ->
-                RtxPacket(rtpHeader, payload, rtpPacket.header.sequenceNumber, backingBuffer)
+                RtxPacket(rtpHeader.clone(), payload.clone(), rtpPacket.header.sequenceNumber)
             }
         }
         // Convert a packet, currently parsed as an RTP packet, to an RTX packet
@@ -52,8 +58,8 @@ class RtxPacket internal constructor(
         }
         // Parse a buffer as an RTX packet
         fun fromBuffer(buf: ByteBuffer): RtxPacket {
-            val header = RtpHeader.create(buf)
-            val originalSequenceNumber = buf.getShort(header.sizeBytes).toInt()
+            val header = RtpHeader.fromBuffer(buf)
+            val originalSequenceNumber = buf.getShort(header.sizeBytes).toPositiveInt()
             val payload = buf.subBuffer(header.sizeBytes + 2)
 
             return RtxPacket(header, payload, originalSequenceNumber, buf)
