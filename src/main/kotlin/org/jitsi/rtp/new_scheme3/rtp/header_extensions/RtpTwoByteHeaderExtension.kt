@@ -40,11 +40,15 @@ import java.nio.ByteBuffer
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
 class RtpTwoByteHeaderExtension(
-    final override val id: Int = -1,
-    final override val data: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+    override val id: Int = -1,
+    data: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : RtpHeaderExtension() {
     override val sizeBytes: Int
         get() = RtpTwoByteHeaderExtension.HEADER_SIZE + data.limit()
+
+    private val _data: ByteBuffer = data.rewind() as ByteBuffer
+    override val data: ByteBuffer
+        get() = _data.duplicate()
 
     override fun serializeTo(buf: ByteBuffer) {
         val absBuf = buf.subBuffer(buf.position())

@@ -53,13 +53,15 @@ import java.nio.ByteBuffer
  */
 open class RtpOneByteHeaderExtension(
     final override val id: Int = -1,
-    //TODO only expose this (and all ByteBuffer fields everywhere) via a custom
-    // getter which always duplicates, so we don't have to worry about
-    // calling rewind?
-    final override val data: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+    data: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
 ) : RtpHeaderExtension() {
     final override val sizeBytes: Int
         get() = RtpOneByteHeaderExtension.HEADER_SIZE + data.limit()
+
+    //TODO: do this for all exposed ByteBuffer members?
+    private val _data: ByteBuffer = data.rewind() as ByteBuffer
+    final override val data: ByteBuffer
+        get() = _data.duplicate()
 
     override fun serializeTo(buf: ByteBuffer) {
         val absBuf = buf.subBuffer(buf.position())
