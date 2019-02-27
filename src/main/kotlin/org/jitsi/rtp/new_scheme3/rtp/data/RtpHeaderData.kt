@@ -225,7 +225,7 @@ data class RtpHeaderData(
          * [buf] should point to the start of the generic extension header
          */
         fun setExtensions(buf: ByteBuffer, extensions: RtpHeaderExtensions) {
-            buf.put(extensions.getBuffer())
+            extensions.serializeTo(buf)
         }
     }
 }
