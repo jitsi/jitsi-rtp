@@ -17,6 +17,7 @@ package org.jitsi.rtp.new_scheme3.rtp.header_extensions
 
 import org.jitsi.rtp.extensions.rewindOneByte
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.extensions.toHex
 import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpOneByteHeaderExtension.Companion.fromBuffer
@@ -59,6 +60,7 @@ class RtpHeaderExtensions(
                     numPaddingBytes++
                 }
                 _sizeBytes = dataSizeBytes + numPaddingBytes
+                sizeNeedsToBeRecalculated = false
             }
             return _sizeBytes
         }
@@ -189,7 +191,9 @@ class RtpHeaderExtensions(
          */
         fun setExtensionsAndPadding(buf: ByteBuffer, extensions: Collection<RtpHeaderExtension>) {
             buf.position(EXTENSION_START_OFFSET)
-            extensions.forEach { buf.put(it.getBuffer()) }
+            extensions.forEach {
+                it.serializeTo(buf)
+            }
             while (buf.position() % 4 != 0) {
                 buf.put(PADDING_BYTE)
             }
