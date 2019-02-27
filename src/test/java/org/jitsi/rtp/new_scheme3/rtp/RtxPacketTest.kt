@@ -19,50 +19,35 @@ package org.jitsi.rtp.new_scheme3.rtp
 import io.kotlintest.IsolationMode
 import io.kotlintest.should
 import io.kotlintest.shouldBe
-import io.kotlintest.specs.BehaviorSpec
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.plus
-import org.jitsi.rtp.extensions.toHex
-import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpHeaderExtensions
-import org.jitsi.rtp.new_scheme3.rtp.header_extensions.TccHeaderExtension
 import org.jitsi.rtp.util.byteBufferOf
 import org.jitsi.test_helpers.matchers.haveSameContentAs
-import org.junit.jupiter.api.Assertions.*
 
 internal class RtxPacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
 
-    private val rtpPacketBuf = RtpPacket(
+    private val dummyRtpPayload = byteBufferOf(
+        0x42, 0x42, 0x42, 0x42,
+        0x42, 0x42, 0x42, 0x42
+    )
+
+    private val rtpPacket = RtpPacket(
         RtpHeader(
             payloadType = 100,
             ssrc = 12345L,
             sequenceNumber = 10
         ),
-        _payload = byteBufferOf(
-            0x42, 0x42
-        )
-    ).getBuffer()
+        _payload = dummyRtpPayload
+    )
+
+    private val rtxPacketBuf = RtxPacket.fromRtpPacket(rtpPacket).getBuffer()
 
     init {
         "an RTX packet" {
             "constructed from a buffer" {
-                val header = RtpHeader(
-                    payloadType = 96,
-                    sequenceNumber = 2,
-                    ssrc = 456,
-                    extensions = RtpHeaderExtensions(mutableMapOf(1 to TccHeaderExtension(1, 5)))
-                )
-                val payload = byteBufferOf(
-                    // Original Sequence number
-                    0x00, 0x80,
-                    // Dummy payload
-                    0x42, 0x42, 0x42, 0x42,
-                    0x42, 0x42, 0x42, 0x42
-                )
-                val packetBuf = header.getBuffer().plus(payload)
-                val rtxPacket = RtxPacket.fromBuffer(packetBuf)
+                val rtxPacket = RtxPacket.fromBuffer(rtxPacketBuf)
                 should("parse the original sequence number correctly") {
-                    rtxPacket.originalSequenceNumber shouldBe 128
+                    rtxPacket.originalSequenceNumber shouldBe 10
                 }
                 "and then converted to an rtp packet" {
                     val rtpPacket = rtxPacket as RtpPacket
@@ -81,7 +66,6 @@ internal class RtxPacketTest : ShouldSpec() {
             "constructed from an existing RTP packet" {
                 // Specifically create the RTP packet from a buffer so it has a backing
                 // buffer
-                val rtpPacket = RtpPacket.fromBuffer(rtpPacketBuf)
                 val rtxPacket = RtxPacket.fromRtpPacket(rtpPacket)
                 rtxPacket.header.payloadType = 96
                 rtxPacket.header.sequenceNumber = 1
@@ -90,7 +74,22 @@ internal class RtxPacketTest : ShouldSpec() {
                     rtpPacket.header.payloadType shouldBe 100
                     rtpPacket.header.ssrc shouldBe 12345L
                     rtpPacket.header.sequenceNumber shouldBe 10
-                    rtpPacket.payload should haveSameContentAs(byteBufferOf(0x42, 0x42))
+                    rtpPacket.payload should haveSameContentAs(dummyRtpPayload)
+                }
+                should("set the original sequence number") {
+                    rtxPacket.originalSequenceNumber shouldBe 10
+                }
+                should("serialize the original sequence number correctly") {
+                    val buf = rtxPacket.getBuffer()
+                    buf.getShort(rtxPacket.header.sizeBytes) shouldBe 10.toShort()
+                }
+            }
+            "constructed from an RTP packet after we find out it's actually RTX" {
+                val rtpPacket = RtpPacket.fromBuffer(rtxPacketBuf)
+                val rtxPacket = RtxPacket.parseAsRtx(rtpPacket)
+                should("parse the values correctly") {
+                    rtxPacket.originalSequenceNumber shouldBe 10
+                    rtxPacket.payload should haveSameContentAs(dummyRtpPayload)
                 }
             }
         }

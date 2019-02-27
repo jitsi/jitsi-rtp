@@ -26,12 +26,36 @@ import java.nio.ByteBuffer
  * To get the original [RtpPacket] from this [RtxPacket], just use it
  * as the [RtpPacket] instance
  */
+/**
+ * There are 3 different paths for creating an [RtxPacket]:
+ * 1) Encapsulating an existing RTP packet in RTX to be sent
+ * out as a retransmission
+ * 2) Converting an [RtpPacket] instance which was discovered to
+ * actually be an RTX packet.
+ * 3) Parsing an incoming RTX packet from the network (such that
+ * the original RTP packet can be extracted).
+ *
+ * An instance of [RtxPacket] will have a header corresponding
+ * to the RTX version of this packet, and a payload which contains
+ * the original RTP payload (NOT the original sequence number).
+ * The original sequence number will be added when [serializeTo]
+ * is called.
+ */
 class RtxPacket internal constructor(
     header: RtpHeader = RtpHeader(),
     payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
     val originalSequenceNumber: Int = 0,
     backingBuffer: ByteBuffer? = null
 ) : RtpPacket(header, payload, backingBuffer) {
+
+    override val sizeBytes: Int
+        get() = super.sizeBytes + 2
+
+    override fun serializeTo(buf: ByteBuffer) {
+        header.serializeTo(buf)
+        buf.putShort(originalSequenceNumber.toShort())
+        buf.put(payload)
+    }
 
     companion object {
         // Create an RTX packet (to be sent out) from a previously-sent
@@ -52,8 +76,7 @@ class RtxPacket internal constructor(
         fun parseAsRtx(rtpPacket: RtpPacket): RtxPacket {
             return rtpPacket.toOtherRtpPacketType { rtpHeader, payload, backingBuffer ->
                 val originalSequenceNumber = payload.getShort().toPositiveInt()
-                val actualPayload = payload.subBuffer(payload.position())
-                RtxPacket(rtpHeader, actualPayload, originalSequenceNumber, backingBuffer )
+                RtxPacket(rtpHeader, payload.subBuffer(payload.position()), originalSequenceNumber, backingBuffer )
             }
         }
         // Parse a buffer as an RTX packet

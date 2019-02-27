@@ -82,7 +82,7 @@ open class RtpPacket(
         return backingBuffer!!
     }
 
-    final override fun serializeTo(buf: ByteBuffer) {
+    override fun serializeTo(buf: ByteBuffer) {
         header.serializeTo(buf)
         _payload.rewind()
         buf.put(_payload)
