@@ -370,12 +370,11 @@ class Tcc(
                 vectorChunks.add(StatusVectorChunk(2, packetStatuses))
             }
             vectorChunks.forEach {
-                buf.put(it.getBuffer())
+                it.serializeTo(buf)
             }
             receiveDeltas.forEach {
-                buf.put(it.getBuffer())
+                it.serializeTo(buf)
             }
         }
     }
-
 }
