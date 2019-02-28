@@ -24,6 +24,14 @@ import java.util.function.Predicate
 abstract class Serializable {
     abstract val sizeBytes: Int
 
+    /**
+     * Get the contents of this [Serializable] in a [ByteBuffer].
+     * Depending on the implementation, the given buffer may
+     * be newly allocated or an owned buffer that is reused.
+     *
+     * The returned buffer should have its position set to
+     * 0 and its limit at the end of the serialized data.
+     */
     open fun getBuffer(): ByteBuffer {
         val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
@@ -31,6 +39,13 @@ abstract class Serializable {
         return b.rewind() as ByteBuffer
     }
 
+    /**
+     * Serialize the contents of this [Serializable] into
+     * the given buffer, starting at its current position.
+     *
+     * After this method returns, [buf]'s position will
+     * be at the end of the data which was just written.
+     */
     abstract fun serializeTo(buf: ByteBuffer)
 }
 

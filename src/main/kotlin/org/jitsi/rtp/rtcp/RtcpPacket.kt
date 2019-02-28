@@ -24,6 +24,17 @@ import org.jitsi.rtp.rtcp.sdes.RtcpSdesPacket
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
+/**
+ * When performing crypto-related operations (authentication,
+ * encryption/decryption) we need to be able to operate on
+ * both the packet's entire data or its payload as a single
+ * buffer (and, in the case of encryption/decryption, be able
+ * to modify it).  These fields (particularly a modifiable payload)
+ * are not exposed in RTCP packets (as we model the
+ * individual fields of each RTCP packet type) so this class is
+ * designed to be used in those cases.  It can be obtained by
+ * calling [RtcpPacket#prepareForCrypto].
+ */
 class RtcpPacketForCrypto(
     header: RtcpHeader = RtcpHeader(),
     private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
@@ -73,18 +84,14 @@ abstract class RtcpPacket(
             return paddingBytes
         }
 
-    // We don't expose _header to subclasses so that we can ensure we know
-    // when it has been modified.  The one thing they do need it for
-    // is cloning themselves, so allow them to call this to clone
-//    protected fun cloneMutableHeader(): RtcpHeader = _header.clone()
-
-    //TODO(brian): it'd be nice to not expose header data here.  maybe
-    // RtcpHeader should add its own layer for each variabl
-//    fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
-//        _header.modify(block)
-//        dirty = true
-//    }
-
+    /**
+     * Acquire an [RtcpPacketForCrypto] version of this RTCP packet which can be
+     * operated on more easily for crypto-related operations (authentication,
+     * encryption/decryption).  Note that this method does not return a cloned
+     * version, so the [RtcpPacket] instance it's being called on should be
+     * considered 'invalidated' after this call (and should no longer be
+     * used).
+     */
     fun prepareForCrypto(): RtcpPacketForCrypto {
         return RtcpPacketForCrypto(header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
     }
@@ -113,8 +120,8 @@ abstract class RtcpPacket(
     fun <OtherType : RtcpPacket>toOtherRtcpPacketType(factory: (RtcpHeader, backingBuffer: ByteBuffer?) -> RtcpPacket): OtherType
         = factory(header, backingBuffer) as OtherType
 
-    //NOTE: This method should almost NEVER be overridden by subclasses.  The exception
-    // is SrtcpPacket, whose header values will be inconsistent with the data due to
+    //NOTE: This method should almost NEVER be overridden by subclasses.  The exceptions
+    // are the SRTCP-related classes, whose header values will be inconsistent with the data due to
     // the auth tag and SRTCP index (and it should not be padded)
     protected open fun shouldUpdateHeaderAndAddPadding(): Boolean = true
 

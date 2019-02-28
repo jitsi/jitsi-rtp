@@ -26,20 +26,3 @@ class Pli : FeedbackControlInformation() {
     override val sizeBytes: Int = 0
     override fun serializeTo(buf: ByteBuffer) {}
 }
-//class Pli : FeedbackControlInformation() {
-//    override val fmt: Int = 1
-//    override val size: Int = 0
-//    override var buf: ByteBuffer? = ByteBuffer.allocate(0)
-//
-//    override fun getBuffer(): ByteBuffer = buf!!
-//
-//    override fun serializeTo(buf: ByteBuffer) {
-//        buf.put(this.buf)
-//    }
-//
-//    override fun toString(): String {
-//        return "PLI packet"
-//    }
-//}
-
-

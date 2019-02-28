@@ -56,6 +56,9 @@ class ByteBufferUtils {
 
                 newBuf.rewind() as ByteBuffer
             } else {
+                if (buf.limit() < requiredCapacity) {
+                    buf.limit(requiredCapacity)
+                }
                 buf.rewind() as ByteBuffer
             }
         }

@@ -42,6 +42,13 @@ open class RtpPacket(
         dirty = true
     }
 
+    /**
+     * Since the mutable [_payload] is not exposed to subclasses, this method
+     * allows them to ensure the buffer is large enough for the requested
+     * capacity (used to make sure we have enough room to add the auth tag).
+     * TODO: should we just override sizeBytes and serializeTo in SrtpPacket
+     * instead?
+     */
     protected fun growPayloadIfNeeded(requiredCapacity: Int) {
         _payload = ByteBufferUtils.growIfNeeded(_payload, requiredCapacity)
     }
@@ -56,7 +63,6 @@ open class RtpPacket(
 
                 // It's an 8-bit unsigned number.
                 payload.get(payload.limit() - 1).toInt()
-
             } else {
                 0
             }
