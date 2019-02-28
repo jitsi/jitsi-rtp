@@ -16,6 +16,6 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.fci
 
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 
-abstract class FeedbackControlInformation : SerializableData(), Cloneable
+abstract class FeedbackControlInformation : Serializable(), Cloneable

@@ -18,7 +18,7 @@ package org.jitsi.rtp.rtp.header_extensions
 import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.rewindOneByte
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import unsigned.toUInt
 import unsigned.toUShort
 import java.nio.ByteBuffer
@@ -38,7 +38,7 @@ import java.nio.ByteBuffer
  */
 class RtpHeaderExtensions(
     private val extensionMap: MutableMap<Int, RtpHeaderExtension> = mutableMapOf()
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     private var sizeNeedsToBeRecalculated = true
 
     private var _sizeBytes: Int = 0

@@ -16,13 +16,13 @@
 package org.jitsi.rtp.rtp.header_extensions
 
 import org.jitsi.rtp.extensions.rewindOneByte
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 
 private val Byte.isPadding: Boolean
     get() = this == 0.toByte()
 
-abstract class RtpHeaderExtension : SerializableData() {
+abstract class RtpHeaderExtension : Serializable() {
     /**
      * This extension's ID
      */

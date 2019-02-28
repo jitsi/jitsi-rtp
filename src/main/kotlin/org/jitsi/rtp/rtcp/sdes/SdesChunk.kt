@@ -17,7 +17,7 @@
 package org.jitsi.rtp.rtcp.sdes
 
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 import java.util.Objects
 
@@ -34,7 +34,7 @@ import java.util.Objects
 class SdesChunk(
     val ssrc: Long = -1,
     val sdesItems: List<SdesItem> = listOf()
-) : SerializableData() {
+) : Serializable() {
 
     private val dataSize: Int = 4 + sdesItems.map(SdesItem::sizeBytes).sum() + EmptySdesItem.sizeBytes
 

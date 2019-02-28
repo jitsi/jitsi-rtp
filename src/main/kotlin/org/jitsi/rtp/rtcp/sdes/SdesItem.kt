@@ -21,7 +21,7 @@ import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.toHex
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -48,7 +48,7 @@ enum class SdesItemType(val value: Int) {
 abstract class SdesItem(
     val type: SdesItemType = SdesItemType.UNKNOWN,
     val data: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     val length: Int
         get() = data.limit()
 

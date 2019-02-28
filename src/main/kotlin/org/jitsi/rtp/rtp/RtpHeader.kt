@@ -23,7 +23,7 @@ import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.SerializedField
 import org.jitsi.rtp.rtp.header_extensions.RtpHeaderExtension
 import org.jitsi.rtp.rtp.header_extensions.RtpHeaderExtensions
@@ -55,7 +55,7 @@ class RtpHeader(
     ssrc: Long = -1,
     csrcs: List<Long> = listOf(),
     private val extensions: RtpHeaderExtensions = RtpHeaderExtensions.NO_EXTENSIONS
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     override val sizeBytes: Int
         get() = FIXED_HEADER_SIZE_BYTES +
                 (csrcCount * CSRC_SIZE_BYTES) +

@@ -18,7 +18,7 @@ package org.jitsi.rtp.rtcp
 
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.Packet
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 import java.util.Objects
 
@@ -95,7 +95,7 @@ class SenderInfo(
      *     payload data rate.
      */
     val sendersOctetCount: Long = -1
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     override val sizeBytes: Int = SIZE_BYTES
 
     /**

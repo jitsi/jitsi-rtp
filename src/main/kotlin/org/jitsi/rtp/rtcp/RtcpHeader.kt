@@ -24,7 +24,7 @@ import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.SerializedField
 import java.nio.ByteBuffer
 
@@ -45,7 +45,7 @@ class RtcpHeader(
     packetType: Int = -1,
     length: Int = -1,
     senderSsrc: Long = -1
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     override val sizeBytes: Int = SIZE_BYTES
 
     // The length field in the RTCP header is given as the number of

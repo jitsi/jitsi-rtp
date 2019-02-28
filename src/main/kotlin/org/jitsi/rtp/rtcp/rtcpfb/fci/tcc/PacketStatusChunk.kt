@@ -22,7 +22,7 @@ import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 import kotlin.experimental.and
 
@@ -37,7 +37,7 @@ enum class PacketStatusChunkType(val value: Int) {
     }
 }
 
-internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol>, SerializableData() {
+internal abstract class PacketStatusChunk : Iterable<PacketStatusSymbol>, Serializable() {
 
     class PacketStatusChunkIterator(private val p: PacketStatusChunk) : Iterator<PacketStatusSymbol> {
         private var currSymbolIndex: Int = 0

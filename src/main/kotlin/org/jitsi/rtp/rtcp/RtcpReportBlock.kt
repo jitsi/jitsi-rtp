@@ -20,7 +20,7 @@ import org.jitsi.rtp.extensions.get3Bytes
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 import java.util.Objects
 
@@ -176,7 +176,7 @@ class RtcpReportBlock(
      *             Figure 2: Example for round-trip time computation
      */
     val delaySinceLastSr: Long = 0
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     /**
      * extended highest sequence number received: 32 bits
      *     The low 16 bits contain the highest sequence number received in an

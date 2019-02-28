@@ -21,35 +21,20 @@ import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 import java.util.function.Predicate
 
-interface Serializable {
-    /**
-     * Get the contents of this object serialized into a buffer.  The
-     * returned buffer MUST:
-     * 1) Have its current position set to 0
-     * 2) Have its limit set to the size of the valid data contained within
-     * the buffer
-     */
-    fun getBuffer(): ByteBuffer
-
-    //TODO(brian): eventually this should be the required one and getBuffer can
-    // have a default implementation which leverages this method (this would
-    // require moving sizeBytes here, which is probably fine? Do we
-    // even need both at this point?)
-    fun serializeTo(buf: ByteBuffer)
-}
-
-abstract class SerializableData : Serializable {
+abstract class Serializable {
     abstract val sizeBytes: Int
 
-    override fun getBuffer(): ByteBuffer {
+    open fun getBuffer(): ByteBuffer {
         val b = ByteBuffer.allocate(sizeBytes)
         serializeTo(b)
 
         return b.rewind() as ByteBuffer
     }
+
+    abstract fun serializeTo(buf: ByteBuffer)
 }
 
-abstract class Packet : SerializableData(), kotlin.Cloneable {
+abstract class Packet : Serializable(), kotlin.Cloneable {
     public abstract override fun clone(): Packet
 }
 

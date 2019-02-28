@@ -16,10 +16,10 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.fci.tcc
 
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import java.nio.ByteBuffer
 
-abstract class ReceiveDelta : SerializableData() {
+abstract class ReceiveDelta : Serializable() {
     abstract var deltaMs: Double //TODO: should we be able to hold this as a long? don't think a double makes sense?
 
     final override fun getBuffer(): ByteBuffer {

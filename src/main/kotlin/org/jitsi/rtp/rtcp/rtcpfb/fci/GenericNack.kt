@@ -18,7 +18,7 @@ package org.jitsi.rtp.rtcp.rtcpfb.fci
 
 import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.SerializableData
+import org.jitsi.rtp.Serializable
 import org.jitsi.rtp.util.RightToLeftBufferUtils
 import java.nio.ByteBuffer
 
@@ -71,7 +71,7 @@ class GenericNack(
  */
 class GenericNackBlp(
     val lostPacketOffsets: List<Int> = listOf()
-) : SerializableData(), Cloneable {
+) : Serializable(), Cloneable {
     override val sizeBytes: Int = SIZE_BYTES
 
     override fun serializeTo(buf: ByteBuffer) {
