@@ -37,7 +37,7 @@ import java.nio.ByteBuffer
  * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
  */
-//TODO: can we have multiple NACK FCIs?
+//TODO: support multiple NACK FCIs in one packet
 class RtcpFbNackPacket(
     header: RtcpHeader = RtcpHeader(),
     mediaSourceSsrc: Long = -1,
@@ -46,8 +46,6 @@ class RtcpFbNackPacket(
 ) : TransportLayerFbPacket(header.apply { reportCount = FMT }, mediaSourceSsrc, fci, backingBuffer) {
 
     val missingSeqNums: List<Int> get() = fci.missingSeqNums
-
-    constructor(mediaSourceSsrc: Long, missingSeqNums: List<Int>) : this(mediaSourceSsrc = mediaSourceSsrc)
 
     override fun clone(): RtcpFbNackPacket {
         return RtcpFbNackPacket(header.clone(), mediaSourceSsrc, fci.clone())

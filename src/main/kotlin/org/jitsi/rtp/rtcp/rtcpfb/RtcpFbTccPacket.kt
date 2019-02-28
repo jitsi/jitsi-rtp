@@ -59,10 +59,8 @@ class RtcpFbTccPacket(
 
     val numPackets: Int get() = fci.numPackets
 
-    fun modifyFci(block: Tcc.() -> Unit) {
-        with (fci) {
-            block()
-        }
+    fun addPacket(seqNum: Int, timestamp: Long) {
+        fci.addPacket(seqNum, timestamp)
         payloadModified()
     }
 
