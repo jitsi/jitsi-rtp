@@ -31,7 +31,9 @@ interface Serializable {
     fun getBuffer(): ByteBuffer
 
     //TODO(brian): eventually this should be the required one and getBuffer can
-    // have a default implementation which leverages this method
+    // have a default implementation which leverages this method (this would
+    // require moving sizeBytes here, which is probably fine? Do we
+    // even need both at this point?)
     fun serializeTo(buf: ByteBuffer)
 }
 
@@ -46,8 +48,6 @@ abstract class SerializableData : Serializable {
     }
 }
 
-//TODO(brian): i don't think cloning RTCP makes much sense.  can we get away
-// without it?
 abstract class Packet : SerializableData(), kotlin.Cloneable {
     public abstract override fun clone(): Packet
 }
