@@ -17,13 +17,9 @@
 package org.jitsi.rtp
 
 import io.kotlintest.IsolationMode
-import io.kotlintest.matchers.haveSize
-import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.toHex
-import org.jitsi.rtp.util.BufferView
 import java.nio.ByteBuffer
 
 internal class RtpPacketTest : ShouldSpec() {
