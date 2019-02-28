@@ -18,9 +18,9 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
 import org.jitsi.rtp.extensions.getBit
 import org.jitsi.rtp.extensions.getBits
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.putBits
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.new_scheme3.SerializableData
 import java.nio.ByteBuffer

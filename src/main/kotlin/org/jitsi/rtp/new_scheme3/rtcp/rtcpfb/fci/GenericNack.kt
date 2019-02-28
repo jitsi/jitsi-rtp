@@ -16,8 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.util.RightToLeftBufferUtils
 import java.nio.ByteBuffer

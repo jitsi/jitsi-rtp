@@ -16,8 +16,8 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb
 
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc.Tcc
 import java.nio.ByteBuffer

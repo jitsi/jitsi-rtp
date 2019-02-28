@@ -16,9 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp.sdes
 
-import org.jitsi.rtp.extensions.unsigned.decrementPosition
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
-import org.jitsi.rtp.new_scheme3.Packet
+import org.jitsi.rtp.extensions.decrementPosition
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpHeader
 import org.jitsi.rtp.new_scheme3.rtcp.RtcpPacket
 import java.nio.ByteBuffer

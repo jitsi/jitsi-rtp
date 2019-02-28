@@ -17,9 +17,9 @@
 package org.jitsi.rtp.new_scheme3.rtcp.sdes
 
 import org.jitsi.rtp.extensions.compareToFromBeginning
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.subBuffer
 import org.jitsi.rtp.extensions.toHex
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.util.ByteBufferUtils

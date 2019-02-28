@@ -15,14 +15,11 @@
  */
 package org.jitsi.rtp.new_scheme3.rtp.header_extensions
 
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.rewindOneByte
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.toHex
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.new_scheme3.SerializableData
 import org.jitsi.rtp.new_scheme3.rtp.header_extensions.RtpOneByteHeaderExtension.Companion.fromBuffer
-import org.jitsi.rtp.util.ByteBufferUtils
-import org.jitsi.rtp.util.ByteBufferUtils.Companion.EMPTY_BUFFER
 import unsigned.toUInt
 import unsigned.toUShort
 import java.nio.ByteBuffer

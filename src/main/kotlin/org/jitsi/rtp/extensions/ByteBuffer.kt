@@ -159,6 +159,12 @@ fun ByteBuffer.put(index: Int, buf: ByteBuffer): ByteBuffer {
     return this
 }
 
+fun ByteBuffer.incrementPosition(value: Int) {
+    position(position() + value)
+}
+fun ByteBuffer.decrementPosition(value: Int) {
+    position(position() - value)
+}
 /**
  * Compare the contents of two ByteBuffers, each starting from their position 0
  */

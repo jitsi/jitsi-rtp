@@ -17,9 +17,9 @@
 package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.tcc
 
 import org.jitsi.rtp.extensions.get3Bytes
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.put3Bytes
 import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
 import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci.FeedbackControlInformation
 import org.jitsi.rtp.util.RtpUtils

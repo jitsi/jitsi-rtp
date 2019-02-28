@@ -16,7 +16,7 @@
 
 package org.jitsi.rtp.new_scheme3.rtcp
 
-import org.jitsi.rtp.extensions.unsigned.incrementPosition
+import org.jitsi.rtp.extensions.incrementPosition
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.new_scheme3.Packet
 import java.nio.ByteBuffer
