@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,57 +13,160 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jitsi.rtp.rtcp
 
-import org.jitsi.rtp.Packet
+import org.jitsi.rtp.extensions.clone
 import org.jitsi.rtp.extensions.subBuffer
+import org.jitsi.rtp.Packet
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
+import org.jitsi.rtp.rtcp.sdes.RtcpSdesPacket
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
-abstract class RtcpPacket : Packet() {
-    abstract var header: RtcpHeader
+class RtcpPacketForCrypto(
+    header: RtcpHeader = RtcpHeader(),
+    private val payload: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER,
+    backingBuffer: ByteBuffer? = null
+) : RtcpPacket(header, backingBuffer) {
+
+    fun getPayload(): ByteBuffer {
+        // We assume that if the payload is retrieved that it's being modified
+        payloadModified()
+        return payload.duplicate()
+    }
+
+    override val sizeBytes: Int
+        get() = header.sizeBytes + payload.limit()
+
+    override fun shouldUpdateHeaderAndAddPadding(): Boolean = false
+
+    override fun clone(): Packet {
+        return RtcpPacketForCrypto(header.clone(), payload.clone())
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        super.serializeTo(buf)
+        payload.rewind()
+        buf.put(payload)
+    }
+}
+
+abstract class RtcpPacket(
+    val header: RtcpHeader,
+    private var backingBuffer: ByteBuffer?
+) : Packet() {
+    private var dirty: Boolean = true
+
     /**
-     * The size of this packet as it is represented by the RTCPFB length field
-     * in the header:
-     * "The length of this packet in 32-bit words minus one, including the
-     * header and any padding.  This is in line with the definition of
-     * the length field used in RTCP sender and receiver reports"
+     * How many padding bytes are needed, if any
+     * TODO: should sizeBytes be exposed publicly?  because it doesn't
+     * include padding it could be misleading
      */
-    //TODO: it would be nice to put this in RtpProtocolPacket and have RtpPacket and
-    // RtcpPacket inherit it?  or at least put it somewhere common for rtp
-    protected val lengthValue: Int
-        get() = ((size + 3) / 4 - 1)
+    private val numPaddingBytes: Int
+        get() {
+            //TODO: maybe we can only update this when dirty = true
+            var paddingBytes = 0
+            while ((sizeBytes + paddingBytes) % 4 != 0) {
+                paddingBytes++
+            }
+            return paddingBytes
+        }
+
+    // We don't expose _header to subclasses so that we can ensure we know
+    // when it has been modified.  The one thing they do need it for
+    // is cloning themselves, so allow them to call this to clone
+//    protected fun cloneMutableHeader(): RtcpHeader = _header.clone()
+
+    //TODO(brian): it'd be nice to not expose header data here.  maybe
+    // RtcpHeader should add its own layer for each variabl
+//    fun modifyHeader(block: RtcpHeaderData.() -> Unit) {
+//        _header.modify(block)
+//        dirty = true
+//    }
+
+    fun prepareForCrypto(): RtcpPacketForCrypto {
+        return RtcpPacketForCrypto(header, getBuffer().subBuffer(header.sizeBytes), backingBuffer)
+    }
+
+    /**
+     * [sizeBytes] MUST including padding (i.e. it should be 32-bit word aligned)
+     */
+    private fun calculateLengthFieldValue(sizeBytes: Int): Int {
+        if (sizeBytes % 4 != 0) {
+            throw Exception("Invalid RTCP size value")
+        }
+        return (sizeBytes / 4) - 1
+    }
+
+    private fun updateHeaderFields() {
+        header.hasPadding = numPaddingBytes > 0
+        header.length = calculateLengthFieldValue(this@RtcpPacket.sizeBytes + numPaddingBytes)
+    }
+
+    protected fun payloadModified() {
+        //TODO: do we want to call updateHeaderFields here?
+        dirty = true
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <OtherType : RtcpPacket>toOtherRtcpPacketType(factory: (RtcpHeader, backingBuffer: ByteBuffer?) -> RtcpPacket): OtherType
+        = factory(header, backingBuffer) as OtherType
+
+    //NOTE: This method should almost NEVER be overridden by subclasses.  The exception
+    // is SrtcpPacket, whose header values will be inconsistent with the data due to
+    // the auth tag and SRTCP index (and it should not be padded)
+    protected open fun shouldUpdateHeaderAndAddPadding(): Boolean = true
+
+
+    final override fun getBuffer(): ByteBuffer {
+        if (dirty || header.dirty) {
+            if (shouldUpdateHeaderAndAddPadding()) {
+                updateHeaderFields()
+            }
+            val neededSize = if (shouldUpdateHeaderAndAddPadding()) sizeBytes + numPaddingBytes else sizeBytes
+            val b = ByteBufferUtils.ensureCapacity(backingBuffer, neededSize)
+            serializeTo(b)
+            b.rewind()
+
+            backingBuffer = b
+            dirty = false
+        }
+        return backingBuffer!!
+    }
+
+    override fun serializeTo(buf: ByteBuffer) {
+        header.serializeTo(buf)
+    }
 
     companion object {
-        fun fromBuffer(buf: ByteBuffer): RtcpPacket {
+        fun parse(buf: ByteBuffer): RtcpPacket {
+            val bufStartPosition = buf.position()
             val packetType = RtcpHeader.getPacketType(buf)
-            return when (packetType) {
-                RtcpSrPacket.PT -> RtcpSrPacket(buf)
-                RtcpRrPacket.PT -> RtcpRrPacket(buf)
-                RtcpSdesPacket.PT -> RtcpSdesPacket(buf)
-                RtcpByePacket.PT -> RtcpByePacket(buf)
+            val packetLengthBytes = (RtcpHeader.getLength(buf) + 1) * 4
+            val packet = when (packetType) {
+                RtcpSrPacket.PT -> RtcpSrPacket.fromBuffer(buf)
+                RtcpRrPacket.PT -> RtcpRrPacket.fromBuffer(buf)
+                RtcpSdesPacket.PT -> RtcpSdesPacket.fromBuffer(buf)
+                RtcpByePacket.PT -> RtcpByePacket.create(buf)
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.fromBuffer(buf)
                 else -> throw Exception("Unsupported RTCP packet type $packetType")
             }
+            if (buf.position() != bufStartPosition + packetLengthBytes) {
+                throw Exception("Didn't parse until the end of the RTCP packet!")
+            }
+            return packet
+        }
+        fun addPadding(buf: ByteBuffer) {
+            while (buf.position() % 4 != 0) {
+                buf.put(0x00)
+            }
         }
 
-        /**
-         * [buf] should be a buffer whose start represents the start of the
-         * RTCP packet (i.e. the start of the RTCP header)
-         */
-        fun setHeader(buf: ByteBuffer, header: RtcpHeader) {
-            buf.put(header.getBuffer())
-        }
-    }
-
-    val payload: ByteBuffer
-        get() = getBuffer().subBuffer(header.size)
-
-    override fun toString(): String {
-        return with (StringBuffer()) {
-            appendln("RTCP packet")
-            append(header.toString())
-            toString()
+        fun consumePadding(buf: ByteBuffer) {
+            while (buf.position() % 4 != 0) {
+                buf.put(0x00)
+            }
         }
     }
 }

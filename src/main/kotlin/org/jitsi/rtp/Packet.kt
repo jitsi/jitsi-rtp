@@ -1,5 +1,5 @@
 /*
- * Copyright @ 2018 Atlassian Pty Ltd
+ * Copyright @ 2018 - present 8x8, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,157 +13,65 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jitsi.rtp
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.put
-import org.jitsi.rtp.extensions.subBuffer
-import org.jitsi.rtp.rtcp.RtcpHeader
-import toUInt
+import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 import java.util.function.Predicate
 
-abstract class Packet : Serializable {
-    abstract val size: Int
-    abstract fun clone(): Packet
+interface Serializable {
+    /**
+     * Get the contents of this object serialized into a buffer.  The
+     * returned buffer MUST:
+     * 1) Have its current position set to 0
+     * 2) Have its limit set to the size of the valid data contained within
+     * the buffer
+     */
+    fun getBuffer(): ByteBuffer
 
-    //deprecated
-    val tags = mutableMapOf<String, Any>()
+    //TODO(brian): eventually this should be the required one and getBuffer can
+    // have a default implementation which leverages this method (this would
+    // require moving sizeBytes here, which is probably fine? Do we
+    // even need both at this point?)
+    fun serializeTo(buf: ByteBuffer)
 }
 
-/**
- * Basically just a wrapper around a buffer that inherits from [Packet]
- * so that it can be passed to logic which will further handle it.
- * [buf] must be sized to matched the data within (i.e. [buf.limit()]
- * should return the length of the data in the buffer).
- */
-class UnparsedPacket(private val buf: ByteBuffer) : Packet() {
-    override val size: Int = buf.limit()
+abstract class SerializableData : Serializable {
+    abstract val sizeBytes: Int
 
     override fun getBuffer(): ByteBuffer {
-        buf.rewind()
-        return buf
-    }
-    override fun clone(): Packet {
-        return UnparsedPacket(buf.clone())
+        val b = ByteBuffer.allocate(sizeBytes)
+        serializeTo(b)
+
+        return b.rewind() as ByteBuffer
     }
 }
 
-/**
- * [SrtpProtocolPacket] is either an SRTP packet or SRTCP packet (but we don't know which)
- * so it basically just distinguishes a packet as encrypted and stores the buffer
- */
-open class SrtpProtocolPacket(protected var buf: ByteBuffer) : Packet() {
-    override val size: Int
-        get() = buf.limit()
-
-    override fun getBuffer(): ByteBuffer {
-        buf.rewind()
-        return buf
-    }
-    override fun clone(): Packet {
-        return SrtpProtocolPacket(buf.clone())
-    }
-    fun getAuthTag(tagLength: Int): ByteBuffer {
-        return buf.subBuffer(buf.limit() - tagLength, tagLength)
-    }
-    fun removeAuthTag(tagLength: Int) {
-        buf.limit(buf.limit() - tagLength)
-    }
-    fun addAuthTag(authTag: ByteBuffer) {
-        if (buf.capacity() - buf.limit() >= authTag.limit()) {
-            buf.limit(buf.limit() + authTag.limit())
-            buf.put(buf.limit() - authTag.limit(), authTag)
-        } else {
-            val newBuf = ByteBuffer.allocate(size + authTag.limit())
-            buf.rewind()
-            newBuf.put(buf)
-            newBuf.put(authTag)
-            newBuf.flip()
-            buf = newBuf
-        }
-    }
+abstract class Packet : SerializableData(), kotlin.Cloneable {
+    public abstract override fun clone(): Packet
 }
 
-/**
- * [SrtpPacket] is a known SRTP (as opposed to SRTCP) packet
- * https://tools.ietf.org/html/rfc3711#section-3.1
- */
-class SrtpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
-    val header = RtpHeader.fromBuffer(buf)
-    // The size of the payload may change depending on whether or not the auth tag has been
-    //  removed, but we know it always occupies the space between the end of the header
-    //  and the end of the buffer.
-    val payload: ByteBuffer
-        get() = buf.subBuffer(header.size, buf.limit() - header.size)
-    override val size: Int
-        get() = header.size + payload.limit()
+open class UnparsedPacket(
+    private val buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+) : Packet() {
 
-//    fun getAuthTag(tagLength: Int): ByteBuffer {
-//        return buf.subBuffer(buf.limit() - tagLength, tagLength)
-//    }
-//    fun removeAuthTag(tagLength: Int) {
-//        buf.limit(buf.limit() - tagLength)
-//    }
-//    fun addAuthTag(authTag: ByteBuffer) {
-//        if (buf.capacity() - buf.limit() >= authTag.limit()) {
-//            buf.limit(buf.limit() + authTag.limit())
-//            buf.put(buf.limit() - authTag.limit(), authTag)
-//        } else {
-//            val newBuf = ByteBuffer.allocate(size + authTag.limit())
-//            newBuf.put(buf)
-//            newBuf.put(authTag)
-//            newBuf.flip()
-//            buf = newBuf
-//        }
-//    }
-    //TODO: override clone
-}
+    override val sizeBytes: Int = buf.limit()
 
-/**
- * [SrtcpPacket] is a known SRTCP (as opposed to SRTP) packet
- * https://tools.ietf.org/html/rfc3711#section-3.4
- */
-class SrtcpPacket(buf: ByteBuffer) : SrtpProtocolPacket(buf) {
-    val header = RtcpHeader(buf)
-    val payload: ByteBuffer
-        get() = getBuffer().subBuffer(header.size)
-    val ssrc: Int = header.senderSsrc.toUInt()
-//    fun getAuthTag(tagLength: Int): ByteBuffer {
-//        return buf.subBuffer(buf.limit() - tagLength, tagLength)
-//    }
-    fun getSrtcpIndex(tagLength: Int): Int {
-        return buf.getInt(buf.limit() - (4 + tagLength)) and (0x80000000.inv()).toInt()
-    }
-    fun addSrtcpIndex(srtcpIndex: Int) {
-        if (buf.capacity() - buf.limit() >= 4) {
-            buf.limit(buf.limit() + 4)
-            buf.putInt(buf.limit() - 4, srtcpIndex)
-        } else {
-            val newBuf = ByteBuffer.allocate(size + 4)
-            newBuf.put(buf)
-            newBuf.putInt(srtcpIndex)
-            newBuf.flip()
-            buf = newBuf
-        }
-    }
-    fun isEncrypted(tagLength: Int): Boolean {
-        return buf.getInt(buf.limit() - (4 + tagLength)) and 0x80000000.toInt() == 0x80000000.toInt()
-    }
-    //TODO: override clone
-}
+    override fun clone(): Packet = UnparsedPacket(buf.clone())
 
-class DtlsProtocolPacket(private val buf: ByteBuffer) : Packet() {
-    override val size: Int = buf.limit()
+    //TODO: expose as readonly?
+    override fun getBuffer(): ByteBuffer = buf
 
-    override fun getBuffer(): ByteBuffer {
-        buf.rewind()
-        return buf
-    }
-
-    override fun clone(): Packet {
-        return DtlsProtocolPacket(buf.clone())
+    override fun serializeTo(buf: ByteBuffer) {
+        this.buf.rewind()
+        buf.put(this.buf)
     }
 }
 
 typealias PacketPredicate = Predicate<Packet>
+
+class DtlsProtocolPacket(
+    buf: ByteBuffer = ByteBufferUtils.EMPTY_BUFFER
+) : UnparsedPacket(buf)
