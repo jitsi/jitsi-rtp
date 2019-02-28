@@ -19,9 +19,6 @@ package org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.fci
 import io.kotlintest.IsolationMode
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.extensions.unsigned.getUByte
-import org.jitsi.rtp.extensions.unsigned.getUInt
-import org.jitsi.rtp.new_scheme3.rtcp.rtcpfb.RtcpFbFirPacket
 import org.jitsi.rtp.util.byteBufferOf
 import java.nio.ByteBuffer
 

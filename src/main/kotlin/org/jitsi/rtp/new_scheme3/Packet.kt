@@ -17,7 +17,6 @@
 package org.jitsi.rtp.new_scheme3
 
 import org.jitsi.rtp.extensions.clone
-import org.jitsi.rtp.extensions.unsigned.allocateByteBuffer
 import org.jitsi.rtp.util.ByteBufferUtils
 import java.nio.ByteBuffer
 
