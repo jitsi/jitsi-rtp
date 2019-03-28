@@ -16,81 +16,86 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 
-import kotlin.experimental.or
-
-// We have to store Chunk as an Int, to avoid sign issues
+// NOTE(brian): We have to store Chunk as an Int to avoid sign issues
 typealias Chunk = Int
 
+/**
+ * This class is a port of TransportFeedback::LastChunk in
+ * transport_feedback.h/transport_feedback.cc in Chrome
+ * https://cs.chromium.org/chromium/src/third_party/webrtc/modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h?l=95&rcl=20393ee9b7ba622f254908646a9c31bf87349fc7
+ *
+ * Because of this, it explicitly does NOT try to conform
+ * to Kotlin style or idioms, instead striving to match the
+ * Chrome code as closely as possible in an effort to make
+ * future updates easier.
+ */
 class LastChunk {
-    private var numStatuses: Int = 0
-    private var allSame: Boolean = true
-    private var hasLargeDelta: Boolean = false
-    private val deltaSizes = Array<DeltaSize>(MAX_VECTOR_CAPACITY) {0}
-
-    val empty: Boolean
-        get() = numStatuses == 0
-
-
-    fun canAdd(deltaSize: DeltaSize): Boolean {
-        return when {
-            numStatuses < MAX_TWO_BIT_CAPACITY -> true
-            numStatuses < MAX_ONE_BIT_CAPACITY && !hasLargeDelta && deltaSize != LARGE_DELTA_SIZE -> true
-            numStatuses < MAX_RUN_LENGTH_CAPACITY && allSame && deltaSizes[0] == deltaSize -> true
-            else -> false
-        }
+    fun Empty(): Boolean {
+        return size_ == 0
     }
 
-    // Should only be called if canAdd returned true
-    fun add(deltaSize: DeltaSize) {
-        if (numStatuses < MAX_VECTOR_CAPACITY) {
-            deltaSizes[numStatuses] = deltaSize
-        }
-        numStatuses++
-        allSame = allSame && deltaSize == deltaSizes[0]
-        hasLargeDelta = hasLargeDelta || deltaSize == LARGE_DELTA_SIZE
+    fun Clear() {
+        size_ = 0
+        all_same_ = true
+        has_large_delta_ = false
     }
 
-    fun emit(): Chunk {
-        if (allSame) {
-            return encodeRunLength().also {
-                clear()
-            }
+
+    fun CanAdd(deltaSize: DeltaSize): Boolean {
+        if (size_ < kMaxTwoBitCapacity)
+            return true
+        if (size_ < kMaxOneBitCapacity && !has_large_delta_ && deltaSize != kLarge)
+            return true
+        if (size_ < kMaxRunLengthCapacity && all_same_ && delta_sizes_[0] == deltaSize)
+            return true
+        return false
+    }
+
+    // Should only be called if CanAdd returned true
+    fun Add(deltaSize: DeltaSize) {
+        if (size_ < kMaxVectorCapacity)
+            delta_sizes_[size_] = deltaSize
+        size_++
+        all_same_ = all_same_ && deltaSize == delta_sizes_[0]
+        has_large_delta_ = has_large_delta_ || deltaSize == kLarge
+    }
+
+    fun Emit(): Chunk {
+        if (all_same_) {
+            val chunk = EncodeRunLength()
+            Clear()
+            return chunk
         }
-        if (numStatuses == MAX_ONE_BIT_CAPACITY) {
-            return encodeOneBit().also {
-                clear()
-            }
+        if (size_ == kMaxOneBitCapacity) {
+            val chunk = EncodeOneBit()
+            Clear()
+            return chunk
         }
-        val chunk = encodeTwoBit(MAX_TWO_BIT_CAPACITY)
-        // Remove MAX_TWO_BIT_CAPACITY encoded delta sizes,
-        // shift remaining delta sizes and recalculate allSame and
-        // hasLargeDelta
-        numStatuses -= MAX_TWO_BIT_CAPACITY
-        allSame = true
-        hasLargeDelta = false
-        (0 until numStatuses).forEach { index ->
-            val deltaSize = deltaSizes[MAX_TWO_BIT_CAPACITY + index]
-            deltaSizes[index] = deltaSize
-            allSame = allSame && deltaSize == deltaSizes[0]
-            hasLargeDelta = hasLargeDelta || deltaSize == LARGE_DELTA_SIZE
+        val chunk = EncodeTwoBit(kMaxTwoBitCapacity)
+        // Remove |kMaxTwoBitCapacity| encoded delta sizes:
+        // Shift remaining delta sizes and recalculate all_same_ && has_large_delta_.
+        size_ -= kMaxTwoBitCapacity
+        all_same_ = true
+        has_large_delta_ = false
+        for (i in 0 until size_) {
+            val deltaSize = delta_sizes_[kMaxTwoBitCapacity + i]
+            delta_sizes_[i] = deltaSize
+            all_same_ = all_same_ && deltaSize == delta_sizes_[0]
+            has_large_delta_ = has_large_delta_ || deltaSize == kLarge
         }
 
         return chunk
     }
 
-    fun encodeLast(): Chunk {
-        return when {
-            allSame -> encodeRunLength()
-            numStatuses < MAX_TWO_BIT_CAPACITY -> encodeTwoBit(numStatuses)
-            else -> encodeOneBit()
-        }
+    fun EncodeLast(): Chunk {
+        if (all_same_)
+            return EncodeRunLength()
+        if (size_ < kMaxTwoBitCapacity)
+            EncodeTwoBit(size_)
+        return EncodeOneBit()
     }
 
-    fun clear() {
-        numStatuses = 0
-        allSame = true
-        hasLargeDelta = true
-    }
+    //private:
 
     /**
      *
@@ -106,8 +111,8 @@ class LastChunk {
      * S = symbol
      * Run Length = Unsigned integer denoting the run length of the symbol
      */
-    private fun encodeRunLength(): Chunk =
-        ((deltaSizes[0] shl 13) or numStatuses)
+    private fun EncodeRunLength(): Chunk =
+        ((delta_sizes_[0] shl 13) or size_)
 
     /**
      *  One Bit Status Vector Chunk
@@ -122,10 +127,10 @@ class LastChunk {
      * S = 0
      * Symbol list = 14 entries where 0 = not received, 1 = received 1-byte delta.
      */
-    private fun encodeOneBit(): Chunk {
+    private fun EncodeOneBit(): Chunk {
         var chunk = 0x8000
-        deltaSizes.forEachIndexed { index, deltaSize ->
-            chunk = (chunk or (deltaSize shl MAX_ONE_BIT_CAPACITY - 1 - index))
+        for (i in 0 until size_) {
+            chunk = (chunk or (delta_sizes_[i] shl kMaxOneBitCapacity - 1 - i))
         }
         return chunk
     }
@@ -143,20 +148,24 @@ class LastChunk {
      * S = 1
      * symbol list = 7 entries of two bits each.
      */
-    private fun encodeTwoBit(numStatuses: Int): Chunk {
+    private fun EncodeTwoBit(size: Int): Chunk {
         var chunk = 0xC000
-        for (i in 0 until numStatuses) {
-            chunk = (chunk or (deltaSizes[i] shl (2 * (MAX_TWO_BIT_CAPACITY - 1 - i))))
+        for (i in 0 until size) {
+            chunk = (chunk or (delta_sizes_[i] shl (2 * (kMaxTwoBitCapacity - 1 - i))))
         }
         return chunk
     }
 
+    private var size_: Int = 0
+    private var all_same_: Boolean = true
+    private var has_large_delta_: Boolean = false
+    private val delta_sizes_ = Array<DeltaSize>(kMaxVectorCapacity) {0}
 
     companion object {
-        const val MAX_RUN_LENGTH_CAPACITY = 0x1FFF
-        const val MAX_ONE_BIT_CAPACITY = 14
-        const val MAX_TWO_BIT_CAPACITY = 7
-        const val MAX_VECTOR_CAPACITY = MAX_ONE_BIT_CAPACITY
-        const val LARGE_DELTA_SIZE: DeltaSize = 2
+        private const val kMaxRunLengthCapacity = 0x1FFF
+        private const val kMaxOneBitCapacity = 14
+        private const val kMaxTwoBitCapacity = 7
+        private const val kMaxVectorCapacity = kMaxOneBitCapacity
+        private const val kLarge: DeltaSize = 2
     }
 }

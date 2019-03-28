@@ -18,7 +18,6 @@ package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
-import org.jitsi.rtp.extensions.bytearray.toHex
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
@@ -27,19 +26,6 @@ import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 
 typealias DeltaSize = Int
-
-// We'll always encode using 2 bit status symbol, status vector chunks
-class StatusVectorChunkBuilder {
-
-//    fun add
-
-
-
-
-    fun writeTo(buf: ByteArray, offset: Int) {
-
-    }
-}
 
 // The base sequence number is passed because we know, based on what has previously
 // been received, what the next expected seq num should be.  We don't pass in the reference
@@ -119,15 +105,15 @@ class RtcpFbTccPacket2Builder(
         if (numSeqNo == MAX_REPORTED_PACKETS) {
             return false
         }
-        val addChunkSize = if (lastChunk.empty) CHUNK_SIZE_BYTES else 0
+        val addChunkSize = if (lastChunk.Empty()) CHUNK_SIZE_BYTES else 0
 
         if (sizeBytes + deltaSize + addChunkSize > MAX_SIZE_BYTES) {
             return false
         }
 
-        if (lastChunk.canAdd(deltaSize)) {
+        if (lastChunk.CanAdd(deltaSize)) {
             sizeBytes += addChunkSize
-            lastChunk.add(deltaSize)
+            lastChunk.Add(deltaSize)
             numSeqNo++
             return true
         }
@@ -135,9 +121,9 @@ class RtcpFbTccPacket2Builder(
         if (sizeBytes + deltaSize + CHUNK_SIZE_BYTES > MAX_SIZE_BYTES) {
             return false
         }
-        encodedChunks.add(lastChunk.emit())
+        encodedChunks.add(lastChunk.Emit())
         sizeBytes += CHUNK_SIZE_BYTES
-        lastChunk.add(deltaSize)
+        lastChunk.Add(deltaSize)
         numSeqNo++
         return true
     }
@@ -173,8 +159,8 @@ class RtcpFbTccPacket2Builder(
             buf.putShort(currOffset, it.toShort())
             currOffset += CHUNK_SIZE_BYTES
         }
-        if (!lastChunk.empty) {
-            val chunk = lastChunk.encodeLast()
+        if (!lastChunk.Empty()) {
+            val chunk = lastChunk.EncodeLast()
             buf.putShort(currOffset, chunk.toShort())
             currOffset += CHUNK_SIZE_BYTES
         }
