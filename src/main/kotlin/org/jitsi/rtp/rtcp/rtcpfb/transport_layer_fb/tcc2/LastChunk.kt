@@ -43,8 +43,9 @@ class LastChunk {
     // Should only be called if canAdd returned true
     fun add(deltaSize: DeltaSize) {
         if (numStatuses < MAX_VECTOR_CAPACITY) {
-            deltaSizes[numStatuses++] = deltaSize
+            deltaSizes[numStatuses] = deltaSize
         }
+        numStatuses++
         allSame = allSame && deltaSize == deltaSizes[0]
         hasLargeDelta = hasLargeDelta || deltaSize == LARGE_DELTA_SIZE
     }

@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 
+import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
 import org.jitsi.rtp.extensions.bytearray.toHex
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
@@ -54,7 +55,8 @@ class RtcpFbTccPacket2Builder(
     // a packet in addReceivedPacket
     private var baseTimeTicks: Long = -1
     // The amount of packets whose status are represented
-    private var numSeqNo = 0
+    var numSeqNo = 0
+        private set
     // The current chunk we're 'filling out' as packets
     // are received
     private var lastChunk = LastChunk()
@@ -69,6 +71,7 @@ class RtcpFbTccPacket2Builder(
     class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
 
     fun addReceivedPacket(sequenceNumber: Int, timestampUs: Long): Boolean {
+//        println("tcc packet $feedbackPacketSeqNum adding seqNum $sequenceNumber ts $timestampUs")
         if (baseTimeTicks == -1L) {
             baseTimeTicks = (timestampUs % TIME_WRAP_PERIOD_US) / BASE_SCALE_FACTOR
             lastTimestampUs = baseTimeTicks * BASE_SCALE_FACTOR
@@ -99,7 +102,7 @@ class RtcpFbTccPacket2Builder(
                 nextSeqNo++
             }
         }
-        val deltaSize = if (delta >= 0 && delta < 0xFF) 1 else 2
+        val deltaSize = if (delta in 0..0xFF) 1 else 2
         if (!addDeltaSize(deltaSize)) {
             return false
         }
@@ -139,25 +142,29 @@ class RtcpFbTccPacket2Builder(
     }
 
     fun build(): RtcpFbTccPacket {
-        val buf = BufferPool.getArray(sizeBytes + RtpUtils.getNumPaddingBytes(sizeBytes))
+        val packetSize = sizeBytes + RtpUtils.getNumPaddingBytes(sizeBytes)
+        val buf = BufferPool.getArray(packetSize)
         writeTo(buf, 0)
-        println("created tcc packet:\n${buf.toHex()}")
-        return RtcpFbTccPacket(buf, 0, sizeBytes)
+//        println("created tcc packet:\n${buf.toHex()}")
+        return RtcpFbTccPacket(buf, 0, packetSize)
     }
 
     fun writeTo(buf: ByteArray, offset: Int) {
+        //NOTE: padding is held 'internally' in the TCC FCI, so we don't set
+        // the padding bit on the header
         val paddingBytes = RtpUtils.getNumPaddingBytes(sizeBytes)
         rtcpHeader.apply {
             packetType = TransportLayerRtcpFbPacket.PT
             reportCount = RtcpFbTccPacket.FMT
             length = RtpUtils.calculateRtcpLengthFieldValue(sizeBytes + paddingBytes)
-            hasPadding = paddingBytes > 0
         }.writeTo(buf, offset)
 
         RtcpFbPacket.setMediaSourceSsrc(buf, offset, mediaSourceSsrc)
         RtcpFbTccPacket.setBaseSeqNum(buf, offset, baseSeqNo)
         RtcpFbTccPacket.setPacketStatusCount(buf, offset, numSeqNo)
-        RtcpFbTccPacket.setReferenceTimeMs(buf, offset, baseTimeTicks)
+//        RtcpFbTccPacket.setReferenceTimeMs(buf, offset, baseTimeTicks)
+        buf.put3Bytes(offset + RtcpFbTccPacket.REFERENCE_TIME_OFFSET, baseTimeTicks.toInt())
+//        RtcpFbTccPacket.setReferenceTimeMs(buf, offset, baseTimeTicks)
         RtcpFbTccPacket.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
 
         var currOffset = RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
@@ -170,7 +177,6 @@ class RtcpFbTccPacket2Builder(
             buf.putShort(currOffset, chunk.toShort())
             currOffset += CHUNK_SIZE_BYTES
         }
-        println("writing first delta at offset $currOffset")
         packets.forEach {
             when (it.deltaTicks) {
                 in 0..0xFF -> buf[currOffset++] = it.deltaTicks.toByte()
@@ -179,6 +185,9 @@ class RtcpFbTccPacket2Builder(
                     currOffset += 2
                 }
             }
+        }
+        repeat(paddingBytes) {
+            buf[currOffset++] = 0x00
         }
     }
 
