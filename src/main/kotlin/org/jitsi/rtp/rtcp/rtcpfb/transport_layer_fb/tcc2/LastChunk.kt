@@ -50,8 +50,6 @@ class LastChunk {
         hasLargeDelta = hasLargeDelta || deltaSize == LARGE_DELTA_SIZE
     }
 
-    //TODO: what is the trigger for calling this? --> it assumes the size will be on a 'nice'
-    // boundary?
     fun emit(): Chunk {
         if (allSame) {
             return encodeRunLength().also {

@@ -71,8 +71,9 @@ class RtcpFbTccPacket2Builder(
     class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
 
     fun addReceivedPacket(sequenceNumber: Int, timestampUs: Long): Boolean {
-//        println("tcc packet $feedbackPacketSeqNum adding seqNum $sequenceNumber ts $timestampUs")
         if (baseTimeTicks == -1L) {
+            // Take timestampUs and convert it to a number that fits and wraps properly to be represented
+            // as the 24 bit reference time field
             baseTimeTicks = (timestampUs % TIME_WRAP_PERIOD_US) / BASE_SCALE_FACTOR
             lastTimestampUs = baseTimeTicks * BASE_SCALE_FACTOR
         }
@@ -199,7 +200,7 @@ class RtcpFbTccPacket2Builder(
     companion object {
         // Maximum number of packets (including missing) TransportFeedback can report.
         const val MAX_REPORTED_PACKETS = 0xFFFF
-        // // Convert to multiples of 0.25ms
+        // Convert to multiples of 0.25ms
         const val DELTA_SCALE_FACTOR = 250
         const val CHUNK_SIZE_BYTES = 2
         // Size constraint imposed by RTCP common header: 16bit size field interpreted
@@ -211,8 +212,11 @@ class RtcpFbTccPacket2Builder(
         // * 8 bytes FeedbackPacket header
         const val TRANSPORT_CC_HEADER_SIZE_BYTES = 4 + 8 + 8
 
+        // Used to convert from microseconds to multiples of 64ms(?)
         const val BASE_SCALE_FACTOR = DELTA_SCALE_FACTOR * (1 shl 8)
         //TODO: make sure we're not overflowing anything here
+        // The reference time field is 24 bits and are represented as multiples of 64ms
+        // When the reference time field would need to wrap around
         const val TIME_WRAP_PERIOD_US: Long = (1 shl 24).toLong() * BASE_SCALE_FACTOR
     }
 }
