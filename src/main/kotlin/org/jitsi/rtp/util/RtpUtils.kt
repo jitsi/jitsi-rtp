@@ -49,6 +49,9 @@ class RtpUtils {
                 }
             }
         }
+        fun getPaddedLengthValue(unpaddedSizeBytes: Int): Int {
+            return calculateRtcpLengthFieldValue(unpaddedSizeBytes + getNumPaddingBytes(unpaddedSizeBytes))
+        }
         /**
          * [sizeBytes] MUST including padding (i.e. it should be 32-bit word aligned)
          */
@@ -61,7 +64,7 @@ class RtpUtils {
 
         fun getNumPaddingBytes(dataSizeBytes: Int): Int {
             var paddingBytes = 0
-            while (dataSizeBytes + paddingBytes % 4 != 0) {
+            while ((dataSizeBytes + paddingBytes) % 4 != 0) {
                 paddingBytes++
             }
             return paddingBytes

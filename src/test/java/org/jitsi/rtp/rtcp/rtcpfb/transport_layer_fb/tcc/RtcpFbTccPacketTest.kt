@@ -23,6 +23,7 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.util.byteBufferOf
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2Builder
 import org.jitsi.test_helpers.matchers.haveSameContentAs
 
 class RtcpFbTccPacketTest : ShouldSpec() {
@@ -169,6 +170,28 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             }
             "With a delta that's too big" {
                 rtcpFbTccPacketBuilder.addPacket(6229, 107784064 + 10000) shouldBe false
+
+            }
+        }
+        "Creating an RtcpFbTccPacket2" {
+            val rtcpFbTccPacketBuilder = RtcpFbTccPacket2Builder(
+                rtcpHeader = RtcpHeaderBuilder(
+                    senderSsrc = 839852602
+                ),
+                mediaSourceSsrc = 2397376430,
+                feedbackPacketSeqNum = 162,
+                baseSeqNo = 6227
+            )
+            rtcpFbTccPacketBuilder.addReceivedPacket(6228, 107784064) shouldBe true
+//            rtcpFbTccPacketBuilder.addReceivedPacket(6227, -1) shouldBe true
+
+            val packet = rtcpFbTccPacketBuilder.build()
+            should("serialize the data correctly") {
+                val x = packet.buffer
+                packet.buffer should haveSameContentAs(tccSvChunkData.array())
+            }
+            "With a delta that's too big" {
+                rtcpFbTccPacketBuilder.addReceivedPacket(6229, 107784064 + 10000) shouldBe false
 
             }
         }
