@@ -16,6 +16,8 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 
+import kotlin.math.min
+
 // NOTE(brian): We have to store Chunk as an Int to avoid sign issues
 typealias Chunk = Int
 
@@ -40,7 +42,8 @@ class LastChunk {
         has_large_delta_ = false
     }
 
-
+    // Return if delta sizes still can be encoded into single chunk with added
+    // |delta_size|.
     fun CanAdd(deltaSize: DeltaSize): Boolean {
         if (size_ < kMaxTwoBitCapacity)
             return true
@@ -51,7 +54,7 @@ class LastChunk {
         return false
     }
 
-    // Should only be called if CanAdd returned true
+    // Add |delta_size|, assumes |CanAdd(delta_size)|,
     fun Add(deltaSize: DeltaSize) {
         if (size_ < kMaxVectorCapacity)
             delta_sizes_[size_] = deltaSize
@@ -60,6 +63,8 @@ class LastChunk {
         has_large_delta_ = has_large_delta_ || deltaSize == kLarge
     }
 
+    // Encode chunk as large as possible removing encoded delta sizes.
+    // Assume CanAdd() == false for some valid delta_size.
     fun Emit(): Chunk {
         if (all_same_) {
             val chunk = EncodeRunLength()
@@ -87,12 +92,33 @@ class LastChunk {
         return chunk
     }
 
+    // // Encode all stored delta_sizes into single chunk, pad with 0s if needed.
     fun EncodeLast(): Chunk {
         if (all_same_)
             return EncodeRunLength()
         if (size_ < kMaxTwoBitCapacity)
             EncodeTwoBit(size_)
         return EncodeOneBit()
+    }
+
+    // Decode up to |max_size| delta sizes from |chunk|.
+    fun Decode(chunk: Chunk, max_size: Int) {
+        if ((chunk and 0x8000) == 0) {
+            DecodeRunLength(chunk, max_size)
+        } else if ((chunk and 0x4000) == 0) {
+            DecodeOneBit(chunk, max_size)
+        } else {
+            DecodeTwoBit(chunk, max_size)
+        }
+    }
+
+    // Appends content of the Lastchunk to |deltas|.
+    fun AppendTo(deltas: MutableList<DeltaSize>) {
+        if (all_same_) {
+            deltas.addAll(List(size_) { delta_sizes_[0] })
+        } else {
+            deltas.addAll(delta_sizes_)
+        }
     }
 
     //private:
@@ -113,6 +139,17 @@ class LastChunk {
      */
     private fun EncodeRunLength(): Chunk =
         ((delta_sizes_[0] shl 13) or size_)
+
+    private fun DecodeRunLength(chunk: Chunk, max_count: Int) {
+        size_ = min(chunk and 0x1fff, max_count)
+        val delta_size = (chunk ushr 13) and 0x03
+        has_large_delta_ = delta_size > kLarge
+        all_same_ = true
+        // To make it consistent with Add function, populate delta_sizes beyound 1st.
+        for (i in 0 until min(size_, kMaxVectorCapacity)) {
+            delta_sizes_[i] = delta_size
+        }
+    }
 
     /**
      *  One Bit Status Vector Chunk
@@ -135,6 +172,15 @@ class LastChunk {
         return chunk
     }
 
+    private fun DecodeOneBit(chunk: Chunk, max_size: Int) {
+        size_ = min(kMaxOneBitCapacity, max_size)
+        has_large_delta_ = false
+        all_same_ = false
+        for (i in 0 until size_) {
+            delta_sizes_[i] = (chunk ushr (kMaxOneBitCapacity - 1 - i)) and 0x01
+        }
+    }
+
     /**
      * Two Bit Status Vector Chunk
      *
@@ -154,6 +200,15 @@ class LastChunk {
             chunk = (chunk or (delta_sizes_[i] shl (2 * (kMaxTwoBitCapacity - 1 - i))))
         }
         return chunk
+    }
+
+    private fun DecodeTwoBit(chunk: Chunk, max_size: Int) {
+        size_ = min(kMaxTwoBitCapacity, max_size)
+        has_large_delta_ = true
+        all_same_ = false
+        for (i in 0 until size_) {
+            delta_sizes_[i] = (chunk ushr (2 * (kMaxTwoBitCapacity - 1 - i))) and 0x03
+        }
     }
 
     private var size_: Int = 0

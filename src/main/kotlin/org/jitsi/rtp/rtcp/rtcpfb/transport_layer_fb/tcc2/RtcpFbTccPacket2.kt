@@ -16,16 +16,34 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 
+import org.jitsi.rtp.extensions.bytearray.cloneFromPool
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
+import org.jitsi.rtp.extensions.unsigned.toPositiveInt
+import org.jitsi.rtp.extensions.unsigned.toPositiveShort
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
+import org.jitsi.rtp.rtcp.RtcpPacket
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kBaseScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kChunkSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kDeltaScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kMaxReportedPackets
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kMaxSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTimeWrapPeriodUs
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
+import org.jitsi.rtp.util.get3BytesAsInt
+import org.jitsi.rtp.util.getShortAsInt
 
+// Size in bytes of a delta time in rtcp packet.
+// Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
+
+private class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
+
 
 // The base sequence number is passed because we know, based on what has previously
 // been received, what the next expected seq num should be.  We don't pass in the reference
@@ -62,8 +80,6 @@ class RtcpFbTccPacket2Builder(
     private var size_bytes_ = kTransportFeedbackHeaderSizeBytes
     private var last_timestamp_us_: Long = 0
     private val packets_ = mutableListOf<ReceivedPacket>()
-
-    class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
 
     fun AddReceivedPacket(sequence_number: Int, timestamp_us: Long): Boolean {
         if (base_time_ticks_ == -1L) {
@@ -187,6 +203,90 @@ class RtcpFbTccPacket2Builder(
         size_bytes_ = kTransportFeedbackHeaderSizeBytes
     }
 
+}
+
+class RtcpFbTccPacket2(
+    buffer: ByteArray,
+    offset: Int,
+    length: Int
+) : TransportLayerRtcpFbPacket(buffer, offset, length) {
+
+    // All but last encoded packet chunks.
+    private val encoded_chunks_ = mutableListOf<Chunk>()
+    // The current chunk we're 'filling out' as packets
+    // are received
+    private var last_chunk_ = LastChunk()
+    private val base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
+    private var num_seq_no_: Int = 0
+    private val packets_ = mutableListOf<ReceivedPacket>()
+    private var last_timestamp_us_: Long = 0
+
+    init {
+        val status_count = RtcpFbTccPacket.getPacketStatusCount(buffer, offset)
+        val delta_sizes = mutableListOf<Int>()
+        var index = offset + RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
+        val end_index = offset + length
+        while (delta_sizes.size < status_count) {
+            if (index + kChunkSizeBytes > end_index) {
+                throw Exception("Buffer overflow while parsing packet.")
+            }
+            val chunk = buffer.getShortAsInt(index)
+            index += kChunkSizeBytes
+            encoded_chunks_.add(chunk)
+            last_chunk_.Decode(chunk, status_count - delta_sizes.size)
+            last_chunk_.AppendTo(delta_sizes)
+        }
+        // Last chunk is stored in the |last_chunk_|.
+        encoded_chunks_.dropLast(1)
+        num_seq_no_ = status_count
+
+        var seq_no = base_seq_no_
+        var recv_delta_size = 0
+        for (delta_size in delta_sizes) {
+            recv_delta_size += delta_size
+        }
+
+        // Determine if timestamps, that is, recv_delta are included in the packet.
+        if (end_index >= index + recv_delta_size) {
+            for (delta_size in delta_sizes) {
+                if (index + delta_size > end_index) {
+                    throw Exception("Buffer overflow while parsing packet.")
+                }
+                when (delta_size) {
+                    0 -> { /* No-op */ }
+                    1 -> {
+                        val delta = buffer[index]
+                        packets_.add(ReceivedPacket(seq_no, delta.toPositiveShort()))
+                        last_timestamp_us_ += delta * kDeltaScaleFactor
+                        index += delta_size
+                    }
+                    2 -> {
+                        val delta = buffer.getShortAsInt(index)
+                        packets_.add(ReceivedPacket(seq_no, delta.toShort()))
+                        last_timestamp_us_ += delta * kDeltaScaleFactor
+                        index += delta_size
+                    }
+                    3 -> {
+                        throw Exception("Warning: invalid delta size for seq_no $seq_no")
+                    }
+                }
+                ++seq_no
+            }
+        } else {
+            // The packet does not contain receive deltas
+            for (delta_size in delta_sizes) {
+                // Use delta sizes to detect if packet was received.
+                if (delta_size > 0) {
+                    packets_.add(ReceivedPacket(seq_no, 0))
+                }
+                ++seq_no
+            }
+        }
+    }
+
+    override fun clone(): RtcpFbTccPacket2 =
+        RtcpFbTccPacket2(buffer.cloneFromPool(), offset, length)
+
     companion object {
         // Convert to multiples of 0.25ms
         const val kDeltaScaleFactor = 250
@@ -207,4 +307,10 @@ class RtcpFbTccPacket2Builder(
         // When the reference time field would need to wrap around
         const val kTimeWrapPeriodUs: Long = (1 shl 24).toLong() * kBaseScaleFactor
     }
+
+
+    // private:
+    private val base_time_ticks = buffer.get3BytesAsInt(offset + RtcpFbTccPacket.REFERENCE_TIME_OFFSET)
+    private val feedback_seq_ = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
+
 }
