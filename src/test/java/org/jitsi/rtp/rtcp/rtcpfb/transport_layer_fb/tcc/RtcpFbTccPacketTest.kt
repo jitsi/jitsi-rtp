@@ -210,10 +210,10 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 39 to 1553754063384000
             )
             val rtcpFbTccPacketBuilder = RtcpFbTccPacket2Builder(
-                baseSeqNo = 7
+                base_seq_no_ = 7
             )
             packets.forEach { (seqNum, timestampUs) ->
-                rtcpFbTccPacketBuilder.addReceivedPacket(seqNum, timestampUs)
+                rtcpFbTccPacketBuilder.AddReceivedPacket(seqNum, timestampUs)
             }
             val pkt = rtcpFbTccPacketBuilder.build()
             println(pkt.toHex())
@@ -225,10 +225,10 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 ),
                 mediaSourceSsrc = 2397376430,
                 feedbackPacketSeqNum = 162,
-                baseSeqNo = 6227
+                base_seq_no_ = 6227
             )
-            rtcpFbTccPacketBuilder.addReceivedPacket(6228, 107784064) shouldBe true
-//            rtcpFbTccPacketBuilder.addReceivedPacket(6227, -1) shouldBe true
+            rtcpFbTccPacketBuilder.AddReceivedPacket(6228, 107784064) shouldBe true
+//            rtcpFbTccPacketBuilder.AddReceivedPacket(6227, -1) shouldBe true
 
             val packet = rtcpFbTccPacketBuilder.build()
             should("serialize the data correctly") {
@@ -236,7 +236,7 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 packet.buffer should haveSameContentAs(tccSvChunkData.array())
             }
             "With a delta that's too big" {
-                rtcpFbTccPacketBuilder.addReceivedPacket(6229, 107784064 + 10000) shouldBe false
+                rtcpFbTccPacketBuilder.AddReceivedPacket(6229, 107784064 + 10000) shouldBe false
             }
         }
     }
