@@ -24,13 +24,13 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveShort
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kBaseScaleFactor
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kChunkSizeBytes
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kDeltaScaleFactor
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kMaxReportedPackets
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kMaxSizeBytes
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTimeWrapPeriodUs
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTransportFeedbackHeaderSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kBaseScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kChunkSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kDeltaScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kMaxReportedPackets
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kMaxSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kTimeWrapPeriodUs
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.get3BytesAsInt
@@ -60,7 +60,7 @@ class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
  * Chrome code as closely as possible in an effort to make
  * future updates easier.
  */
-class RtcpFbTccPacket2Builder(
+class RtcpFbTccPacketBuilder(
     val rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     var mediaSourceSsrc: Long = -1,
     val feedbackPacketSeqNum: Int = -1,
@@ -153,11 +153,11 @@ class RtcpFbTccPacket2Builder(
         return true
     }
 
-    fun build(): RtcpFbTccPacket2 {
+    fun build(): RtcpFbTccPacket {
         val packetSize = size_bytes_ + RtpUtils.getNumPaddingBytes(size_bytes_)
         val buf = BufferPool.getArray(packetSize)
         writeTo(buf, 0)
-        return RtcpFbTccPacket2(buf, 0, packetSize)
+        return RtcpFbTccPacket(buf, 0, packetSize)
     }
 
     fun writeTo(buf: ByteArray, offset: Int) {
@@ -166,17 +166,17 @@ class RtcpFbTccPacket2Builder(
         val paddingBytes = RtpUtils.getNumPaddingBytes(size_bytes_)
         rtcpHeader.apply {
             packetType = TransportLayerRtcpFbPacket.PT
-            reportCount = RtcpFbTccPacket2.FMT
+            reportCount = RtcpFbTccPacket.FMT
             length = RtpUtils.calculateRtcpLengthFieldValue(size_bytes_ + paddingBytes)
         }.writeTo(buf, offset)
 
         RtcpFbPacket.setMediaSourceSsrc(buf, offset, mediaSourceSsrc)
-        RtcpFbTccPacket2.setBaseSeqNum(buf, offset, base_seq_no_)
-        RtcpFbTccPacket2.setPacketStatusCount(buf, offset, num_seq_no_)
-        RtcpFbTccPacket2.setReferenceTimeTicks(buf, offset, base_time_ticks_.toInt())
-        RtcpFbTccPacket2.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
+        RtcpFbTccPacket.setBaseSeqNum(buf, offset, base_seq_no_)
+        RtcpFbTccPacket.setPacketStatusCount(buf, offset, num_seq_no_)
+        RtcpFbTccPacket.setReferenceTimeTicks(buf, offset, base_time_ticks_.toInt())
+        RtcpFbTccPacket.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
 
-        var currOffset = RtcpFbTccPacket2.PACKET_CHUNKS_OFFSET
+        var currOffset = RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
         encoded_chunks_.forEach {
             buf.putShort(currOffset, it.toShort())
             currOffset += kChunkSizeBytes
@@ -209,11 +209,11 @@ class RtcpFbTccPacket2Builder(
 
 /**
  * NOTE(brian): This class is a port of the rest of the logic in TransportFeedback
- * not covered by RtcpFbTccPacket2Builder.  Chrome uses a single class for both
+ * not covered by RtcpFbTccPacketBuilder.  Chrome uses a single class for both
  * the 'builder' and the 'parser' but because of the way we define packets
  * (inheriting from the buffer type and therefore always requiring a valid buffer),
  * we separate builders out into their own class.  Because of that, this class
- * and RtcpFbTccPacket2Builder have overlap in their members.
+ * and RtcpFbTccPacketBuilder have overlap in their members.
  *
  * https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01#section-3.1
  * 0                   1                   2                   3
@@ -250,7 +250,7 @@ class RtcpFbTccPacket2Builder(
  *  feedback packet sent.  Used to detect feedback packet
  *  losses.
  */
-class RtcpFbTccPacket2(
+class RtcpFbTccPacket(
     buffer: ByteArray,
     offset: Int,
     length: Int
@@ -268,14 +268,14 @@ class RtcpFbTccPacket2(
     // The reference time, in ticks.
     private var base_time_ticks_: Long = -1
 
-    val feedbackSeqNum: Int = RtcpFbTccPacket2.getFeedbackPacketCount(buffer, offset)
+    val feedbackSeqNum: Int = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
 
     init {
-        base_seq_no_ = RtcpFbTccPacket2.getBaseSeqNum(buffer, offset)
-        val status_count = RtcpFbTccPacket2.getPacketStatusCount(buffer, offset)
-        base_time_ticks_ = RtcpFbTccPacket2.getReferenceTimeTicks(buffer, offset)
+        base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
+        val status_count = RtcpFbTccPacket.getPacketStatusCount(buffer, offset)
+        base_time_ticks_ = RtcpFbTccPacket.getReferenceTimeTicks(buffer, offset)
         val delta_sizes = mutableListOf<Int>()
-        var index = offset + RtcpFbTccPacket2.PACKET_CHUNKS_OFFSET
+        var index = offset + RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
         val end_index = offset + length
         while (delta_sizes.size < status_count) {
             if (index + kChunkSizeBytes > end_index) {
@@ -340,8 +340,8 @@ class RtcpFbTccPacket2(
 
     override fun iterator(): Iterator<ReceivedPacket> = packets_.iterator()
 
-    override fun clone(): RtcpFbTccPacket2 =
-        RtcpFbTccPacket2(buffer.cloneFromPool(), offset, length)
+    override fun clone(): RtcpFbTccPacket =
+        RtcpFbTccPacket(buffer.cloneFromPool(), offset, length)
 
     companion object {
         const val FMT = 15

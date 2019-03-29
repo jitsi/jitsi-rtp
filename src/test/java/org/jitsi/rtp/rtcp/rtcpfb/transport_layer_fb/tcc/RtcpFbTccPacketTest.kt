@@ -18,14 +18,12 @@ package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc
 
 import io.kotlintest.matchers.maps.shouldContainKey
 import io.kotlintest.matchers.withClue
-import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2Builder
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacketBuilder
 import org.jitsi.rtp.util.byteBufferOf
-import org.jitsi.test_helpers.matchers.haveSameContentAs
 
 class RtcpFbTccPacketTest : ShouldSpec() {
     fun Int.toTicks(): Short = (this * 4).toShort()
@@ -134,7 +132,7 @@ class RtcpFbTccPacketTest : ShouldSpec() {
     init {
         "Parsing an RtcpFbTccPacket" {
             "with RLE" {
-                val rtcpFbTccPacket = RtcpFbTccPacket2(tccRleData.array(), tccRleData.arrayOffset(), tccRleData.limit())
+                val rtcpFbTccPacket = RtcpFbTccPacket(tccRleData.array(), tccRleData.arrayOffset(), tccRleData.limit())
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach { (seqNum, deltaTicks) ->
                         expectedTccRlePacketInfo shouldContainKey seqNum
@@ -145,7 +143,7 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 }
             }
             "with mixed chunk types and a negative delta" {
-                val rtcpFbTccPacket = RtcpFbTccPacket2(tccMixedChunkTypeData.array(), tccMixedChunkTypeData.arrayOffset(), tccMixedChunkTypeData.limit())
+                val rtcpFbTccPacket = RtcpFbTccPacket(tccMixedChunkTypeData.array(), tccMixedChunkTypeData.arrayOffset(), tccMixedChunkTypeData.limit())
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach { (seqNum, recvTimestamp) ->
                         expectedTccMixedChunkTypePacketInfo shouldContainKey seqNum
@@ -157,7 +155,7 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             }
         }
         "Creating an RtcpFbTccPacket" {
-            val rtcpFbTccPacketBuilder = RtcpFbTccPacket2Builder(
+            val rtcpFbTccPacketBuilder = RtcpFbTccPacketBuilder(
                 rtcpHeader = RtcpHeaderBuilder(
                     senderSsrc = 839852602
                 ),
