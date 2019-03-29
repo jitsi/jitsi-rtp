@@ -19,11 +19,11 @@ package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 import org.jitsi.rtp.extensions.bytearray.cloneFromPool
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
+import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 import org.jitsi.rtp.extensions.unsigned.toPositiveShort
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kBaseScaleFactor
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kChunkSizeBytes
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kDeltaScaleFactor
@@ -33,13 +33,18 @@ import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Compan
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
+import org.jitsi.rtp.util.get3BytesAsInt
+import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.getShortAsInt
 
 // Size in bytes of a delta time in rtcp packet.
 // Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
 
-class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
+class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
+    operator fun component1(): Int = seqNum
+    operator fun component2(): Short = deltaTicks
+}
 
 
 // The base sequence number is passed because we know, based on what has previously
@@ -148,11 +153,11 @@ class RtcpFbTccPacket2Builder(
         return true
     }
 
-    fun build(): RtcpFbTccPacket {
+    fun build(): RtcpFbTccPacket2 {
         val packetSize = size_bytes_ + RtpUtils.getNumPaddingBytes(size_bytes_)
         val buf = BufferPool.getArray(packetSize)
         writeTo(buf, 0)
-        return RtcpFbTccPacket(buf, 0, packetSize)
+        return RtcpFbTccPacket2(buf, 0, packetSize)
     }
 
     fun writeTo(buf: ByteArray, offset: Int) {
@@ -161,17 +166,17 @@ class RtcpFbTccPacket2Builder(
         val paddingBytes = RtpUtils.getNumPaddingBytes(size_bytes_)
         rtcpHeader.apply {
             packetType = TransportLayerRtcpFbPacket.PT
-            reportCount = RtcpFbTccPacket.FMT
+            reportCount = RtcpFbTccPacket2.FMT
             length = RtpUtils.calculateRtcpLengthFieldValue(size_bytes_ + paddingBytes)
         }.writeTo(buf, offset)
 
         RtcpFbPacket.setMediaSourceSsrc(buf, offset, mediaSourceSsrc)
-        RtcpFbTccPacket.setBaseSeqNum(buf, offset, base_seq_no_)
-        RtcpFbTccPacket.setPacketStatusCount(buf, offset, num_seq_no_)
-        buf.put3Bytes(offset + RtcpFbTccPacket.REFERENCE_TIME_OFFSET, base_time_ticks_.toInt())
-        RtcpFbTccPacket.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
+        RtcpFbTccPacket2.setBaseSeqNum(buf, offset, base_seq_no_)
+        RtcpFbTccPacket2.setPacketStatusCount(buf, offset, num_seq_no_)
+        RtcpFbTccPacket2.setReferenceTimeTicks(buf, offset, base_time_ticks_.toInt())
+        RtcpFbTccPacket2.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
 
-        var currOffset = RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
+        var currOffset = RtcpFbTccPacket2.PACKET_CHUNKS_OFFSET
         encoded_chunks_.forEach {
             buf.putShort(currOffset, it.toShort())
             currOffset += kChunkSizeBytes
@@ -210,8 +215,40 @@ class RtcpFbTccPacket2Builder(
  * we separate builders out into their own class.  Because of that, this class
  * and RtcpFbTccPacket2Builder have overlap in their members.
  *
- * TODO: We don't currently use this class as TransportCCEngine in JMT has been modified
- * to deal with reference time and deltas in milliseconds, whereas this still uses ticks.
+ * https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01#section-3.1
+ * 0                   1                   2                   3
+ * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |V=2|P|  FMT=15 |    PT=205     |           length              |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                     SSRC of packet sender                     |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                      SSRC of media source                     |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |      base sequence number     |      packet status count      |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |                 reference time                | fb pkt. count |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |          packet chunk         |         packet chunk          |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * .                                                               .
+ * .                                                               .
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |         packet chunk          |  recv delta   |  recv delta   |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * .                                                               .
+ * .                                                               .
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ * |           recv delta          |  recv delta   | zero padding  |
+ * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ *
+ * packet status count:  16 bits The number of packets this feedback
+ *  contains status for, starting with the packet identified
+ *  by the base sequence number.
+ *
+ * feedback packet count:  8 bits A counter incremented by one for each
+ *  feedback packet sent.  Used to detect feedback packet
+ *  losses.
  */
 class RtcpFbTccPacket2(
     buffer: ByteArray,
@@ -231,14 +268,14 @@ class RtcpFbTccPacket2(
     // The reference time, in ticks.
     private var base_time_ticks_: Long = -1
 
-    val feedbackSeqNum: Int = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
+    val feedbackSeqNum: Int = RtcpFbTccPacket2.getFeedbackPacketCount(buffer, offset)
 
     init {
-        base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
-        val status_count = RtcpFbTccPacket.getPacketStatusCount(buffer, offset)
-        base_time_ticks_ = RtcpFbTccPacket.getReferenceTimeTicks(buffer, offset)
+        base_seq_no_ = RtcpFbTccPacket2.getBaseSeqNum(buffer, offset)
+        val status_count = RtcpFbTccPacket2.getPacketStatusCount(buffer, offset)
+        base_time_ticks_ = RtcpFbTccPacket2.getReferenceTimeTicks(buffer, offset)
         val delta_sizes = mutableListOf<Int>()
-        var index = offset + RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
+        var index = offset + RtcpFbTccPacket2.PACKET_CHUNKS_OFFSET
         val end_index = offset + length
         while (delta_sizes.size < status_count) {
             if (index + kChunkSizeBytes > end_index) {
@@ -307,6 +344,7 @@ class RtcpFbTccPacket2(
         RtcpFbTccPacket2(buffer.cloneFromPool(), offset, length)
 
     companion object {
+        const val FMT = 15
         // Convert to multiples of 0.25ms
         const val kDeltaScaleFactor = 250
         // Maximum number of packets_ (including missing) TransportFeedback can report.
@@ -325,5 +363,31 @@ class RtcpFbTccPacket2(
         // The reference time field is 24 bits and are represented as multiples of 64ms
         // When the reference time field would need to wrap around
         const val kTimeWrapPeriodUs: Long = (1 shl 24).toLong() * kBaseScaleFactor
+
+        const val BASE_SEQ_NUM_OFFSET = RtcpFbPacket.HEADER_SIZE
+        const val PACKET_STATUS_COUNT_OFFSET = RtcpFbPacket.HEADER_SIZE + 2
+        const val REFERENCE_TIME_OFFSET = RtcpFbPacket.HEADER_SIZE + 4
+        const val FB_PACKET_COUNT_OFFSET = RtcpFbPacket.HEADER_SIZE + 7
+        const val PACKET_CHUNKS_OFFSET = RtcpFbPacket.HEADER_SIZE + 8
+        // baseOffset in all of these refers to the start of the entire RTCP TCC packet
+        fun getBaseSeqNum(buf: ByteArray, baseOffset: Int): Int =
+            buf.getShortAsInt(baseOffset + BASE_SEQ_NUM_OFFSET)
+        fun setBaseSeqNum(buf: ByteArray, baseOffset: Int, value: Int) =
+            buf.putShort(baseOffset + BASE_SEQ_NUM_OFFSET, value.toShort())
+
+        fun getPacketStatusCount(buf: ByteArray, baseOffset: Int): Int =
+            buf.getShortAsInt(baseOffset + PACKET_STATUS_COUNT_OFFSET)
+        fun setPacketStatusCount(buf: ByteArray, baseOffset: Int, value: Int) =
+            buf.putShort(baseOffset + PACKET_STATUS_COUNT_OFFSET, value.toShort())
+
+        fun getReferenceTimeTicks(buf: ByteArray, baseOffset: Int): Long =
+            buf.get3BytesAsInt(baseOffset + REFERENCE_TIME_OFFSET).toPositiveLong()
+        fun setReferenceTimeTicks(buf: ByteArray, baseOffset: Int, refTimeTicks: Int) =
+            buf.put3Bytes(baseOffset + REFERENCE_TIME_OFFSET, refTimeTicks)
+
+        fun getFeedbackPacketCount(buf: ByteArray, baseOffset: Int): Int =
+            buf.getByteAsInt(baseOffset + FB_PACKET_COUNT_OFFSET)
+        fun setFeedbackPacketCount(buf: ByteArray, baseOffset: Int, value: Int) =
+            buf.set(baseOffset + FB_PACKET_COUNT_OFFSET, value.toByte())
     }
 }

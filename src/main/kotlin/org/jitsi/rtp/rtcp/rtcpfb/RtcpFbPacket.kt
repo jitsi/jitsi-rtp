@@ -26,7 +26,6 @@ import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbFirPacket
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbPliPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.RtcpFbNackPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2
 
 /**
@@ -76,7 +75,7 @@ abstract class RtcpFbPacket(
                 TransportLayerRtcpFbPacket.PT -> {
                     when (fmt) {
                         RtcpFbNackPacket.FMT -> RtcpFbNackPacket(buf, offset, length)
-                        RtcpFbTccPacket.FMT -> RtcpFbTccPacket2(buf, offset, length)
+                        RtcpFbTccPacket2.FMT -> RtcpFbTccPacket2(buf, offset, length)
                         else -> TODO("unimplemented transport layer rtcp packet fmt $fmt")
                     }
                 }

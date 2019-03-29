@@ -21,14 +21,14 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
-import org.jitsi.rtp.util.byteBufferOf
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
-import org.jitsi.rtp.rtcp.RtcpPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2Builder
+import org.jitsi.rtp.util.byteBufferOf
 import org.jitsi.test_helpers.matchers.haveSameContentAs
 
 class RtcpFbTccPacketTest : ShouldSpec() {
+    fun Int.toTicks(): Short = (this * 4).toShort()
     private val tccRleData = byteBufferOf(
         //V=2,P=false,FMT=15,PT=205,L=7(32 bytes)
         0x8f, 0xcd, 0x00, 0x07,
@@ -50,16 +50,16 @@ class RtcpFbTccPacketTest : ShouldSpec() {
         //  Recv delta padding
         0x00
     )
-    val expectedTccRlePacketInfo = mapOf<Int, Long> (
-        1969 to 107752512 + 54,
-        1970 to 107752512 + 54 + 0,
-        1971 to 107752512 + 54 + 0 + 6,
-        1972 to 107752512 + 54 + 0 + 6 + 5,
-        1973 to 107752512 + 54 + 0 + 6 + 5 + 6,
-        1974 to 107752512 + 54 + 0 + 6 + 5 + 6 + 5,
-        1975 to 107752512 + 54 + 0 + 6 + 5 + 6 + 5 + 6,
-        1976 to 107752512 + 54 + 0 + 6 + 5 + 6 + 5 + 6 + 5,
-        1977 to 107752512 + 54 + 0 + 6 + 5 + 6 + 5 + 6 + 5 + 6
+    val expectedTccRlePacketInfo = mapOf<Int, Short> (
+        1969 to 54.toTicks(),
+        1970 to 0.toTicks(),
+        1971 to 6.toTicks(),
+        1972 to 5.toTicks(),
+        1973 to 6.toTicks(),
+        1974 to 5.toTicks(),
+        1975 to 6.toTicks(),
+        1976 to 5.toTicks(),
+        1977 to 6.toTicks()
     )
 
     // This also has a negative delta
@@ -91,19 +91,19 @@ class RtcpFbTccPacketTest : ShouldSpec() {
         // Recv delta padding
         0x00, 0x00, 0x00
     )
-    val expectedTccMixedChunkTypePacketInfo = mapOf<Int, Long> (
-        5376 to 107780160 + 2,
-        5377 to 107780160 + 2 + 0,
-        5378 to 107780160 + 2 + 0 + 0,
-        5379 to 107780160 + 2 + 0 + 0 + 0,
-        5380 to 107780160 + 2 + 0 + 0 + 0 + 22,
-        5381 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1,
-        5382 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0,
-        5383 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0 + 0,
-        5384 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0 + 0 + 8,
-        5385 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0 + 0 + 8 + -1,
-        5386 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0 + 0 + 8 + -1 + 1,
-        5387 to 107780160 + 2 + 0 + 0 + 0 + 22 + 1 + 0 + 0 + 8 + -1 + 1 + 0
+    val expectedTccMixedChunkTypePacketInfo = mapOf<Int, Short> (
+        5376 to 2.toTicks(),
+        5377 to 0.toTicks(),
+        5378 to 0.toTicks(),
+        5379 to 0.toTicks(),
+        5380 to 22.toTicks(),
+        5381 to 1.toTicks(),
+        5382 to 0.toTicks(),
+        5383 to 0.toTicks(),
+        5384 to 8.toTicks(),
+        5385 to (-1).toTicks(),
+        5386 to 1.toTicks(),
+        5387 to 0.toTicks()
     )
 
     private val tccSvChunkData = byteBufferOf(
@@ -134,16 +134,18 @@ class RtcpFbTccPacketTest : ShouldSpec() {
     init {
         "Parsing an RtcpFbTccPacket" {
             "with RLE" {
-                val rtcpFbTccPacket = RtcpFbTccPacket(tccRleData.array(), tccRleData.arrayOffset(), tccRleData.limit())
+                val rtcpFbTccPacket = RtcpFbTccPacket2(tccRleData.array(), tccRleData.arrayOffset(), tccRleData.limit())
                 should("parse the values correctly") {
-                    rtcpFbTccPacket.forEach { (seqNum, recvTimestamp) ->
+                    rtcpFbTccPacket.forEach { (seqNum, deltaTicks) ->
                         expectedTccRlePacketInfo shouldContainKey seqNum
-                        expectedTccRlePacketInfo[seqNum] shouldBe recvTimestamp
+                        withClue("seqNum $seqNum deltaTicks") {
+                            deltaTicks shouldBe expectedTccRlePacketInfo[seqNum]
+                        }
                     }
                 }
             }
             "with mixed chunk types and a negative delta" {
-                val rtcpFbTccPacket = RtcpFbTccPacket(tccMixedChunkTypeData.array(), tccMixedChunkTypeData.arrayOffset(), tccMixedChunkTypeData.limit())
+                val rtcpFbTccPacket = RtcpFbTccPacket2(tccMixedChunkTypeData.array(), tccMixedChunkTypeData.arrayOffset(), tccMixedChunkTypeData.limit())
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach { (seqNum, recvTimestamp) ->
                         expectedTccMixedChunkTypePacketInfo shouldContainKey seqNum
@@ -164,16 +166,6 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 base_seq_no_ = 6227
             )
             rtcpFbTccPacketBuilder.AddReceivedPacket(6228, 107784064) shouldBe true
-
-            val packet = rtcpFbTccPacketBuilder.build()
-            should("serialize the data correctly") {
-                val x = packet.buffer
-                packet.buffer should haveSameContentAs(tccSvChunkData.array())
-            }
-            "With a delta that's too big" {
-                rtcpFbTccPacketBuilder.AddReceivedPacket(6229, 107784064 + 10000) shouldBe false
-            }
         }
     }
-
 }
