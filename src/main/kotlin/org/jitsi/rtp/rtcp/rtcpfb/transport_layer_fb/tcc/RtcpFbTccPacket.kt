@@ -31,6 +31,7 @@ import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companio
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kMaxSizeBytes
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTimeWrapPeriodUs
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTransportFeedbackHeaderSizeBytes
+import org.jitsi.rtp.rtp.RtpSequenceNumber
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.get3BytesAsInt
@@ -47,9 +48,6 @@ class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
 }
 
 
-// The base sequence number is passed because we know, based on what has previously
-// been received, what the next expected seq num should be.  We don't pass in the reference
-// timestamp though, since that will be based on the first packet which is received
 /**
  * This class is a port of TransportFeedback in
  * transport_feedback.h/transport_feedback.cc in Chrome
@@ -64,8 +62,9 @@ class RtcpFbTccPacketBuilder(
     val rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     var mediaSourceSsrc: Long = -1,
     val feedbackPacketSeqNum: Int = -1,
-    val base_seq_no_: Int = -1
+    base_seq_no_: Int = -1
 ) {
+    val base_seq_no_ = RtpSequenceNumber(base_seq_no_)
     // The reference time, in ticks.  Chrome passes this into BuildFeedbackPacket, but we don't
     // hold the times in the same way, so we'll just assign it the first time we see
     // a packet in AddReceivedPacket
@@ -83,7 +82,8 @@ class RtcpFbTccPacketBuilder(
     private var last_timestamp_us_: Long = 0
     private val packets_ = mutableListOf<ReceivedPacket>()
 
-    fun AddReceivedPacket(sequence_number: Int, timestamp_us: Long): Boolean {
+    fun AddReceivedPacket(seqNum: Int, timestamp_us: Long): Boolean {
+        val sequence_number = RtpSequenceNumber(seqNum)
         if (base_time_ticks_ == -1L) {
             // Take timestamp_us and convert it to a number that fits and wraps properly to be represented
             // as the 24 bit reference time field
@@ -106,7 +106,6 @@ class RtcpFbTccPacketBuilder(
         var next_seq_no = base_seq_no_ + num_seq_no_
         if (sequence_number != next_seq_no) {
             val lastSeqNo = next_seq_no - 1
-            //TODO: proper seq num comparison
             if (sequence_number <= lastSeqNo) {
                 return false
             }
@@ -120,8 +119,7 @@ class RtcpFbTccPacketBuilder(
         if (!AddDeltaSize(delta_size))
             return false
 
-        //TODO: too costly to create a new ReceivedPacket instance each time?
-        packets_.add(ReceivedPacket(sequence_number, delta))
+        packets_.add(ReceivedPacket(sequence_number.value, delta))
         last_timestamp_us_ += delta * kDeltaScaleFactor
         size_bytes_ += delta_size
 
@@ -171,7 +169,7 @@ class RtcpFbTccPacketBuilder(
         }.writeTo(buf, offset)
 
         RtcpFbPacket.setMediaSourceSsrc(buf, offset, mediaSourceSsrc)
-        RtcpFbTccPacket.setBaseSeqNum(buf, offset, base_seq_no_)
+        RtcpFbTccPacket.setBaseSeqNum(buf, offset, base_seq_no_.value)
         RtcpFbTccPacket.setPacketStatusCount(buf, offset, num_seq_no_)
         RtcpFbTccPacket.setReferenceTimeTicks(buf, offset, base_time_ticks_.toInt())
         RtcpFbTccPacket.setFeedbackPacketCount(buf, offset, feedbackPacketSeqNum)
