@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
+package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc
 
 import kotlin.math.min
 

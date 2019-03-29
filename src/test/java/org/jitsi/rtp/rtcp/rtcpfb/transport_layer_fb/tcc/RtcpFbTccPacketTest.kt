@@ -21,8 +21,6 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacketBuilder
 import org.jitsi.rtp.util.byteBufferOf
 
 class RtcpFbTccPacketTest : ShouldSpec() {

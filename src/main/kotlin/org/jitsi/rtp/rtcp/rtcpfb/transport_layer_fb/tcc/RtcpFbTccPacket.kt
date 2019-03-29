@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
+package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc
 
 import org.jitsi.rtp.extensions.bytearray.cloneFromPool
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
@@ -24,13 +24,13 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveShort
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kBaseScaleFactor
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kChunkSizeBytes
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kDeltaScaleFactor
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kMaxReportedPackets
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kMaxSizeBytes
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kTimeWrapPeriodUs
-import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket.Companion.kTransportFeedbackHeaderSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kBaseScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kChunkSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kDeltaScaleFactor
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kMaxReportedPackets
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kMaxSizeBytes
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTimeWrapPeriodUs
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.get3BytesAsInt
@@ -268,14 +268,14 @@ class RtcpFbTccPacket(
     // The reference time, in ticks.
     private var base_time_ticks_: Long = -1
 
-    val feedbackSeqNum: Int = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
+    val feedbackSeqNum: Int = getFeedbackPacketCount(buffer, offset)
 
     init {
-        base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
-        val status_count = RtcpFbTccPacket.getPacketStatusCount(buffer, offset)
-        base_time_ticks_ = RtcpFbTccPacket.getReferenceTimeTicks(buffer, offset)
+        base_seq_no_ = getBaseSeqNum(buffer, offset)
+        val status_count = getPacketStatusCount(buffer, offset)
+        base_time_ticks_ = getReferenceTimeTicks(buffer, offset)
         val delta_sizes = mutableListOf<Int>()
-        var index = offset + RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
+        var index = offset + PACKET_CHUNKS_OFFSET
         val end_index = offset + length
         while (delta_sizes.size < status_count) {
             if (index + kChunkSizeBytes > end_index) {
