@@ -117,7 +117,7 @@ class LastChunk {
         if (all_same_) {
             deltas.addAll(List(size_) { delta_sizes_[0] })
         } else {
-            deltas.addAll(delta_sizes_)
+            deltas.addAll(delta_sizes_.take(size_))
         }
     }
 

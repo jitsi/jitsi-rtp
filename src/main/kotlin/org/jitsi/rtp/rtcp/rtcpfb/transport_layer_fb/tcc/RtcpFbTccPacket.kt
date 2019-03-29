@@ -110,6 +110,9 @@ class RtcpFbTccPacket(
          */
         fun getReferenceTimeMs(buf: ByteArray, baseOffset: Int): Long =
             (buf.get3BytesAsInt(baseOffset + REFERENCE_TIME_OFFSET) shl 6).toPositiveLong()
+
+        fun getReferenceTimeTicks(buf: ByteArray, baseOffset: Int): Long =
+            buf.get3BytesAsInt(baseOffset + REFERENCE_TIME_OFFSET).toPositiveLong()
         /**
          * [referenceTime] should be a standard timestamp in milliseconds, this method
          * will convert the value to the packet format (a value which is a multiple of 64ms).

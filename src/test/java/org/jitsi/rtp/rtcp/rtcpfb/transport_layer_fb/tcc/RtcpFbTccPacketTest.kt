@@ -23,6 +23,8 @@ import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.util.byteBufferOf
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
+import org.jitsi.rtp.rtcp.RtcpPacket
+import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2Builder
 import org.jitsi.test_helpers.matchers.haveSameContentAs
 
@@ -153,72 +155,6 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             }
         }
         "Creating an RtcpFbTccPacket" {
-            val rtcpFbTccPacketBuilder = RtcpFbTccPacketBuilder(
-                rtcpHeader = RtcpHeaderBuilder(
-                    senderSsrc = 839852602
-                ),
-                mediaSourceSsrc = 2397376430,
-                feedbackPacketCount = 162
-            )
-            rtcpFbTccPacketBuilder.addPacket(6228, 107784064) shouldBe true
-            rtcpFbTccPacketBuilder.addPacket(6227, -1) shouldBe true
-
-            val packet = rtcpFbTccPacketBuilder.build()
-            should("serialize the data correctly") {
-                val x = packet.buffer
-                packet.buffer should haveSameContentAs(tccSvChunkData.array())
-            }
-            "With a delta that's too big" {
-                rtcpFbTccPacketBuilder.addPacket(6229, 107784064 + 10000) shouldBe false
-
-            }
-        }
-        "f:blah" {
-            val packets = mutableListOf(
-                7 to 1553754063147000,
-                8 to 1553754063149000,
-                9 to 1553754063150000,
-                10 to 1553754063151000,
-                11 to 1553754063152000,
-                12 to 1553754063154000,
-                13 to 1553754063156000,
-                14 to 1553754063156000,
-                15 to 1553754063158000,
-                16 to 1553754063160000,
-                17 to 1553754063161000,
-                18 to 1553754063163000,
-                19 to 1553754063164000,
-                20 to 1553754063166000,
-                21 to 1553754063167000,
-                22 to 1553754063201000,
-                23 to 1553754063204000,
-                24 to 1553754063208000,
-                25 to 1553754063213000,
-                26 to 1553754063218000,
-                27 to 1553754063223000,
-                28 to 1553754063230000,
-                29 to 1553754063230000,
-                30 to 1553754063234000,
-                31 to 1553754063240000,
-                32 to 1553754063241000,
-                33 to 1553754063246000,
-                34 to 1553754063251000,
-                35 to 1553754063256000,
-                36 to 1553754063260000,
-                37 to 1553754063267000,
-                38 to 1553754063268000,
-                39 to 1553754063384000
-            )
-            val rtcpFbTccPacketBuilder = RtcpFbTccPacket2Builder(
-                base_seq_no_ = 7
-            )
-            packets.forEach { (seqNum, timestampUs) ->
-                rtcpFbTccPacketBuilder.AddReceivedPacket(seqNum, timestampUs)
-            }
-            val pkt = rtcpFbTccPacketBuilder.build()
-            println(pkt.toHex())
-        }
-        "Creating an RtcpFbTccPacket2" {
             val rtcpFbTccPacketBuilder = RtcpFbTccPacket2Builder(
                 rtcpHeader = RtcpHeaderBuilder(
                     senderSsrc = 839852602
@@ -228,7 +164,6 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 base_seq_no_ = 6227
             )
             rtcpFbTccPacketBuilder.AddReceivedPacket(6228, 107784064) shouldBe true
-//            rtcpFbTccPacketBuilder.AddReceivedPacket(6227, -1) shouldBe true
 
             val packet = rtcpFbTccPacketBuilder.build()
             should("serialize the data correctly") {

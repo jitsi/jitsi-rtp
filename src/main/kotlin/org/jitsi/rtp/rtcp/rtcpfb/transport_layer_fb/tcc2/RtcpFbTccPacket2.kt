@@ -19,10 +19,8 @@ package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2
 import org.jitsi.rtp.extensions.bytearray.cloneFromPool
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
-import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveShort
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
-import org.jitsi.rtp.rtcp.RtcpPacket
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.TransportLayerRtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket
@@ -35,14 +33,13 @@ import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Compan
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc2.RtcpFbTccPacket2.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
-import org.jitsi.rtp.util.get3BytesAsInt
 import org.jitsi.rtp.util.getShortAsInt
 
 // Size in bytes of a delta time in rtcp packet.
 // Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
 
-private class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
+class ReceivedPacket(val seqNum: Int, val deltaTicks: Short)
 
 
 // The base sequence number is passed because we know, based on what has previously
@@ -205,24 +202,41 @@ class RtcpFbTccPacket2Builder(
 
 }
 
+/**
+ * NOTE(brian): This class is a port of the rest of the logic in TransportFeedback
+ * not covered by RtcpFbTccPacket2Builder.  Chrome uses a single class for both
+ * the 'builder' and the 'parser' but because of the way we define packets
+ * (inheriting from the buffer type and therefore always requiring a valid buffer),
+ * we separate builders out into their own class.  Because of that, this class
+ * and RtcpFbTccPacket2Builder have overlap in their members.
+ *
+ * TODO: We don't currently use this class as TransportCCEngine in JMT has been modified
+ * to deal with reference time and deltas in milliseconds, whereas this still uses ticks.
+ */
 class RtcpFbTccPacket2(
     buffer: ByteArray,
     offset: Int,
     length: Int
-) : TransportLayerRtcpFbPacket(buffer, offset, length) {
+) : TransportLayerRtcpFbPacket(buffer, offset, length), Iterable<ReceivedPacket> {
 
     // All but last encoded packet chunks.
     private val encoded_chunks_ = mutableListOf<Chunk>()
     // The current chunk we're 'filling out' as packets
     // are received
     private var last_chunk_ = LastChunk()
-    private val base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
+    private val base_seq_no_: Int
     private var num_seq_no_: Int = 0
     private val packets_ = mutableListOf<ReceivedPacket>()
     private var last_timestamp_us_: Long = 0
+    // The reference time, in ticks.
+    private var base_time_ticks_: Long = -1
+
+    val feedbackSeqNum: Int = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
 
     init {
+        base_seq_no_ = RtcpFbTccPacket.getBaseSeqNum(buffer, offset)
         val status_count = RtcpFbTccPacket.getPacketStatusCount(buffer, offset)
+        base_time_ticks_ = RtcpFbTccPacket.getReferenceTimeTicks(buffer, offset)
         val delta_sizes = mutableListOf<Int>()
         var index = offset + RtcpFbTccPacket.PACKET_CHUNKS_OFFSET
         val end_index = offset + length
@@ -284,6 +298,11 @@ class RtcpFbTccPacket2(
         }
     }
 
+    fun GetBaseTimeUs(): Long =
+        base_time_ticks_ * kBaseScaleFactor
+
+    override fun iterator(): Iterator<ReceivedPacket> = packets_.iterator()
+
     override fun clone(): RtcpFbTccPacket2 =
         RtcpFbTccPacket2(buffer.cloneFromPool(), offset, length)
 
@@ -301,16 +320,10 @@ class RtcpFbTccPacket2(
         // * 8 bytes Common Packet Format for RTCP Feedback Messages
         // * 8 bytes FeedbackPacket header
         const val kTransportFeedbackHeaderSizeBytes = 4 + 8 + 8
-        // Used to convert from microseconds to multiples of 64ms(?)
+        // Used to convert from microseconds to multiples of 64ms
         const val kBaseScaleFactor = kDeltaScaleFactor * (1 shl 8)
         // The reference time field is 24 bits and are represented as multiples of 64ms
         // When the reference time field would need to wrap around
         const val kTimeWrapPeriodUs: Long = (1 shl 24).toLong() * kBaseScaleFactor
     }
-
-
-    // private:
-    private val base_time_ticks = buffer.get3BytesAsInt(offset + RtcpFbTccPacket.REFERENCE_TIME_OFFSET)
-    private val feedback_seq_ = RtcpFbTccPacket.getFeedbackPacketCount(buffer, offset)
-
 }
