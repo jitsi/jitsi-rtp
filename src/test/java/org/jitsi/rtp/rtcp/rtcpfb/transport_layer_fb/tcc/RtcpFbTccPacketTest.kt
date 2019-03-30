@@ -158,9 +158,9 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                     senderSsrc = 839852602
                 ),
                 mediaSourceSsrc = 2397376430,
-                feedbackPacketSeqNum = 162,
-                base_seq_no_ = 6227
+                feedbackPacketSeqNum = 162
             )
+            rtcpFbTccPacketBuilder.SetBase(6227, 107784064)
             rtcpFbTccPacketBuilder.AddReceivedPacket(6228, 107784064) shouldBe true
         }
     }

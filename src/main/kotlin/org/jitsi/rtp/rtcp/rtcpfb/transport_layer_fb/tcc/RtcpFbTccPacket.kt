@@ -47,7 +47,6 @@ class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
     operator fun component2(): Short = deltaTicks
 }
 
-
 /**
  * This class is a port of TransportFeedback in
  * transport_feedback.h/transport_feedback.cc in Chrome
@@ -61,10 +60,10 @@ class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
 class RtcpFbTccPacketBuilder(
     val rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     var mediaSourceSsrc: Long = -1,
-    val feedbackPacketSeqNum: Int = -1,
-    base_seq_no_: Int = -1
+    val feedbackPacketSeqNum: Int = -1
 ) {
-    val base_seq_no_ = RtpSequenceNumber(base_seq_no_)
+    var base_seq_no_: RtpSequenceNumber = RtpSequenceNumber.INVALID
+        private set
     // The reference time, in ticks.  Chrome passes this into BuildFeedbackPacket, but we don't
     // hold the times in the same way, so we'll just assign it the first time we see
     // a packet in AddReceivedPacket
@@ -82,14 +81,14 @@ class RtcpFbTccPacketBuilder(
     private var last_timestamp_us_: Long = 0
     private val packets_ = mutableListOf<ReceivedPacket>()
 
+    fun SetBase(base_sequence: Int, ref_timestamp_us: Long) {
+        base_seq_no_ = RtpSequenceNumber(base_sequence)
+        base_time_ticks_ = (ref_timestamp_us % kTimeWrapPeriodUs) / kBaseScaleFactor
+        last_timestamp_us_ = GetBaseTimeUs()
+    }
+
     fun AddReceivedPacket(seqNum: Int, timestamp_us: Long): Boolean {
         val sequence_number = RtpSequenceNumber(seqNum)
-        if (base_time_ticks_ == -1L) {
-            // Take timestamp_us and convert it to a number that fits and wraps properly to be represented
-            // as the 24 bit reference time field
-            base_time_ticks_ = (timestamp_us % kTimeWrapPeriodUs) / kBaseScaleFactor
-            last_timestamp_us_ = base_time_ticks_ * kBaseScaleFactor
-        }
         var delta_full = (timestamp_us - last_timestamp_us_) % kTimeWrapPeriodUs
         if (delta_full > kTimeWrapPeriodUs / 2) {
             delta_full -= kTimeWrapPeriodUs
@@ -125,6 +124,9 @@ class RtcpFbTccPacketBuilder(
 
         return true
     }
+
+    fun GetBaseTimeUs(): Long =
+        base_time_ticks_ * kBaseScaleFactor
 
     private fun AddDeltaSize(deltaSize: DeltaSize): Boolean {
         if (num_seq_no_ == kMaxReportedPackets)
