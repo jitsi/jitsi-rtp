@@ -96,7 +96,7 @@ class LastChunk {
     fun EncodeLast(): Chunk {
         if (all_same_)
             return EncodeRunLength()
-        if (size_ < kMaxTwoBitCapacity)
+        if (size_ <= kMaxTwoBitCapacity)
             EncodeTwoBit(size_)
         return EncodeOneBit()
     }
@@ -115,9 +115,13 @@ class LastChunk {
     // Appends content of the Lastchunk to |deltas|.
     fun AppendTo(deltas: MutableList<DeltaSize>) {
         if (all_same_) {
-            deltas.addAll(List(size_) { delta_sizes_[0] })
+            repeat (size_) {
+                deltas.add(delta_sizes_[0])
+            }
         } else {
-            deltas.addAll(delta_sizes_.take(size_))
+            for (i in 0 until size_) {
+                deltas.add(delta_sizes_[i])
+            }
         }
     }
 
@@ -143,7 +147,7 @@ class LastChunk {
     private fun DecodeRunLength(chunk: Chunk, max_count: Int) {
         size_ = min(chunk and 0x1fff, max_count)
         val delta_size = (chunk ushr 13) and 0x03
-        has_large_delta_ = delta_size > kLarge
+        has_large_delta_ = delta_size >= kLarge
         all_same_ = true
         // To make it consistent with Add function, populate delta_sizes beyound 1st.
         for (i in 0 until min(size_, kMaxVectorCapacity)) {
@@ -167,7 +171,7 @@ class LastChunk {
     private fun EncodeOneBit(): Chunk {
         var chunk = 0x8000
         for (i in 0 until size_) {
-            chunk = (chunk or (delta_sizes_[i] shl kMaxOneBitCapacity - 1 - i))
+            chunk = (chunk or (delta_sizes_[i] shl (kMaxOneBitCapacity - 1 - i)))
         }
         return chunk
     }

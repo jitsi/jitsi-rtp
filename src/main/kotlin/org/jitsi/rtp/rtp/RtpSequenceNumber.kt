@@ -16,6 +16,8 @@
 
 package org.jitsi.rtp.rtp
 
+import org.jitsi.rtp.util.RtpUtils
+
 /**
  * An inline class representing an RTP sequence number.  The class operates just like
  * an Int but takes rollover into account for all operations.
@@ -31,14 +33,8 @@ inline class RtpSequenceNumber(val value: Int) : Comparable<RtpSequenceNumber> {
     operator fun minus(num: Int): RtpSequenceNumber = plus(-num)
     operator fun minus(seqNum: RtpSequenceNumber): RtpSequenceNumber = plus(-seqNum.value)
 
-    override operator fun compareTo(other: RtpSequenceNumber): Int {
-        val diff = value - other.value
-        return when {
-            diff < -(1 shl 15) -> diff + (1 shl 16)
-            diff > (1 shl 15) -> diff - (1 shl 16)
-            else -> diff
-        }
-    }
+    override operator fun compareTo(other: RtpSequenceNumber): Int =
+        RtpUtils.getSequenceNumberDelta(value, other.value)
 
     operator fun rangeTo(other: RtpSequenceNumber) = RtpSequenceNumberProgression(this, other)
 
