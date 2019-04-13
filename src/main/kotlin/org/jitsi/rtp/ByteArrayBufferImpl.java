@@ -17,9 +17,11 @@
 package org.jitsi.rtp;
 
 import org.jitsi.rtp.util.*;
+import org.jitsi.utils.*;
 
 //TODO documentation
-public abstract class ByteArrayBuffer
+public abstract class ByteArrayBufferImpl
+    implements ByteArrayBuffer
 {
     private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
@@ -29,14 +31,14 @@ public abstract class ByteArrayBuffer
 
     public int length;
 
-    public ByteArrayBuffer(byte[] buffer, int offset, int length)
+    public ByteArrayBufferImpl(byte[] buffer, int offset, int length)
     {
         this.buffer = buffer;
         this.offset = offset;
         this.length = length;
     }
 
-    public ByteArrayBuffer()
+    public ByteArrayBufferImpl()
     {
         this.buffer = new byte[0];
         this.offset = 0;
@@ -111,7 +113,7 @@ public abstract class ByteArrayBuffer
 
 
     /**
-     * Grows the internal buffer of this {@code ByteArrayBuffer}.
+     * Grows the internal buffer of this {@code ByteArrayBufferImpl}.
      *
      * This will change the data buffer of this packet but not the length of the
      * valid data. Use this to grow the internal buffer to avoid buffer
@@ -152,6 +154,17 @@ public abstract class ByteArrayBuffer
             this.length = 0;
     }
 
+    /**
+     * Creates a clone of this buffer. The underlying byte[] has the same size
+     * as our byte[], but we only copy the data that this {@link ByteArrayBufferImpl}
+     * represents.
+     */
+    protected byte[] cloneBuffer()
+    {
+        byte[] clone = BufferPool.Companion.getGetArray().invoke(buffer.length);
+        System.arraycopy(buffer, offset, clone, offset, length);
+        return clone;
+    }
 
 
     /**
@@ -183,5 +196,11 @@ public abstract class ByteArrayBuffer
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public boolean isInvalid()
+    {
+        return false;
     }
 }
