@@ -23,6 +23,7 @@ import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.BR_LEN
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.NUM_SSRC_LEN
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.REMB_LEN
+import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.getExpAndMantissa
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.getBitsAsInt
@@ -152,20 +153,8 @@ class RtcpFbRembPacket(
 class RtcpFbRembPacketBuilder(
     val rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     val ssrcs: List<Long> = emptyList(),
-    val exp: Int,
-    val mantissa: Int
+    val brBps: Long
 ) {
-
-    constructor(
-        /**
-         * Bitrate in bits per seconds
-         */
-        brBps: Long
-    ) : this(RtcpFbRembPacket.getExpAndMantissa(brBps))
-
-    constructor(expAndMantissa: Pair<Int, Int>) :
-            this(exp = expAndMantissa.first, mantissa = expAndMantissa.second)
-
     private val sizeBytes: Int = RtcpFbPacket.HEADER_SIZE +
             REMB_LEN + NUM_SSRC_LEN + BR_LEN + ssrcs.size * 4
 
@@ -185,8 +174,10 @@ class RtcpFbRembPacketBuilder(
         RtcpFbPacket.setMediaSourceSsrc(buf, offset, 0)
         RtcpFbRembPacket.setRemb(buf, offset)
         RtcpFbRembPacket.setNumSsrc(buf, offset, if (ssrcs.isNotEmpty()) ssrcs.size else 0)
-        RtcpFbRembPacket.setBrExp(buf, offset, exp)
-        RtcpFbRembPacket.setBrMantissa(buf, offset, mantissa)
+
+        val expAndMantissa = getExpAndMantissa(brBps)
+        RtcpFbRembPacket.setBrExp(buf, offset, expAndMantissa.first)
+        RtcpFbRembPacket.setBrMantissa(buf, offset, expAndMantissa.second)
         RtcpFbRembPacket.setSsrcs(buf, offset, ssrcs)
     }
 }
