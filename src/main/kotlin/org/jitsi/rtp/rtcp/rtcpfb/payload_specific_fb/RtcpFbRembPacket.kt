@@ -21,18 +21,16 @@ import org.jitsi.rtp.extensions.bytearray.putInt
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.BR_LEN
-import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.BR_OFF
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.NUM_SSRC_LEN
-import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.NUM_SSRC_OFF
 import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.REMB_LEN
-import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.REMB_OFF
-import org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb.RtcpFbRembPacket.Companion.SSRCS_OFF
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.getBitsAsInt
 import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.getIntAsLong
 import org.jitsi.rtp.util.getShortAsInt
+import unsigned.or
+import unsigned.toUbyte
 
 /**
  * https://tools.ietf.org/html/draft-alvestrand-rmcat-remb-03
@@ -63,21 +61,6 @@ class RtcpFbRembPacket(
     length: Int
 ) : PayloadSpecificRtcpFbPacket(buffer, offset, length) {
 
-    /**
-     * The exponential scaling of the mantissa for the maximum total media
-     * bit rate value, ignoring all packet overhead.
-     */
-    val exp: Int
-        get() = getBrExp(buffer, offset)
-
-    /**
-     * The mantissa of the maximum total media bit rate (ignoring all packet
-     * overhead) that the sender of the REMB estimates.  The BR is the estimate
-     * of the traveled path for the SSRCs reported in this message.
-     */
-    val mantissa: Int
-        get() = getBrMantissa(buffer, offset)
-
     val bitrate: Long
         get() = getBitrate(buffer, offset)
 
@@ -102,7 +85,7 @@ class RtcpFbRembPacket(
 
         const val REMB_OFF = FCI_OFFSET
         const val REMB_LEN = 4
-        const val NUM_SSRC_OFF = FCI_OFFSET + REMB_LEN
+        const val NUM_SSRC_OFF = REMB_OFF + REMB_LEN
         const val NUM_SSRC_LEN = 1
         const val BR_OFF = NUM_SSRC_OFF + NUM_SSRC_LEN
         const val BR_LEN = 4
@@ -133,6 +116,35 @@ class RtcpFbRembPacket(
             /* type of bitrate is an unsigned int (32 bits) */
             val mantissa = brBps.toInt() shr exp
             return Pair(exp, mantissa)
+        }
+
+        fun setRemb(buf: ByteArray, baseOffset: Int) {
+            buf[baseOffset + REMB_OFF + 0] = 'R'.toByte()
+            buf[baseOffset + REMB_OFF + 1] = 'E'.toByte()
+            buf[baseOffset + REMB_OFF + 2] = 'M'.toByte()
+            buf[baseOffset + REMB_OFF + 3] = 'B'.toByte()
+        }
+
+        fun setNumSsrc(buf: ByteArray, off: Int, value: Int) {
+            buf[off] = value.toByte()
+        }
+
+        fun setBrExp(buf: ByteArray, baseOffset: Int, value: Int) {
+            buf[baseOffset + BR_OFF] = buf[baseOffset] or (value and 0x3f shl 2).toUbyte()
+        }
+
+        fun setBrMantissa(buf: ByteArray, baseOffset: Int, value: Int) {
+            buf[baseOffset + BR_OFF] = buf[baseOffset] or (value and 0x30000 shr 16).toUbyte()
+            buf[baseOffset + BR_OFF + 1] = (value and 0xff00 shr 8).toByte()
+            buf[baseOffset + BR_OFF + 2] = (value and 0xff).toByte()
+        }
+
+        fun setSsrcs(buf: ByteArray, baseOffset: Int, ssrcs: List<Long>) {
+            var ssrcsOff = baseOffset + SSRCS_OFF
+            ssrcs.forEach {
+                buf.putInt(ssrcsOff, it.toInt())
+                ssrcsOff += 4
+            }
         }
     }
 }
@@ -170,20 +182,11 @@ class RtcpFbRembPacketBuilder(
             length = RtpUtils.calculateRtcpLengthFieldValue(RtcpFbPliPacket.SIZE_BYTES)
         }
         rtcpHeader.writeTo(buf, offset)
-        RtcpFbPacket.setMediaSourceSsrc(buf, offset, 0) //
-        buf[REMB_OFF + 0] = 'R'.toByte()
-        buf[REMB_OFF + 1] = 'E'.toByte()
-        buf[REMB_OFF + 2] = 'M'.toByte()
-        buf[REMB_OFF + 3] = 'B'.toByte()
-        buf[NUM_SSRC_OFF] = (if (ssrcs.isNotEmpty()) ssrcs.size else 0).toByte()
-        buf[BR_OFF] = (exp and 0x3f shl 2 or (mantissa and 0x30000 shr 16)).toByte()
-        buf[BR_OFF + 1] = (mantissa and 0xff00 shr 8).toByte()
-        buf[BR_OFF + 2] = (mantissa and 0xff).toByte()
-
-        var ssrcsOff = SSRCS_OFF
-        ssrcs.forEach {
-            buf.putInt(ssrcsOff, it.toInt())
-            ssrcsOff += 4
-        }
+        RtcpFbPacket.setMediaSourceSsrc(buf, offset, 0)
+        RtcpFbRembPacket.setRemb(buf, offset)
+        RtcpFbRembPacket.setNumSsrc(buf, offset, if (ssrcs.isNotEmpty()) ssrcs.size else 0)
+        RtcpFbRembPacket.setBrExp(buf, offset, exp)
+        RtcpFbRembPacket.setBrMantissa(buf, offset, mantissa)
+        RtcpFbRembPacket.setSsrcs(buf, offset, ssrcs)
     }
 }
