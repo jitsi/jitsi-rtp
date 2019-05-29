@@ -114,7 +114,7 @@ class RtcpFbRembPacket(
                 }
             }
 
-            /* type of bitrate is an unsigned int (32 bits) */
+            // type of bitrate is an unsigned int (32 bits)
             val mantissa = brBps.toInt() shr exp
             return Pair(exp, mantissa)
         }
