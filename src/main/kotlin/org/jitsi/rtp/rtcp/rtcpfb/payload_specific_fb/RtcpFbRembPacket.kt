@@ -62,11 +62,9 @@ class RtcpFbRembPacket(
     length: Int
 ) : PayloadSpecificRtcpFbPacket(buffer, offset, length) {
 
-    val bitrate: Long
-        get() = getBitrate(buffer, offset)
+    val bitrate: Long = getBitrate(buffer, offset)
 
-    val numSsrc: Int
-        get() = getNumSsrc(buffer, offset)
+    val numSsrc: Int = getNumSsrc(buffer, offset)
 
     /**
      * one or more SSRC entries which this feedback message applies to.
