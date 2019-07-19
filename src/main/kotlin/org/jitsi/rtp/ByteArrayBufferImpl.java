@@ -23,7 +23,6 @@ import org.jitsi.utils.*;
 public abstract class ByteArrayBufferImpl
     implements ByteArrayBuffer
 {
-    private static final char[] HEX_CHARS = "0123456789ABCDEF".toCharArray();
 
     public byte[] buffer;
 
@@ -173,29 +172,6 @@ public abstract class ByteArrayBufferImpl
     public void setBuffer(byte[] buffer)
     {
         this.buffer = buffer;
-    }
-
-    public String toHex()
-    {
-        StringBuilder sb = new StringBuilder();
-        int position = 0;
-
-        for (int i = offset; i < (offset + length) && i < buffer.length; ++i)
-        {
-            int octet = buffer[i];
-            int firstIndex = (octet & 0xF0) >> 4;
-            int secondIndex = octet & 0x0F;
-            sb.append(HEX_CHARS[firstIndex]);
-            sb.append(HEX_CHARS[secondIndex]);
-            if ((position + 1) % 16 == 0) {
-                sb.append("\n");
-            } else if ((position + 1) % 4 == 0) {
-                sb.append(" ");
-            }
-            position++;
-        }
-
-        return sb.toString();
     }
 
     @Override
