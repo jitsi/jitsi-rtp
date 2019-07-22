@@ -154,19 +154,6 @@ public abstract class ByteArrayBufferImpl
     }
 
     /**
-     * Creates a clone of this buffer. The underlying byte[] has the same size
-     * as our byte[], but we only copy the data that this {@link ByteArrayBufferImpl}
-     * represents.
-     */
-    protected byte[] cloneBuffer()
-    {
-        byte[] clone = BufferPool.Companion.getGetArray().invoke(buffer.length);
-        System.arraycopy(buffer, offset, clone, offset, length);
-        return clone;
-    }
-
-
-    /**
      * @param buffer the buffer to set
      */
     public void setBuffer(byte[] buffer)
