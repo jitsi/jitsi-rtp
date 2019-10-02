@@ -41,9 +41,12 @@ import org.jitsi.rtp.util.getShortAsInt
 // Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
 
-class ReceivedPacket(val seqNum: Int, val deltaTicks: Short) {
+class ReceivedPacket(val seqNum: Int, val deltaTicks: Short, val received: Boolean = true) {
     operator fun component1(): Int = seqNum
     operator fun component2(): Short = deltaTicks
+    operator fun component3(): Boolean = received
+
+    constructor(seqNum: Int) : this(seqNum, 0, false)
 }
 
 /**
@@ -312,7 +315,9 @@ class RtcpFbTccPacket(
                     throw Exception("Buffer overflow while parsing packet.")
                 }
                 when (delta_size) {
-                    0 -> { /* No-op */ }
+                    0 -> {
+                        packets_.add(ReceivedPacket(seq_no.value))
+                    }
                     1 -> {
                         val delta = buffer[index]
                         packets_.add(ReceivedPacket(seq_no.value, delta.toPositiveShort()))
@@ -335,7 +340,9 @@ class RtcpFbTccPacket(
             // The packet does not contain receive deltas
             for (delta_size in delta_sizes) {
                 // Use delta sizes to detect if packet was received.
-                if (delta_size > 0) {
+                if (delta_size == 0) {
+                    packets_.add(ReceivedPacket(seq_no.value))
+                } else {
                     packets_.add(ReceivedPacket(seq_no.value, 0))
                 }
                 seq_no += 1

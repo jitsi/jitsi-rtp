@@ -167,5 +167,30 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             rtcpFbTccPacketBuilder.SetBase(6227, 107784064)
             rtcpFbTccPacketBuilder.AddReceivedPacket(6228, 107784064) shouldBe true
         }
+        "Creating and parsing an RtcpFbTccPacket" {
+            "with missing packets" {
+                val kBaseSeqNo = 1000
+                val kBaseTimestampUs = 10000L
+                val rtcpFbTccPacketBuilder = RtcpFbTccPacketBuilder(
+                    rtcpHeader = RtcpHeaderBuilder(
+                        senderSsrc = 839852602
+                    ),
+                    mediaSourceSsrc = 2397376430,
+                    feedbackPacketSeqNum = 163
+                )
+                rtcpFbTccPacketBuilder.SetBase(kBaseSeqNo, kBaseTimestampUs)
+                rtcpFbTccPacketBuilder.AddReceivedPacket(kBaseSeqNo + 0, kBaseTimestampUs)
+                rtcpFbTccPacketBuilder.AddReceivedPacket(kBaseSeqNo + 3, kBaseTimestampUs + 2000)
+
+                val coded = rtcpFbTccPacketBuilder.build()
+
+                val packet = RtcpFbTccPacket(coded.buffer, coded.offset, coded.length)
+                val it = packet.iterator()
+                it.next().received shouldBe true
+                it.next().received shouldBe false
+                it.next().received shouldBe false
+                it.next().received shouldBe true
+            }
+        }
     }
 }
