@@ -37,9 +37,7 @@ import org.jitsi.rtp.util.get3BytesAsInt
 import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.getShortAsInt
 
-open class PacketReport(val seqNum: Int) {
-    operator fun component1(): Int = seqNum
-}
+open class PacketReport(val seqNum: Int)
 
 class UnreceivedPacketReport(seqNum: Int) : PacketReport(seqNum)
 
@@ -47,9 +45,7 @@ class UnreceivedPacketReport(seqNum: Int) : PacketReport(seqNum)
 // Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
 
-class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(seqNum) {
-    operator fun component2(): Short = deltaTicks
-}
+class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(seqNum)
 
 /**
  * This class is a port of TransportFeedback in
