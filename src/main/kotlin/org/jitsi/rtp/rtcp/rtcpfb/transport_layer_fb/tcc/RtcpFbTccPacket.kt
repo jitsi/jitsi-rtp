@@ -16,6 +16,8 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc
 
+import java.time.Duration
+import java.time.temporal.ChronoUnit
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.extensions.bytearray.putShort
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
@@ -45,7 +47,10 @@ class UnreceivedPacketReport(seqNum: Int) : PacketReport(seqNum)
 // Valid values are 0 (packet wasn't received), 1 or 2.
 typealias DeltaSize = Int
 
-class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(seqNum)
+class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(seqNum) {
+    val deltaTicksDuration: Duration
+        get() = Duration.of(deltaTicks * 250L, ChronoUnit.MICROS)
+}
 
 /**
  * This class is a port of TransportFeedback in
