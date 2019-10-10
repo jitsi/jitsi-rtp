@@ -16,8 +16,10 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc
 
+import io.kotlintest.matchers.beInstanceOf
 import io.kotlintest.matchers.maps.shouldContainKey
 import io.kotlintest.matchers.withClue
+import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
@@ -136,10 +138,13 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             "with RLE" {
                 val rtcpFbTccPacket = RtcpFbTccPacket(tccRleData.array(), tccRleData.arrayOffset(), tccRleData.limit())
                 should("parse the values correctly") {
-                    rtcpFbTccPacket.forEach { (seqNum, deltaTicks) ->
-                        expectedTccRlePacketInfo shouldContainKey seqNum
-                        withClue("seqNum $seqNum deltaTicks") {
-                            deltaTicks shouldBe expectedTccRlePacketInfo[seqNum]
+                    rtcpFbTccPacket.forEach {
+                        it should beInstanceOf<ReceivedPacketReport>()
+                        if (it is ReceivedPacketReport) {
+                            expectedTccRlePacketInfo shouldContainKey it.seqNum
+                            withClue("seqNum ${it.seqNum} deltaTicks") {
+                                it.deltaTicks shouldBe expectedTccRlePacketInfo[it.seqNum]
+                            }
                         }
                     }
                 }
@@ -147,10 +152,13 @@ class RtcpFbTccPacketTest : ShouldSpec() {
             "with mixed chunk types and a negative delta" {
                 val rtcpFbTccPacket = RtcpFbTccPacket(tccMixedChunkTypeData.array(), tccMixedChunkTypeData.arrayOffset(), tccMixedChunkTypeData.limit())
                 should("parse the values correctly") {
-                    rtcpFbTccPacket.forEach { (seqNum, recvTimestamp) ->
-                        expectedTccMixedChunkTypePacketInfo shouldContainKey seqNum
-                        withClue("seqNum $seqNum timestamp") {
-                            recvTimestamp shouldBe expectedTccMixedChunkTypePacketInfo[seqNum]
+                    rtcpFbTccPacket.forEach {
+                        it should beInstanceOf<ReceivedPacketReport>()
+                        if (it is ReceivedPacketReport) {
+                            expectedTccMixedChunkTypePacketInfo shouldContainKey it.seqNum
+                            withClue("seqNum ${it.seqNum} deltaTicks") {
+                                it.deltaTicks shouldBe expectedTccMixedChunkTypePacketInfo[it.seqNum]
+                            }
                         }
                     }
                 }
@@ -186,10 +194,10 @@ class RtcpFbTccPacketTest : ShouldSpec() {
 
                 val packet = RtcpFbTccPacket(coded.buffer, coded.offset, coded.length)
                 val it = packet.iterator()
-                it.next().received shouldBe true
-                it.next().received shouldBe false
-                it.next().received shouldBe false
-                it.next().received shouldBe true
+                it.next() should beInstanceOf<ReceivedPacketReport>()
+                it.next() should beInstanceOf<UnreceivedPacketReport>()
+                it.next() should beInstanceOf<UnreceivedPacketReport>()
+                it.next() should beInstanceOf<ReceivedPacketReport>()
             }
         }
     }
