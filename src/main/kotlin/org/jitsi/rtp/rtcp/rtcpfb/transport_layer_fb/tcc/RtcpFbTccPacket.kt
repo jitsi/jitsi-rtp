@@ -48,7 +48,7 @@ class UnreceivedPacketReport(seqNum: Int) : PacketReport(seqNum)
 typealias DeltaSize = Int
 
 class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(seqNum) {
-    val deltaTicksDuration: Duration
+    val deltaDuration: Duration
         get() = Duration.of(deltaTicks * 250L, ChronoUnit.MICROS)
 }
 
