@@ -141,11 +141,11 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach {
                         it should beInstanceOf<ReceivedPacketReport>()
-                        val recv = it as ReceivedPacketReport
-                        expectedTccRlePacketInfo shouldContainKey recv.seqNum
-                        withClue("seqNum ${recv.seqNum} deltaTicks") {
-                            recv.deltaTicks shouldBe expectedTccRlePacketInfo[recv.seqNum]
-                            recv.deltaDuration shouldBe Duration.ofNanos(recv.deltaTicks * 250 * 1000L)
+                        it as ReceivedPacketReport
+                        expectedTccRlePacketInfo shouldContainKey it.seqNum
+                        withClue("seqNum ${it.seqNum} deltaTicks") {
+                            it.deltaTicks shouldBe expectedTccRlePacketInfo[it.seqNum]
+                            it.deltaDuration shouldBe Duration.ofNanos(it.deltaTicks * 250 * 1000L)
                         }
                     }
                 }
@@ -155,11 +155,11 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach {
                         it should beInstanceOf<ReceivedPacketReport>()
-                        val recv = it as ReceivedPacketReport
-                        expectedTccMixedChunkTypePacketInfo shouldContainKey recv.seqNum
-                        withClue("seqNum ${recv.seqNum} deltaTicks") {
-                            recv.deltaTicks shouldBe expectedTccMixedChunkTypePacketInfo[recv.seqNum]
-                            recv.deltaDuration shouldBe Duration.ofNanos(recv.deltaTicks * 250 * 1000L)
+                        it as ReceivedPacketReport
+                        expectedTccMixedChunkTypePacketInfo shouldContainKey it.seqNum
+                        withClue("seqNum ${it.seqNum} deltaTicks") {
+                            it.deltaTicks shouldBe expectedTccMixedChunkTypePacketInfo[it.seqNum]
+                            it.deltaDuration shouldBe Duration.ofNanos(it.deltaTicks * 250 * 1000L)
                         }
                     }
                 }
