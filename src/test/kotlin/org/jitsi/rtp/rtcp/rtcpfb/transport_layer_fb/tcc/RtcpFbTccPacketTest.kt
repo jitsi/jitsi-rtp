@@ -22,6 +22,7 @@ import io.kotlintest.matchers.withClue
 import io.kotlintest.should
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.ShouldSpec
+import java.time.Duration
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.util.byteBufferOf
 
@@ -140,11 +141,11 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach {
                         it should beInstanceOf<ReceivedPacketReport>()
-                        if (it is ReceivedPacketReport) {
-                            expectedTccRlePacketInfo shouldContainKey it.seqNum
-                            withClue("seqNum ${it.seqNum} deltaTicks") {
-                                it.deltaTicks shouldBe expectedTccRlePacketInfo[it.seqNum]
-                            }
+                        val recv = it as ReceivedPacketReport
+                        expectedTccRlePacketInfo shouldContainKey recv.seqNum
+                        withClue("seqNum ${recv.seqNum} deltaTicks") {
+                            recv.deltaTicks shouldBe expectedTccRlePacketInfo[recv.seqNum]
+                            recv.deltaDuration shouldBe Duration.ofNanos(recv.deltaTicks * 250 * 1000L)
                         }
                     }
                 }
@@ -154,11 +155,11 @@ class RtcpFbTccPacketTest : ShouldSpec() {
                 should("parse the values correctly") {
                     rtcpFbTccPacket.forEach {
                         it should beInstanceOf<ReceivedPacketReport>()
-                        if (it is ReceivedPacketReport) {
-                            expectedTccMixedChunkTypePacketInfo shouldContainKey it.seqNum
-                            withClue("seqNum ${it.seqNum} deltaTicks") {
-                                it.deltaTicks shouldBe expectedTccMixedChunkTypePacketInfo[it.seqNum]
-                            }
+                        val recv = it as ReceivedPacketReport
+                        expectedTccMixedChunkTypePacketInfo shouldContainKey recv.seqNum
+                        withClue("seqNum ${recv.seqNum} deltaTicks") {
+                            recv.deltaTicks shouldBe expectedTccMixedChunkTypePacketInfo[recv.seqNum]
+                            recv.deltaDuration shouldBe Duration.ofNanos(recv.deltaTicks * 250 * 1000L)
                         }
                     }
                 }
