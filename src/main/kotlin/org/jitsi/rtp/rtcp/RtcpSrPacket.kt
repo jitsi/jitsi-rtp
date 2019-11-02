@@ -136,11 +136,11 @@ class RtcpSrPacket(
 
     val senderInfo: SenderInfo by lazy { SenderInfo() }
 
-    val reportBlocks: List<RtcpReportBlock> by lazy {
-        (0 until reportCount).map {
-            RtcpReportBlock.fromBuffer(buffer, offset + REPORT_BLOCKS_OFFSET + it * RtcpReportBlock.SIZE_BYTES)
-        }.toList()
-    }
+    val reportBlocks: List<RtcpReportBlock>
+        get() =
+            (0 until reportCount).map {
+                RtcpReportBlock.fromBuffer(buffer, offset + REPORT_BLOCKS_OFFSET + it * RtcpReportBlock.SIZE_BYTES)
+            }.toList()
 
     override fun clone(): RtcpSrPacket = RtcpSrPacket(cloneBuffer(0), 0, length)
 
