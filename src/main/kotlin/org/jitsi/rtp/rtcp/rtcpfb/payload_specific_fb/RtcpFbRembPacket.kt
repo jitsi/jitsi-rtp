@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb
 
-import org.jitsi.rtp.extensions.bytearray.cloneFromPool
 import org.jitsi.rtp.extensions.bytearray.putInt
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
@@ -74,7 +73,7 @@ class RtcpFbRembPacket(
     }
 
     override fun clone(): RtcpFbRembPacket {
-        return RtcpFbRembPacket(buffer.cloneFromPool(), offset, length)
+        return RtcpFbRembPacket(cloneBuffer(0), 0, length)
     }
 
     companion object {
@@ -91,7 +90,7 @@ class RtcpFbRembPacket(
         fun getBrExp(buf: ByteArray, baseOffset: Int): Int =
             buf.getBitsAsInt(baseOffset + BR_OFF, 0, 6)
         fun getBrMantissa(buf: ByteArray, baseOffset: Int): Int =
-            (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 8) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
+            (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 16) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
         fun getBitrate(buf: ByteArray, baseOffset: Int): Long =
             (getBrMantissa(buf, baseOffset) * Math.pow(2.0, getBrExp(buf, baseOffset).toDouble())).toLong()
         fun getNumSsrc(buf: ByteArray, baseOffset: Int): Int =
