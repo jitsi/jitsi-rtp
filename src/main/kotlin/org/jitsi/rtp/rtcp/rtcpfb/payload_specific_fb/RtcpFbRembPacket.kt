@@ -90,9 +90,9 @@ class RtcpFbRembPacket(
         fun getBrExp(buf: ByteArray, baseOffset: Int): Int =
             buf.getBitsAsInt(baseOffset + BR_OFF, 0, 6)
         fun getBrMantissa(buf: ByteArray, baseOffset: Int): Int =
-            (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 16) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
+                (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 16) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
         fun getBitrate(buf: ByteArray, baseOffset: Int): Long =
-            (getBrMantissa(buf, baseOffset) * Math.pow(2.0, getBrExp(buf, baseOffset).toDouble())).toLong()
+            (getBrMantissa(buf, baseOffset) shl getBrExp(buf, baseOffset)).toLong()
         fun getNumSsrc(buf: ByteArray, baseOffset: Int): Int =
             buf.getByteAsInt(baseOffset + NUM_SSRC_OFF)
         fun getSsrc(buf: ByteArray, baseOffset: Int, ssrcIndex: Int) =
@@ -103,6 +103,7 @@ class RtcpFbRembPacket(
             // 18 bit mantissa
             var exp = 0
             for (i in 0..63) {
+                // 0x3ffff (262143) is the max value that can be put into an 18-bit unsigned integer
                 if (brBps <= 0x3ffff shl i) {
                     exp = i
                     break
@@ -133,7 +134,7 @@ class RtcpFbRembPacket(
         fun setBrMantissa(buf: ByteArray, baseOffset: Int, value: Int) {
             buf[baseOffset + BR_OFF] =
                 ((buf[baseOffset + BR_OFF].toInt() and 0xfc) or ((value shr 16) and 0x03)).toByte()
-            buf[baseOffset + BR_OFF + 1] = ((value shr 8) and 0xff00).toByte()
+            buf[baseOffset + BR_OFF + 1] = ((value shr 8) and 0xff).toByte()
             buf[baseOffset + BR_OFF + 2] = (value and 0xff).toByte()
         }
 
