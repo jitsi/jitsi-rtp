@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb
 
+import kotlin.math.pow
 import org.jitsi.rtp.extensions.bytearray.putInt
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
@@ -92,7 +93,7 @@ class RtcpFbRembPacket(
         fun getBrMantissa(buf: ByteArray, baseOffset: Int): Int =
                 (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 16) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
         fun getBitrate(buf: ByteArray, baseOffset: Int): Long =
-            (getBrMantissa(buf, baseOffset) shl getBrExp(buf, baseOffset)).toLong()
+                (getBrMantissa(buf, baseOffset) * 2.0.pow(getBrExp(buf, baseOffset).toDouble())).toLong()
         fun getNumSsrc(buf: ByteArray, baseOffset: Int): Int =
             buf.getByteAsInt(baseOffset + NUM_SSRC_OFF)
         fun getSsrc(buf: ByteArray, baseOffset: Int, ssrcIndex: Int) =
