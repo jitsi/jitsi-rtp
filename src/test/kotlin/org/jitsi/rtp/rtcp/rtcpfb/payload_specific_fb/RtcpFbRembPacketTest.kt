@@ -54,10 +54,38 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
 
                 should("set the values correctly") {
                     rembPacket.senderSsrc shouldBe 4567L
-                    RtcpFbRembPacket.getBrExp(rembPacket.buffer, 0) shouldBe 2
-                    RtcpFbRembPacket.getBrMantissa(rembPacket.buffer, 0) shouldBe 250000
                     rembPacket.ssrcs shouldBe listOf(1234L)
                     rembPacket.bitrate shouldBe 1_000_000L
+                }
+            }
+            "from values" {
+                val rembPacket = RtcpFbRembPacketBuilder(rtcpHeader = RtcpHeaderBuilder(
+                        senderSsrc = 4567L
+                ),
+                        ssrcs = listOf(1234L),
+                        brBps = Long.MAX_VALUE).build()
+
+                should("set the values correctly") {
+                    rembPacket.senderSsrc shouldBe 4567L
+                    rembPacket.ssrcs shouldBe listOf(1234L)
+                    // the difference between Long.MAX_VALUE and 9223336852482686976L is expected and stems from the
+                    // fact that we (only) have 18 bits of resolution for the mantissa.
+                    rembPacket.bitrate shouldBe 9223336852482686976L
+                }
+            }
+            "from values" {
+                val rembPacket = RtcpFbRembPacketBuilder(rtcpHeader = RtcpHeaderBuilder(
+                        senderSsrc = 4567L
+                ),
+                        ssrcs = listOf(1234L),
+                        brBps = 50_000_000L).build()
+
+                should("set the values correctly") {
+                    rembPacket.senderSsrc shouldBe 4567L
+                    rembPacket.ssrcs shouldBe listOf(1234L)
+                    // the difference between 50_000_000L and 49999872L is expected and it stems from the fact that we
+                    // (only) have 18 bits of resolution for the mantissa.
+                    rembPacket.bitrate shouldBe 49999872L
                 }
             }
             "creation" {

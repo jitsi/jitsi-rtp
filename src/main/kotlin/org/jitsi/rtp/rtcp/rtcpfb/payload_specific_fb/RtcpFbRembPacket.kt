@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.rtcp.rtcpfb.payload_specific_fb
 
-import kotlin.math.pow
 import org.jitsi.rtp.extensions.bytearray.putInt
 import org.jitsi.rtp.rtcp.RtcpHeaderBuilder
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
@@ -92,8 +91,16 @@ class RtcpFbRembPacket(
             buf.getBitsAsInt(baseOffset + BR_OFF, 0, 6)
         fun getBrMantissa(buf: ByteArray, baseOffset: Int): Int =
                 (buf.getBitsAsInt(baseOffset + BR_OFF, 6, 2) shl 16) + buf.getShortAsInt(baseOffset + BR_OFF + 1)
-        fun getBitrate(buf: ByteArray, baseOffset: Int): Long =
-                (getBrMantissa(buf, baseOffset) * 2.0.pow(getBrExp(buf, baseOffset).toDouble())).toLong()
+        fun getBitrate(buf: ByteArray, baseOffset: Int): Long {
+            val mantissa = getBrMantissa(buf, baseOffset)
+            val exp = getBrExp(buf, baseOffset)
+            val brBps = mantissa.toLong() shl exp
+            if ((brBps shr exp).toInt() != mantissa) {
+                return -1
+            }
+
+            return brBps
+        }
         fun getNumSsrc(buf: ByteArray, baseOffset: Int): Int =
             buf.getByteAsInt(baseOffset + NUM_SSRC_OFF)
         fun getSsrc(buf: ByteArray, baseOffset: Int, ssrcIndex: Int) =
@@ -103,17 +110,15 @@ class RtcpFbRembPacket(
             // 6 bit Exp
             // 18 bit mantissa
             var exp = 0
-            for (i in 0..63) {
-                // 0x3ffff (262143) is the max value that can be put into an 18-bit unsigned integer
-                if (brBps <= 0x3ffff shl i) {
-                    exp = i
-                    break
-                }
+            var mantissa = if (brBps > 0) brBps else 0
+
+            // 0x3ffff (262143) is the max value that can be put into an 18-bit unsigned integer
+            while (mantissa > 0x3ffff) {
+                mantissa = mantissa shr 1
+                ++exp
             }
 
-            // type of bitrate is an unsigned int (32 bits)
-            val mantissa = (brBps shr exp).toInt()
-            return Pair(exp, mantissa)
+            return Pair(exp, mantissa.toInt())
         }
 
         fun setRemb(buf: ByteArray, baseOffset: Int) {
