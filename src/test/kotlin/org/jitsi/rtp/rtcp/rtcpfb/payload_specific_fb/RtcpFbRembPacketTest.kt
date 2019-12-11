@@ -43,6 +43,16 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
             0x9e, 0x23, 0x54, 0xa3
     )
 
+    val rembPacket3Buf = byteBufferOf(
+            0x8f, 0xce, 0x00, 0x06,
+            0xfe, 0x93, 0x23, 0x03,
+            0x00, 0x00, 0x00, 0x00,
+            0x52, 0x45, 0x4d, 0x42,
+            0x02, 0xff, 0xff, 0xff,
+            0x9e, 0x72, 0x01, 0xc1,
+            0x9e, 0x23, 0x54, 0xa3
+    )
+
     init {
         "Creating an RtcpFbRembPacket" {
             "from values" {
@@ -89,7 +99,7 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
                 }
             }
             "creation" {
-                "from a buffer" {
+                "from a buffer of a simple REMB" {
                     val rembPacket = RtcpFbRembPacket(rembPacket1Buf.array(), rembPacket1Buf.arrayOffset(), rembPacket1Buf.limit())
                     should("read everything correctly") {
                         rembPacket.senderSsrc shouldBe 0xfe932303
@@ -100,13 +110,24 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
                 }
             }
             "creation" {
-                "from a buffer" {
+                "from a buffer of a REMB with two ssrcs" {
                     val rembPacket = RtcpFbRembPacket(rembPacket2Buf.array(), rembPacket2Buf.arrayOffset(), rembPacket2Buf.limit())
                     should("read everything correctly") {
                         rembPacket.senderSsrc shouldBe 0xfe932303
                         rembPacket.numSsrc shouldBe 2
                         rembPacket.ssrcs shouldBe listOf(0x9e7201c1, 0x9e2354a3)
                         rembPacket.bitrate shouldBe 971112
+                    }
+                }
+            }
+            "creation" {
+                "from a buffer of a REMB signaling unbound bandwidth" {
+                    val rembPacket = RtcpFbRembPacket(rembPacket3Buf.array(), rembPacket3Buf.arrayOffset(), rembPacket3Buf.limit())
+                    should("read everything correctly") {
+                        rembPacket.senderSsrc shouldBe 0xfe932303
+                        rembPacket.numSsrc shouldBe 2
+                        rembPacket.ssrcs shouldBe listOf(0x9e7201c1, 0x9e2354a3)
+                        rembPacket.bitrate shouldBe Long.MAX_VALUE
                     }
                 }
             }
