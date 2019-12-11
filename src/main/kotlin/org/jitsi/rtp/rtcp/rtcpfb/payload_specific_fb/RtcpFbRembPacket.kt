@@ -96,7 +96,10 @@ class RtcpFbRembPacket(
             val exp = getBrExp(buf, baseOffset)
             val brBps = mantissa.toLong() shl exp
             if ((brBps shr exp).toInt() != mantissa) {
-                return -1
+                // This block catches a Java long overflow (i.e. the bitrate larger than Long.MAX_VALUE). Although this
+                // could potentially indicate a malformed remb or a bug in our code, we chose to interpret as the remote
+                // party trying to signal unbounded bandwidth.
+                return Long.MAX_VALUE
             }
 
             return brBps
