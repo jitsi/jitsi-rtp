@@ -18,6 +18,7 @@ package org.jitsi.rtp.rtp.header_extensions
 
 import org.jitsi.rtp.extensions.bytearray.put3Bytes
 import org.jitsi.rtp.rtp.RtpPacket
+import org.jitsi.rtp.util.get3BytesAsInt
 
 /**
  * https://webrtc.org/experiments/rtp-hdrext/abs-send-time/
@@ -46,6 +47,14 @@ class AbsSendTimeHeaderExtension {
             val timestamp = ((seconds shl 18) or fraction) and 0x00FFFFFF
 
             buf.put3Bytes(offset + RtpPacket.HEADER_EXT_HEADER_SIZE, timestamp.toInt())
+        }
+
+        /**
+         * Gets the timestamp in the native format (6.18 fixed point) represented as an [Int].
+         */
+        fun getTime(ext: RtpPacket.HeaderExtension): Int = getTime(ext.currExtBuffer, ext.currExtOffset)
+        fun getTime(buf: ByteArray, baseOffset: Int): Int {
+            return buf.get3BytesAsInt(baseOffset + RtpPacket.HEADER_EXT_HEADER_SIZE)
         }
     }
 }
