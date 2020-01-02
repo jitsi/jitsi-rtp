@@ -91,13 +91,10 @@ class RtpUtils {
          * TODO: since [Short] can fully represent sequence number deltas,
          *   change this to be the public API?
          */
-        private inline fun getSequenceNumberDeltaAsShort(a: Int, b: Int): Short {
-            val diff = a - b
+        private inline fun getSequenceNumberDeltaAsShort(a: Int, b: Int): Short =
             /* Coercing to short forces diff to the range -0x8000 - 0x7fff,
                which is what we want. */
-            val coerced = diff.toShort()
-            return coerced
-        }
+            (a - b).toShort()
 
         /**
          * Apply a delta to a given sequence number and return the result (taking
@@ -151,13 +148,10 @@ class RtpUtils {
          * TODO: since [Int] can fully represent timestamp deltas,
          *   change this to be the public API?
          */
-        private inline fun getTimestampDiffAsInt(a: Long, b: Long): Int {
-            val diff = a - b
+        private inline fun getTimestampDiffAsInt(a: Long, b: Long): Int =
             /* Coercing to int forces diff to the range -0x8000_0000 - 0x7fff_ffff,
-               which is what we want. */
-            val coerced = diff.toInt()
-            return coerced
-        }
+              which is what we want. */
+            (a - b).toInt()
 
         /**
          * Returns a sequence of Ints from olderSeqNum (exclusive) to newerSeqNum (exclusive),
