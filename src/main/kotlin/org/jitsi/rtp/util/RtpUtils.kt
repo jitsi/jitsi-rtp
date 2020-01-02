@@ -84,11 +84,10 @@ class RtpUtils {
         @JvmStatic
         fun getSequenceNumberDelta(a: Int, b: Int): Int {
             val diff = a - b
-            return when {
-                diff < -(1 shl 15) -> diff + (1 shl 16)
-                diff > (1 shl 15) -> diff - (1 shl 16)
-                else -> diff
-            }
+            /* Coercing to short forces diff to the range -0x8000 - 0x7fff,
+               which is what we want. */
+            val coerced = diff.toShort().toInt()
+            return coerced
         }
 
         /**
@@ -135,14 +134,10 @@ class RtpUtils {
          */
         @JvmStatic
         fun getTimestampDiff(a: Long, b: Long): Long {
-            var diff = a - b
-            if (diff < -0x8000_0000L) {
-                diff += 0x1_0000_0000L
-            } else if (diff > 0x8000_0000L) {
-                diff -= 0x1_0000_0000L
-            }
-
-            return diff
+            val diff = a - b
+            /* Coercing to int forces diff to the range -0x8000_0000 - 0x7fff_ffff,
+               which is what we want. */
+            return diff.toInt().toLong()
         }
 
         /**
