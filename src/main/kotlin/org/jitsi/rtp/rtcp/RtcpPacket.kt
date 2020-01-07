@@ -17,6 +17,7 @@
 package org.jitsi.rtp.rtcp
 
 import org.jitsi.rtp.Packet
+import org.jitsi.rtp.extensions.bytearray.toHex
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 
 /**
@@ -83,8 +84,17 @@ abstract class RtcpPacket(
                 RtcpSdesPacket.PT -> RtcpSdesPacket(buf, offset, packetLengthBytes)
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.parse(buf, offset, packetLengthBytes)
                 RtcpXrPacket.PT -> RtcpXrPacket(buf, offset, packetLengthBytes)
-                else -> TODO("unimplemented rtcp type $packetType")
+                else -> {
+                    when (packetType) {
+                        in 192..195, in 200..213 -> throw UnsupportedRtcpException(packetType)
+                        else -> throw InvalidRtcpException(packetType, buf, offset)
+                    }
+                }
             }
         }
     }
 }
+
+class UnsupportedRtcpException(packetType: Int) : Exception("Unsupported RTCP packet type: $packetType")
+class InvalidRtcpException(packetType: Int, buf: ByteArray, offset: Int) :
+    Exception("Invalid RTCP packet type: $packetType: ${buf.toHex(offset, 8)}")
