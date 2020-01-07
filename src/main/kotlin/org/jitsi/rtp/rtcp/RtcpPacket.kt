@@ -85,8 +85,8 @@ abstract class RtcpPacket(
                 in RtcpFbPacket.PACKET_TYPES -> RtcpFbPacket.parse(buf, offset, packetLengthBytes)
                 RtcpXrPacket.PT -> RtcpXrPacket(buf, offset, packetLengthBytes)
                 else -> {
-                    when (packetType) {
-                        in 192..195, in 200..213 -> throw UnsupportedRtcpException(packetType)
+                    return when (packetType) {
+                        in 192..195, in 200..213 -> UnsupportedRtcpPacket(buf, offset, packetLengthBytes)
                         else -> throw InvalidRtcpException(packetType, buf, offset)
                     }
                 }
@@ -95,6 +95,5 @@ abstract class RtcpPacket(
     }
 }
 
-class UnsupportedRtcpException(packetType: Int) : Exception("Unsupported RTCP packet type: $packetType")
 class InvalidRtcpException(packetType: Int, buf: ByteArray, offset: Int) :
     Exception("Invalid RTCP packet type: $packetType: ${buf.toHex(offset, 8)}")
