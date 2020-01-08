@@ -17,9 +17,8 @@
 package org.jitsi.rtp.rtcp
 
 import io.kotlintest.matchers.types.shouldBeInstanceOf
-import io.kotlintest.specs.ShouldSpec
-import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
+import io.kotlintest.specs.ShouldSpec
 
 class RtcpPacketTest : ShouldSpec() {
 
