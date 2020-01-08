@@ -87,7 +87,7 @@ abstract class RtcpPacket(
                 else -> {
                     return when (packetType) {
                         in 192..195, in 200..213 -> UnsupportedRtcpPacket(buf, offset, packetLengthBytes)
-                        else -> throw InvalidRtcpException(packetType, buf, offset)
+                        else -> throw InvalidRtcpException(buf, offset)
                     }
                 }
             }
@@ -95,5 +95,5 @@ abstract class RtcpPacket(
     }
 }
 
-class InvalidRtcpException(packetType: Int, buf: ByteArray, offset: Int) :
-    Exception("Invalid RTCP packet type: $packetType: ${buf.toHex(offset, 8)}")
+class InvalidRtcpException(buf: ByteArray, offset: Int) :
+    Exception("Invalid RTCP packet: ${buf.toHex(offset, 8)}")
