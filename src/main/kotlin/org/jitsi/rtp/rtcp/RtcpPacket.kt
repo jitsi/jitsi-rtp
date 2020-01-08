@@ -96,4 +96,4 @@ abstract class RtcpPacket(
 }
 
 class InvalidRtcpException(buf: ByteArray, offset: Int) :
-    Exception("Invalid RTCP packet: ${buf.toHex(offset, 8)}")
+    Exception("Invalid RTCP packet: ${buf.toHex(offset, RtcpHeader.SIZE_BYTES)}")
