@@ -17,6 +17,7 @@
 package org.jitsi.rtp.rtcp
 
 import org.jitsi.rtp.Packet
+import org.jitsi.rtp.extensions.RTCP_PACKET_TYPE_RANGE
 import org.jitsi.rtp.extensions.bytearray.toHex
 import org.jitsi.rtp.rtcp.rtcpfb.RtcpFbPacket
 
@@ -86,7 +87,7 @@ abstract class RtcpPacket(
                 RtcpXrPacket.PT -> RtcpXrPacket(buf, offset, packetLengthBytes)
                 else -> {
                     return when (packetType) {
-                        in 192..195, in 200..213 -> UnsupportedRtcpPacket(buf, offset, packetLengthBytes)
+                        in RTCP_PACKET_TYPE_RANGE -> UnsupportedRtcpPacket(buf, offset, packetLengthBytes)
                         else -> throw InvalidRtcpException(buf, offset)
                     }
                 }
