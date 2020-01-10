@@ -3,4 +3,4 @@
 set -e
 
 cd $WORKSPACE
-../build.sh
+./resources/build.sh
