@@ -16,24 +16,49 @@
 
 package org.jitsi.rtp.rtcp
 
-class CompoundRtcpPacket(
-    buffer: ByteArray,
-    offset: Int,
-    length: Int
-) : RtcpPacket(buffer, offset, length) {
+import org.jitsi.rtp.util.BufferPool
 
-    val packets: List<RtcpPacket> = run {
-        var bytesRemaining = length
-        var currOffset = offset
-        val rtcpPackets = mutableListOf<RtcpPacket>()
-        while (bytesRemaining >= RtcpHeader.SIZE_BYTES) {
-            val rtcpPacket = parse(buffer, currOffset)
-            rtcpPackets.add(rtcpPacket)
-            currOffset += rtcpPacket.length
-            bytesRemaining -= rtcpPacket.length
+class CompoundRtcpPacket private constructor(
+    holder: Holder
+) : RtcpPacket(holder.buffer, holder.offset, holder.length) {
+
+    val packets: List<RtcpPacket> by lazy { parse(holder) }
+
+    constructor(buffer: ByteArray, offset: Int, length: Int) : this(Holder(buffer, offset, length))
+    constructor(packets: List<RtcpPacket>) : this(createBuffer(packets))
+
+    companion object {
+
+        private fun parse(holder: Holder) = parse(holder.buffer, holder.offset, holder.length)
+
+        fun parse(buffer: ByteArray, offset: Int, length: Int): List<RtcpPacket> {
+            var bytesRemaining = length
+            var currOffset = offset
+            val rtcpPackets = mutableListOf<RtcpPacket>()
+            while (bytesRemaining >= RtcpHeader.SIZE_BYTES) {
+                val rtcpPacket = parse(buffer, currOffset)
+                rtcpPackets.add(rtcpPacket)
+                currOffset += rtcpPacket.length
+                bytesRemaining -= rtcpPacket.length
+            }
+            return rtcpPackets
         }
-        rtcpPackets
+
+        private fun createBuffer(packets: List<RtcpPacket>): Holder {
+            val totalLength = packets.map { it.length }.sum()
+            val buf = BufferPool.getArray(totalLength + BYTES_TO_LEAVE_AT_END_OF_PACKET)
+
+            var off = 0
+            packets.forEach {
+                System.arraycopy(it.buffer, it.offset, buf, off, it.length)
+                off += it.length
+            }
+
+            return Holder(buf, 0, totalLength)
+        }
     }
+
+    private data class Holder(val buffer: ByteArray, val offset: Int, val length: Int)
 
     override fun clone(): RtcpPacket = CompoundRtcpPacket(cloneBuffer(0), 0, length)
 }
