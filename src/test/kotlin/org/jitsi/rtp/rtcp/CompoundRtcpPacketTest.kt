@@ -31,16 +31,13 @@ internal class CompoundRtcpPacketTest : ShouldSpec() {
             val remb = RtcpFbRembPacketBuilder(RtcpHeaderBuilder(), listOf(123), 12345).build()
             val pli = RtcpFbPliPacketBuilder(RtcpHeaderBuilder(), 456).build()
 
-            val compoundRtcpPacket = CompoundRtcpPacket(rr, remb, pli)
-            compoundRtcpPacket.packets.size shouldBe 3
-            compoundRtcpPacket.packets[0]::class shouldBe rr::class
-            compoundRtcpPacket.packets[0].length shouldBe rr.length
-
-            compoundRtcpPacket.packets[1]::class shouldBe remb::class
-            compoundRtcpPacket.packets[1].length shouldBe remb.length
-
-            compoundRtcpPacket.packets[2]::class shouldBe pli::class
-            compoundRtcpPacket.packets[2].length shouldBe pli.length
+            val packets = arrayOf(rr, remb, pli)
+            val compoundRtcpPacket = CompoundRtcpPacket(*packets)
+            compoundRtcpPacket.packets.size shouldBe packets.size
+            compoundRtcpPacket.packets.forEachIndexed { i, packet ->
+                packet.length shouldBe packets[i].length
+                packet::class shouldBe packets[i]::class
+            }
         }
     }
 }
