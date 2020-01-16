@@ -35,7 +35,7 @@ class CompoundRtcpPacket(
             val rtcpPackets = mutableListOf<RtcpPacket>()
             while (bytesRemaining >= RtcpHeader.SIZE_BYTES) {
                 val rtcpPacket = try {
-                    parse(buffer, currOffset, bytesRemaining)
+                    RtcpPacket.parse(buffer, currOffset, bytesRemaining)
                 } catch (e: InvalidRtcpException) {
                     throw CompoundRtcpContainedInvalidDataException(buffer, offset, length, currOffset)
                 }
