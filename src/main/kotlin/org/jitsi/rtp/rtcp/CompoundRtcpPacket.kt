@@ -37,7 +37,7 @@ class CompoundRtcpPacket(
                 val rtcpPacket = try {
                     RtcpPacket.parse(buffer, currOffset, bytesRemaining)
                 } catch (e: InvalidRtcpException) {
-                    throw CompoundRtcpContainedInvalidDataException(buffer, offset, length, currOffset)
+                    throw CompoundRtcpContainedInvalidDataException(buffer, offset, length, currOffset, e.reason)
                 }
                 rtcpPackets.add(rtcpPacket)
                 currOffset += rtcpPacket.length
@@ -67,7 +67,8 @@ class CompoundRtcpContainedInvalidDataException(
     compoundRtcpBuf: ByteArray,
     compoundRtcpOffset: Int,
     compoundRtcpLength: Int,
-    invalidDataOffset: Int
+    invalidDataOffset: Int,
+    invalidDataReason: String
 ) : Exception("Compound RTCP contained invalid data.  Compound RTCP packet data is: " +
     "${compoundRtcpBuf.toHex(compoundRtcpOffset, compoundRtcpLength)} Invalid data " +
-    "started at offset ${invalidDataOffset - compoundRtcpOffset}")
+    "started at offset ${invalidDataOffset - compoundRtcpOffset} and failed due to '$invalidDataReason'")
