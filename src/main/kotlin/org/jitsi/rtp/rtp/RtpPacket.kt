@@ -73,20 +73,25 @@ open class RtpPacket(
         get() = RtpHeader.getMarker(buffer, offset)
         set(value) = RtpHeader.setMarker(buffer, offset, value)
 
+    /* The four values below (payloadType, sequenceNumber, timestamp, and ssrc)
+     * are very frequently accessed in our pipeline; store their values in
+     * delegated properties, rather than re-reading them from the buffer every time.
+     */
+
     var payloadType: Int by Delegates.observable(RtpHeader.getPayloadType(buffer, offset)) {
-        _, _, value -> RtpHeader.setPayloadType(buffer, offset, value)
+        _, _, newValue -> RtpHeader.setPayloadType(buffer, offset, newValue)
     }
 
     var sequenceNumber: Int by Delegates.observable(RtpHeader.getSequenceNumber(buffer, offset)) {
-        _, _, value -> RtpHeader.setSequenceNumber(buffer, offset, value)
+        _, _, newValue -> RtpHeader.setSequenceNumber(buffer, offset, newValue)
     }
 
     var timestamp: Long by Delegates.observable(RtpHeader.getTimestamp(buffer, offset)) {
-        _, _, value -> RtpHeader.setTimestamp(buffer, offset, value)
+        _, _, newValue -> RtpHeader.setTimestamp(buffer, offset, newValue)
     }
 
     var ssrc: Long by Delegates.observable(RtpHeader.getSsrc(buffer, offset)) {
-        _, _, value -> RtpHeader.setSsrc(buffer, offset, value)
+        _, _, newValue -> RtpHeader.setSsrc(buffer, offset, newValue)
     }
 
     val csrcs: List<Long>
