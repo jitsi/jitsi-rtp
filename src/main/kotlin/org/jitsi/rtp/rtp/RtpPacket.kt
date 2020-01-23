@@ -24,7 +24,7 @@ import org.jitsi.rtp.rtp.header_extensions.HeaderExtensionHelpers
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.isPadding
-import kotlin.properties.Delegates
+import org.jitsi.utils.observableWhenChanged
 
 /**
  *
@@ -78,19 +78,19 @@ open class RtpPacket(
      * delegated properties, rather than re-reading them from the buffer every time.
      */
 
-    var payloadType: Int by Delegates.observable(RtpHeader.getPayloadType(buffer, offset)) {
+    var payloadType: Int by observableWhenChanged(RtpHeader.getPayloadType(buffer, offset)) {
         _, _, newValue -> RtpHeader.setPayloadType(buffer, offset, newValue)
     }
 
-    var sequenceNumber: Int by Delegates.observable(RtpHeader.getSequenceNumber(buffer, offset)) {
+    var sequenceNumber: Int by observableWhenChanged(RtpHeader.getSequenceNumber(buffer, offset)) {
         _, _, newValue -> RtpHeader.setSequenceNumber(buffer, offset, newValue)
     }
 
-    var timestamp: Long by Delegates.observable(RtpHeader.getTimestamp(buffer, offset)) {
+    var timestamp: Long by observableWhenChanged(RtpHeader.getTimestamp(buffer, offset)) {
         _, _, newValue -> RtpHeader.setTimestamp(buffer, offset, newValue)
     }
 
-    var ssrc: Long by Delegates.observable(RtpHeader.getSsrc(buffer, offset)) {
+    var ssrc: Long by observableWhenChanged(RtpHeader.getSsrc(buffer, offset)) {
         _, _, newValue -> RtpHeader.setSsrc(buffer, offset, newValue)
     }
 
