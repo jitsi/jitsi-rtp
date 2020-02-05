@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.rtcp
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.jitsi.rtp.extensions.bytearray.getInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 
@@ -39,6 +40,7 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveLong
  * (opt) |     length    |               reason for leaving            ...
  *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH")
 class RtcpByePacket(
     buffer: ByteArray,
     offset: Int,
@@ -58,7 +60,7 @@ class RtcpByePacket(
 
         if (hasReason) {
             val reasonLengthOffset = offset + headerAndSsrcsLengthBytes
-            val reasonLength = buffer.get(reasonLengthOffset).toInt()
+            val reasonLength = buffer[reasonLengthOffset].toInt()
             val reasonStr = String(buffer, reasonLengthOffset + 1, reasonLength)
             reasonStr
         } else {
