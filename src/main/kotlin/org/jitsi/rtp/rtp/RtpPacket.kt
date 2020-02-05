@@ -16,6 +16,7 @@
 
 package org.jitsi.rtp.rtp
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import kotlin.experimental.or
 import org.jitsi.rtp.Packet
 import org.jitsi.rtp.extensions.bytearray.hashCodeOfSegment
@@ -78,18 +79,22 @@ open class RtpPacket(
      * delegated properties, rather than re-reading them from the buffer every time.
      */
 
+    @SuppressFBWarnings(value = ["EI_EXPOSE_REP2"])
     var payloadType: Int by observableWhenChanged(RtpHeader.getPayloadType(buffer, offset)) {
         _, _, newValue -> RtpHeader.setPayloadType(buffer, offset, newValue)
     }
 
+    @SuppressFBWarnings(value = ["EI_EXPOSE_REP2"])
     var sequenceNumber: Int by observableWhenChanged(RtpHeader.getSequenceNumber(buffer, offset)) {
         _, _, newValue -> RtpHeader.setSequenceNumber(buffer, offset, newValue)
     }
 
+    @SuppressFBWarnings(value = ["EI_EXPOSE_REP2"])
     var timestamp: Long by observableWhenChanged(RtpHeader.getTimestamp(buffer, offset)) {
         _, _, newValue -> RtpHeader.setTimestamp(buffer, offset, newValue)
     }
 
+    @SuppressFBWarnings(value = ["EI_EXPOSE_REP2"])
     var ssrc: Long by observableWhenChanged(RtpHeader.getSsrc(buffer, offset)) {
         _, _, newValue -> RtpHeader.setSsrc(buffer, offset, newValue)
     }
