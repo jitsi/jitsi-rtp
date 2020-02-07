@@ -16,7 +16,6 @@
 
 package org.jitsi.rtp.rtcp
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings
 import org.jitsi.rtp.extensions.bytearray.getInt
 import org.jitsi.rtp.extensions.unsigned.toPositiveLong
 
@@ -40,7 +39,6 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveLong
  * (opt) |     length    |               reason for leaving            ...
  *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  */
-@SuppressFBWarnings("NP_NULL_ON_SOME_PATH")
 class RtcpByePacket(
     buffer: ByteArray,
     offset: Int,

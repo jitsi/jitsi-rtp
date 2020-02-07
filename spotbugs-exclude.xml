@@ -2,24 +2,18 @@
 <FindBugsFilter>
 
 <Match>
-  <!-- Our Packet hierarchy intentionally uses clone() without calling super.clone(). -->
-  <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
-</Match>
-
-<Match>
-  <!-- This seems to get triggered by certain kotlin constructs though they look safe -->
-  <Bug pattern="BC_BAD_CAST_TO_ABSTRACT_COLLECTION"/>
-  <Source name="~.*\.kt" />
-</Match>
-
-<Match>
-  <!-- Serialization -->
-  <Bug pattern="SE_BAD_FIELD"/>
-</Match>
-
-<Match>
-  <!-- Serialization -->
-  <Bug pattern="SE_BAD_FIELD_STORE"/>
+  <Or>
+    <!-- Our Packet hierarchy intentionally uses clone() without calling super.clone(). -->
+    <Bug pattern="CN_IDIOM_NO_SUPER_CALL"/>
+    <!-- This seems to get triggered by certain kotlin constructs though they look safe -->
+    <Bug pattern="BC_BAD_CAST_TO_ABSTRACT_COLLECTION"/>
+    <!-- Serialization -->
+    <Bug pattern="SE_BAD_FIELD"/>
+    <!-- Serialization -->
+    <Bug pattern="SE_BAD_FIELD_STORE"/>
+    <!-- False positives with lazy vals -->
+    <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+  </Or>
 </Match>
 
 <Match>
