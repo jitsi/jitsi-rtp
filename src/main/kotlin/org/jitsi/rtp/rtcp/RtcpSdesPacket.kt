@@ -152,12 +152,7 @@ abstract class SdesItem(
             if (dataLength <= 0) {
                 return ByteArrayUtils.emptyByteArray
             }
-            val copy = when {
-                // Don't use the pool for small arrays.
-                dataLength < 30 -> ByteArray(dataLength)
-                else -> BufferPool.getArray(dataLength)
-            }
-
+            val copy = BufferPool.getArray(dataLength)
             System.arraycopy(buf, baseOffset + DATA_OFFSET, copy, 0, dataLength)
             return copy
         }
