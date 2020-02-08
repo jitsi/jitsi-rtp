@@ -87,13 +87,13 @@ class RtcpFbTccPacketBuilder(
     private val packets_ = mutableListOf<PacketReport>()
 
     fun SetBase(base_sequence: Int, ref_timestamp_us: Long) {
-        base_seq_no_ = RtpSequenceNumber(base_sequence)
+        base_seq_no_ = RtpSequenceNumber.wrap(base_sequence)
         base_time_ticks_ = (ref_timestamp_us % kTimeWrapPeriodUs) / kBaseScaleFactor
         last_timestamp_us_ = GetBaseTimeUs()
     }
 
     fun AddReceivedPacket(seqNum: Int, timestamp_us: Long): Boolean {
-        val sequence_number = RtpSequenceNumber(seqNum)
+        val sequence_number = RtpSequenceNumber.wrap(seqNum)
         var delta_full = (timestamp_us - last_timestamp_us_) % kTimeWrapPeriodUs
         if (delta_full > kTimeWrapPeriodUs / 2) {
             delta_full -= kTimeWrapPeriodUs

@@ -54,6 +54,7 @@ inline class RtpSequenceNumber(val value: Int) : Comparable<RtpSequenceNumber> {
 
     companion object {
         val INVALID = RtpSequenceNumber(-1)
+        fun wrap(value: Int): RtpSequenceNumber = RtpSequenceNumber(value and 0xffff)
     }
 }
 
