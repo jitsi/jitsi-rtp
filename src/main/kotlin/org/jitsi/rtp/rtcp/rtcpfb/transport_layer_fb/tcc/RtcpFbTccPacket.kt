@@ -400,9 +400,8 @@ class RtcpFbTccPacket(
         // Maximum number of packets_ (including missing) TransportFeedback can report.
         const val kMaxReportedPackets = 0xFFFF
         const val kChunkSizeBytes = 2
-        // Size constraint imposed by RTCP common header: 16bit size field interpreted
-        // as number of four byte words minus the first header word.
-        const val kMaxSizeBytes = (1 shl 16) * 4
+        // Fit TCC packets within an MTU
+        const val kMaxSizeBytes = 1500 - (14 /* srtcp */ + 8 /* udp */ + 20 /* ip */)
         // Header size:
         // * 4 bytes Common RTCP Packet Header
         // * 8 bytes Common Packet Format for RTCP Feedback Messages
