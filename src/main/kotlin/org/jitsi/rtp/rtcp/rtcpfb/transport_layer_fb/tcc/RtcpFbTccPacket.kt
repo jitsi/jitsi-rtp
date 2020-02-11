@@ -33,6 +33,7 @@ import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companio
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTimeWrapPeriodUs
 import org.jitsi.rtp.rtcp.rtcpfb.transport_layer_fb.tcc.RtcpFbTccPacket.Companion.kTransportFeedbackHeaderSizeBytes
 import org.jitsi.rtp.rtp.RtpSequenceNumber
+import org.jitsi.rtp.rtp.toRtpSequenceNumber
 import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.get3BytesAsInt
@@ -87,13 +88,13 @@ class RtcpFbTccPacketBuilder(
     private val packets_ = mutableListOf<PacketReport>()
 
     fun SetBase(base_sequence: Int, ref_timestamp_us: Long) {
-        base_seq_no_ = RtpSequenceNumber.wrap(base_sequence)
+        base_seq_no_ = base_sequence.toRtpSequenceNumber()
         base_time_ticks_ = (ref_timestamp_us % kTimeWrapPeriodUs) / kBaseScaleFactor
         last_timestamp_us_ = GetBaseTimeUs()
     }
 
     fun AddReceivedPacket(seqNum: Int, timestamp_us: Long): Boolean {
-        val sequence_number = RtpSequenceNumber.wrap(seqNum)
+        val sequence_number = seqNum.toRtpSequenceNumber()
         var delta_full = (timestamp_us - last_timestamp_us_) % kTimeWrapPeriodUs
         if (delta_full > kTimeWrapPeriodUs / 2) {
             delta_full -= kTimeWrapPeriodUs
@@ -280,7 +281,7 @@ class RtcpFbTccPacket(
     )
 
     private val data: TccMemberData by lazy(LazyThreadSafetyMode.NONE) {
-        val base_seq_no_ = RtpSequenceNumber(getBaseSeqNum(buffer, offset))
+        val base_seq_no_ = getBaseSeqNum(buffer, offset).toRtpSequenceNumber()
         val status_count = getPacketStatusCount(buffer, offset)
         val encoded_chunks_ = mutableListOf<Chunk>()
         val last_chunk_ = LastChunk()
