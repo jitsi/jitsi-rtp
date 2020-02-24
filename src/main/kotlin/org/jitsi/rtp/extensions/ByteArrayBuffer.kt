@@ -26,17 +26,19 @@ fun ByteArrayBuffer.toHex(maxBytes: Int = Int.MAX_VALUE): String {
 
     val sb = StringBuilder()
     for (i in offset until offset + numBytes) {
+        val position = i - offset
+        if (position != 0) {
+            if (position % 16 == 0) {
+                sb.append("\n")
+            } else if (position % 4 == 0) {
+                sb.append(" ")
+            }
+        }
         val byte: Int = buffer[i].toInt()
         val firstIndex = (byte and 0xF0) shr 4
         val secondIndex = byte and 0x0F
         sb.append(HEX_CHARS[firstIndex])
         sb.append(HEX_CHARS[secondIndex])
-        val position = i - offset
-        if ((position + 1) % 16 == 0) {
-            sb.append("\n")
-        } else if ((position + 1) % 4 == 0) {
-            sb.append(" ")
-        }
     }
 
     return sb.toString()

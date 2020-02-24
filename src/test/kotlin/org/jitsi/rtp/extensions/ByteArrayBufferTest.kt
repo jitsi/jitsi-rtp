@@ -17,63 +17,63 @@ class ByteArrayBufferTest : ShouldSpec() {
         "ByteArrayBuffer.toHex" {
             should("format a full buffer correctly") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size)
-                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000 "
+                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000"
             }
             should("honor maxBytes") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size)
-                packet.toHex(12) shouldBe "906F16AF 65F3E8CE 480F223A "
+                packet.toHex(12) shouldBe "906F16AF 65F3E8CE 480F223A"
             }
             should("handle large maxBytes") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size)
-                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000 "
+                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000"
             }
             should("work correctly for offset packets") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 4)
-                packet.toHex() shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000\n"
+                packet.toHex() shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000"
             }
             should("honor maxBytes for offset packets") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 4)
-                packet.toHex(12) shouldBe "65F3E8CE 480F223A BEDE0001 "
+                packet.toHex(12) shouldBe "65F3E8CE 480F223A BEDE0001"
             }
             should("handle large maxBytes for offset packets") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 4)
-                packet.toHex(40) shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000\n"
+                packet.toHex(40) shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000"
             }
             should("handle maxBytes large enough that maxBytes + offset wraps Int") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 4)
-                packet.toHex(Int.MAX_VALUE - 2) shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000\n"
+                packet.toHex(Int.MAX_VALUE - 2) shouldBe "65F3E8CE 480F223A BEDE0001 10FF0000"
             }
             should("work correctly for short packets") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size - 4)
-                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n"
+                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001"
             }
             should("honor maxBytes for short packets") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size - 4)
-                packet.toHex(12) shouldBe "906F16AF 65F3E8CE 480F223A "
+                packet.toHex(12) shouldBe "906F16AF 65F3E8CE 480F223A"
             }
             should("handle large maxBytes for short packets") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size - 4)
-                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n"
+                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001"
             }
             should("work correctly for short packets with offset") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 8)
-                packet.toHex() shouldBe "65F3E8CE 480F223A BEDE0001 "
+                packet.toHex() shouldBe "65F3E8CE 480F223A BEDE0001"
             }
             should("honor maxBytes for short packets with offset") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 8)
-                packet.toHex(8) shouldBe "65F3E8CE 480F223A "
+                packet.toHex(8) shouldBe "65F3E8CE 480F223A"
             }
             should("handle large maxBytes for short packets with offset") {
                 val packet = UnparsedPacket(buffer, 4, buffer.size - 8)
-                packet.toHex(40) shouldBe "65F3E8CE 480F223A BEDE0001 "
+                packet.toHex(40) shouldBe "65F3E8CE 480F223A BEDE0001"
             }
             should("handle packets with invalidly large length values") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size + 40)
-                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000 "
+                packet.toHex() shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000"
             }
             should("honor maxBytes for packets with invalidly large length values") {
                 val packet = UnparsedPacket(buffer, 0, buffer.size + 40)
-                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000 "
+                packet.toHex(40) shouldBe "906F16AF 65F3E8CE 480F223A BEDE0001\n10FF0000"
             }
         }
     }
