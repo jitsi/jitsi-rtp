@@ -23,10 +23,11 @@ import org.jitsi.utils.ByteArrayBuffer
 fun ByteArrayBuffer.toHex(maxChars: Int = Int.MAX_VALUE): String {
     val HEX_CHARS = "0123456789ABCDEF"
 
-    val limit = if (maxChars < Int.MAX_VALUE - offset)
-        min(offset + maxChars, min(offset + length, buffer.size))
-    else
+    val limit = if (maxChars < length) {
+        min(offset + maxChars, buffer.size)
+    } else {
         min(offset + length, buffer.size)
+    }
 
     val sb = StringBuilder()
     for (i in offset until limit) {
