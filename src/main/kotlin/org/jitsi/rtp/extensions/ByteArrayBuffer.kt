@@ -19,11 +19,17 @@ package org.jitsi.rtp.extensions
 import java.lang.Integer.min
 import org.jitsi.utils.ByteArrayBuffer
 
-fun ByteArrayBuffer.toHex(): String {
+@JvmOverloads
+fun ByteArrayBuffer.toHex(maxChars: Int = Int.MAX_VALUE): String {
     val HEX_CHARS = "0123456789ABCDEF"
 
+    val limit = if (maxChars < Int.MAX_VALUE - offset)
+        min(offset + maxChars, min(offset + length, buffer.size))
+    else
+        min(offset + length, buffer.size)
+
     val sb = StringBuilder()
-    for (i in offset until min(offset + length, buffer.size)) {
+    for (i in offset until limit) {
         val octet: Int = buffer[i].toInt()
         val firstIndex = (octet and 0xF0) shr 4
         val secondIndex = octet and 0x0F
