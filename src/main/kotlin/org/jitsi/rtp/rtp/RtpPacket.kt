@@ -26,6 +26,7 @@ import org.jitsi.rtp.util.BufferPool
 import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.isPadding
 import org.jitsi.utils.observableWhenChanged
+import sun.plugin.dom.exception.InvalidStateException
 
 /**
  *
@@ -375,12 +376,18 @@ open class RtpPacket(
             currExtLength = nextHeaderExtLength
         }
 
-        val id: Int
+        var id: Int
             get() {
                 if (currExtLength <= 0) {
                     return -1
                 }
                 return HeaderExtensionHelpers.getId(currExtBuffer, currExtOffset)
+            }
+            set(newId) {
+                if (currExtLength <= 0) {
+                    throw InvalidStateException("Can't set ID on header extension wiith no length")
+                }
+                HeaderExtensionHelpers.setId(newId, currExtBuffer, currExtOffset)
             }
 
         val dataLengthBytes: Int
