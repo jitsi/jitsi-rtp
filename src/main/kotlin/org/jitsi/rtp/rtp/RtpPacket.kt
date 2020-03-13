@@ -385,7 +385,7 @@ open class RtpPacket(
             }
             set(newId) {
                 if (currExtLength <= 0) {
-                    throw InvalidStateException("Can't set ID on header extension wiith no length")
+                    throw InvalidStateException("Can't set ID on header extension with no length")
                 }
                 HeaderExtensionHelpers.setId(newId, currExtBuffer, currExtOffset)
             }
