@@ -86,6 +86,7 @@ open class RtpPacket(
         set(newValue) {
             if (newValue != _payloadType) {
                 RtpHeader.setPayloadType(this.buffer, this.offset, newValue)
+                _payloadType = newValue
             }
         }
 
@@ -95,6 +96,7 @@ open class RtpPacket(
         set(newValue) {
             if (newValue != _sequenceNumber) {
                 RtpHeader.setSequenceNumber(this.buffer, this.offset, newValue)
+                _sequenceNumber = newValue
             }
         }
 
@@ -104,6 +106,7 @@ open class RtpPacket(
         set(newValue) {
             if (newValue != _timestamp) {
                 RtpHeader.setTimestamp(this.buffer, this.offset, newValue)
+                _timestamp = newValue
             }
         }
 
@@ -113,6 +116,7 @@ open class RtpPacket(
         set(newValue) {
             if (newValue != _ssrc) {
                 RtpHeader.setSsrc(this.buffer, this.offset, newValue)
+                _ssrc = newValue
             }
         }
 
