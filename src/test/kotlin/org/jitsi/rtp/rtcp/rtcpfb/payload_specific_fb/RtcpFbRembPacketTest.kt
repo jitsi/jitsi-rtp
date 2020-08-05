@@ -55,7 +55,7 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
 
     init {
         context("Creating an RtcpFbRembPacket") {
-            context("from values") {
+            context("from normal values") {
                 val rembPacket = RtcpFbRembPacketBuilder(rtcpHeader = RtcpHeaderBuilder(
                         senderSsrc = 4567L
                 ),
@@ -68,7 +68,7 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
                     rembPacket.bitrate shouldBe 1_000_000L
                 }
             }
-            context("from values") {
+            context("from values which overflow the field size by a lot") {
                 val rembPacket = RtcpFbRembPacketBuilder(rtcpHeader = RtcpHeaderBuilder(
                         senderSsrc = 4567L
                 ),
@@ -83,7 +83,7 @@ internal class RtcpFbRembPacketTest : ShouldSpec() {
                     rembPacket.bitrate shouldBe 9223336852482686976L
                 }
             }
-            context("from values") {
+            context("from values which overflow the field size by a little") {
                 val rembPacket = RtcpFbRembPacketBuilder(rtcpHeader = RtcpHeaderBuilder(
                         senderSsrc = 4567L
                 ),
