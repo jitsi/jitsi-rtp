@@ -53,7 +53,7 @@ class RedPacketParser<PacketType : RtpPacket>(
         var currentOffset = payloadOffset
 
         val redundancyBlockHeaders = mutableListOf<RedundancyBlockHeader>()
-        var primaryBlockHeader: PrimaryBlockHeader? = null
+        lateinit var primaryBlockHeader: PrimaryBlockHeader
         do {
             if (currentOffset > length) {
                 throw IllegalArgumentException(
@@ -125,7 +125,7 @@ class RedPacketParser<PacketType : RtpPacket>(
         )
         offset = newOffset
         length = newLength
-        payloadType = primaryBlockHeader!!.pt.toInt()
+        payloadType = primaryBlockHeader.pt.toInt()
 
         return packets
     }
