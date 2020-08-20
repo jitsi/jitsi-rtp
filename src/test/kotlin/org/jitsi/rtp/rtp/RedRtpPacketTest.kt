@@ -39,7 +39,7 @@ class RedRtpPacketTest : ShouldSpec() {
                 packet.getHeaderExtension(1).shouldHaveId1AndLen1()
                 packet.payloadLength shouldBe 66
 
-                packet.decapsulate()
+                packet.parse(false)
                 packet.payloadType shouldBe 111
                 packet.sequenceNumber shouldBe 0x7b2b
                 packet.timestamp shouldBe 0x44b2836e
@@ -58,7 +58,7 @@ class RedRtpPacketTest : ShouldSpec() {
                 packet.getHeaderExtension(1).shouldHaveId1AndLen1()
                 packet.payloadLength shouldBe 66
 
-                val redundantPackets = packet.parseRedundancyAndDecapsulate()
+                val redundantPackets = packet.parse(true)
                 redundantPackets.shouldBeEmpty()
                 packet.payloadType shouldBe 111
                 packet.sequenceNumber shouldBe 0x7b2b
@@ -80,7 +80,7 @@ class RedRtpPacketTest : ShouldSpec() {
                 packet.getHeaderExtension(1).shouldHaveId1AndLen1()
                 packet.payloadLength shouldBe 4 + 4 + 1 + 65 + 68 + 62 // block headers + block lengths
 
-                packet.decapsulate()
+                packet.parse(false)
                 packet.payloadType shouldBe 111
                 packet.sequenceNumber shouldBe 0x7b2b
                 packet.timestamp shouldBe 0x44b2836e
@@ -101,7 +101,7 @@ class RedRtpPacketTest : ShouldSpec() {
                 packet.getHeaderExtension(1).shouldHaveId1AndLen1()
                 packet.payloadLength shouldBe 4 + 4 + 1 + 65 + 68 + 62 // block headers + block lengths
 
-                val redundancyPackets = packet.parseRedundancyAndDecapsulate()
+                val redundancyPackets = packet.parse(true)
                 redundancyPackets.size shouldBe 2
 
                 redundancyPackets.forEachIndexed { i, p ->

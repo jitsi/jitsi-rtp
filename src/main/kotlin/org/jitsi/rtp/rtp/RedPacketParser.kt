@@ -18,23 +18,6 @@ class RedPacketParser<PacketType : RtpPacket>(
      */
     val createPacket: (ByteArray, Int, Int) -> PacketType
 ) {
-
-    /**
-     * Removes the RED encapsulation from a RED packet. The operation is done in-place, changing the payload type
-     * and offset of the packet. Redundancy blocks are ignored.
-     */
-    fun decapsulate(rtpPacket: RtpPacket) {
-        parse(rtpPacket, false)
-    }
-
-    /**
-     * Removes the RED encapsulation from a RED packet. The operation is done in-place, changing the payload type
-     * and offset of the packet. Redundancy blocks are parsed as [PacketType] into newly allocated buffers.
-     *
-     * If redundancy is not needed, use [decapsulate] instead.
-     */
-    fun parseRedundancyAndDecapsulate(rtpPacket: RtpPacket) = parse(rtpPacket, true) as List<PacketType>
-
     /**
      * Destructively parses a specific [RtpPacket] as RED. The redundant RED blocks are removed from the payload,
      * leaving only the primary block as payload, and the payload type is changed to the payload type of the primary
@@ -43,13 +26,13 @@ class RedPacketParser<PacketType : RtpPacket>(
      * If [parseRedundancy] is set, the redundancy blocks are parsed as [PacketType] into newly allocated buffers.
      *
      * @param rtpPacket the packet to parse
-     * @param parseRedundancy whether to parse
-     * @return The list of parsed redundancy packets (possibly empty) if [parseRedundancy] is set, and `null` otherwise.
+     * @param parseRedundancy whether to parse redundancy packets
+     * @return The list of parsed redundancy packets.
      */
-    private fun parse(
+    fun parse(
         rtpPacket: RtpPacket,
         parseRedundancy: Boolean
-    ): List<PacketType>? = with(rtpPacket) {
+    ): List<PacketType> = with(rtpPacket) {
         var currentOffset = payloadOffset
 
         val redundancyBlockHeaders = mutableListOf<RedundancyBlockHeader>()
@@ -126,7 +109,7 @@ class RedPacketParser<PacketType : RtpPacket>(
         length = newLength
         payloadType = primaryBlockHeader.pt.toInt()
 
-        return packets
+        return packets ?: emptyList()
     }
 }
 
@@ -199,6 +182,5 @@ internal class RtpRedPacket(buffer: ByteArray, offset: Int, length: Int) : RtpPa
         val parser = RedPacketParser { b, o, l -> RtpPacket(b, o, l) }
     }
 
-    fun decapsulate() = parser.decapsulate(this)
-    fun parseRedundancyAndDecapsulate(): List<RtpPacket> = parser.parseRedundancyAndDecapsulate(this)
+    fun parse(parseRedundancy: Boolean) = parser.parse(this, parseRedundancy)
 }
