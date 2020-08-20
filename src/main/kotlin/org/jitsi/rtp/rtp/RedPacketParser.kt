@@ -65,8 +65,7 @@ class RedPacketParser<PacketType : RtpPacket>(
                 is RedundancyBlockHeader -> redundancyBlockHeaders.add(blockHeader)
             }
             currentOffset += blockHeader.headerLength
-        }
-        while (blockHeader is RedundancyBlockHeader)
+        } while (blockHeader is RedundancyBlockHeader)
 
         val packets = if (parseRedundancy) mutableListOf<PacketType>() else null
         for ((index, it) in redundancyBlockHeaders.withIndex()) {
