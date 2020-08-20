@@ -161,10 +161,12 @@ class PrimaryBlockHeader(pt: Byte) : BlockHeader(pt) {
 
 class RedundancyBlockHeader(
     pt: Byte,
+    /**
+     * The (negative) offset of the timestamp relative to the RTP packet/primary block.
+     */
     val timestampOffset: Int,
     /**
-    * The length of the block's payload in bytes, or `null` if this is the last block (whose length is not explicitly
-    * specified).
+    * The length of the block's payload in bytes.
     */
     val length: Int
 ) : BlockHeader(pt) {
