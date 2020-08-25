@@ -6,8 +6,11 @@ import org.jitsi.rtp.extensions.unsigned.toPositiveInt
 import org.jitsi.rtp.rtp.RtpHeader.Companion.FIXED_HEADER_SIZE_BYTES
 import org.jitsi.rtp.rtp.RtpPacket.Companion.BYTES_TO_LEAVE_AT_START_OF_PACKET
 import org.jitsi.rtp.util.BufferPool
+import org.jitsi.rtp.util.RtpUtils.Companion.getTimestampDiffAsInt
 import org.jitsi.rtp.util.getBitsAsInt
 import java.lang.IllegalArgumentException
+import kotlin.experimental.and
+import kotlin.experimental.or
 
 /**
  * Parses RED (RFC2198) packets.
@@ -120,6 +123,8 @@ sealed class BlockHeader(
     val pt: Byte
 ) {
     abstract val headerLength: Int
+    abstract fun write(buffer: ByteArray, offset: Int): Int
+
     companion object {
         /**
          * See RFC2198.
@@ -157,6 +162,10 @@ sealed class BlockHeader(
 
 class PrimaryBlockHeader(pt: Byte) : BlockHeader(pt) {
     override val headerLength = 1
+    override fun write(buffer: ByteArray, offset: Int): Int {
+        buffer[offset] = pt and 0x7f.toByte()
+        return 1
+    }
 }
 
 class RedundancyBlockHeader(
@@ -171,6 +180,14 @@ class RedundancyBlockHeader(
     val length: Int
 ) : BlockHeader(pt) {
     override val headerLength = 4
+
+    override fun write(buffer: ByteArray, offset: Int): Int {
+        buffer[offset] = pt or 0x80.toByte()
+        buffer[offset + 1] = (timestampOffset shr 6).toByte()
+        buffer[offset + 2] = ((timestampOffset and 0x3f) shl 2).toByte() or ((length shr 8).toByte() and 0x03.toByte())
+        buffer[offset + 3] = (length and 0xff).toByte()
+        return 4
+    }
 }
 
 internal class RtpRedPacket(buffer: ByteArray, offset: Int, length: Int) : RtpPacket(buffer, offset, length) {
@@ -182,7 +199,57 @@ internal class RtpRedPacket(buffer: ByteArray, offset: Int, length: Int) : RtpPa
 
     companion object {
         val parser = RedPacketParser { b, o, l -> RtpPacket(b, o, l) }
+        val builder = RedPacketBuilder { b, o, l -> RtpRedPacket(b, o, l) }
     }
 
     fun parse(parseRedundancy: Boolean) = parser.parse(this, parseRedundancy)
+}
+
+class RedPacketBuilder<PacketType : RtpPacket>(val createPacket: (ByteArray, Int, Int) -> PacketType) {
+
+    fun build(redPayloadType: Int, primary: RtpPacket, redundancy: List<RtpPacket>): PacketType {
+        val bytesNeeded = primary.length + 1 + redundancy.map { it.payloadLength }.sum() + redundancy.size * 4
+
+        val buf = BufferPool.getArray(bytesNeeded + BYTES_TO_LEAVE_AT_START_OF_PACKET + BYTES_TO_LEAVE_AT_END_OF_PACKET)
+
+        var currentOffset = BYTES_TO_LEAVE_AT_START_OF_PACKET
+        val primaryHeaderLength = primary.headerLength
+
+        System.arraycopy(
+            primary.buffer, primary.offset,
+            buf, currentOffset,
+            primaryHeaderLength)
+        currentOffset += primaryHeaderLength
+
+        // TODO optimize use of `payloadLength` (it is calculated on the fly)
+        redundancy.forEach {
+            val header = RedundancyBlockHeader(
+                it.payloadType.toByte(),
+                getTimestampDiffAsInt(primary.timestamp, it.timestamp),
+                it.payloadLength)
+            currentOffset += header.write(buf, currentOffset)
+        }
+
+        val primaryHeader = PrimaryBlockHeader(primary.payloadType.toByte())
+        currentOffset += primaryHeader.write(buf, currentOffset)
+
+        redundancy.forEach {
+            System.arraycopy(
+                it.buffer, it.payloadOffset,
+                buf, currentOffset,
+                it.payloadLength
+            )
+            currentOffset += it.payloadLength
+        }
+
+        System.arraycopy(
+            primary.buffer, primary.payloadOffset,
+            buf, currentOffset,
+            primary.payloadLength
+        )
+
+        return createPacket(buf, BYTES_TO_LEAVE_AT_START_OF_PACKET, bytesNeeded).apply {
+            payloadType = redPayloadType
+        }
+    }
 }

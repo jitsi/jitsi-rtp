@@ -3,11 +3,15 @@ package org.jitsi.rtp.rtp
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeTypeOf
 
 import org.jitsi.rtp.extensions.bytearray.byteArrayOf
+import org.jitsi.test_helpers.matchers.haveSameFixedHeader
+import org.jitsi.test_helpers.matchers.haveSamePayload
 
 class RedRtpPacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -26,6 +30,29 @@ class RedRtpPacketTest : ShouldSpec() {
                 block.pt shouldBe 5.toByte()
                 block.timestampOffset shouldBe 0x3fff
                 block.length shouldBe 0x3ff
+            }
+        }
+        context("Creating block headers") {
+            context("Primary") {
+                val buf = ByteArray(1)
+                val blockHeader = PrimaryBlockHeader(111)
+                blockHeader.write(buf, 0)
+
+                val parsed = BlockHeader.parse(buf, 0)
+                parsed.shouldBeTypeOf<PrimaryBlockHeader>()
+                parsed.pt shouldBe 111.toByte()
+            }
+            context("Redundancy") {
+                val buf = ByteArray(4)
+                val blockHeader = RedundancyBlockHeader(111, 960, 55)
+                blockHeader.write(buf, 0)
+
+                val parsed = BlockHeader.parse(buf, 0)
+                parsed.shouldBeTypeOf<RedundancyBlockHeader>()
+                parsed as RedundancyBlockHeader
+                parsed.pt shouldBe 111.toByte()
+                parsed.timestampOffset shouldBe 960
+                parsed.length shouldBe 55
             }
         }
         context("Parsing a RED packet with a single block") {
@@ -123,6 +150,60 @@ class RedRtpPacketTest : ShouldSpec() {
                 packet.hasExtensions shouldBe true
                 packet.getHeaderExtension(1).shouldHaveId1AndLen1()
                 packet.payloadLength shouldBe 62
+            }
+        }
+        context("Creating a RED packet without redundancy") {
+            val rtpPacket = RtpPacket(redPacketBytesSingleBlock.clone(), 0, redPacketBytesSingleBlock.size).apply {
+                payloadType = 111
+            }
+
+            val redPacket = RtpRedPacket.builder.build(112, rtpPacket, emptyList())
+            redPacket.length shouldBe rtpPacket.length + 1
+            redPacket.payloadType shouldBe 112
+
+            redPacket.parse(false)
+            val reconstructed = RtpPacket(redPacket.buffer, redPacket.offset, redPacket.length)
+            reconstructed should haveSameFixedHeader(rtpPacket)
+            reconstructed should haveSamePayload(rtpPacket)
+        }
+        context("Creating a RED packet with redundancy") {
+            val primary = RtpPacket(redPacketBytesSingleBlock.clone(), 0, redPacketBytesSingleBlock.size).apply {
+                payloadType = 111
+            }
+            val redundancy1 = RtpPacket(redPacketBytesSingleBlock.clone(), 0, redPacketBytesSingleBlock.size).apply {
+                payloadType = 111
+                timestamp = primary.timestamp - 1920
+                sequenceNumber = primary.sequenceNumber - 2
+            }
+            val redundancy2 = RtpPacket(redPacketBytesSingleBlock.clone(), 0, redPacketBytesSingleBlock.size).apply {
+                payloadType = 111
+                timestamp = primary.timestamp - 960
+                sequenceNumber = primary.sequenceNumber - 1
+            }
+
+            val redPacket = RtpRedPacket.builder.build(112, primary, listOf(redundancy1, redundancy2))
+            redPacket.length shouldBe primary.length + 1 + redundancy1.payloadLength + 4 + redundancy2.payloadLength + 4
+            redPacket.payloadType shouldBe 112
+
+            val reconstructedRedundancy = redPacket.parse(true)
+            val reconstructedPrimary = RtpPacket(redPacket.buffer, redPacket.offset, redPacket.length)
+
+            reconstructedPrimary should haveSameFixedHeader(primary)
+            reconstructedPrimary should haveSamePayload(primary)
+
+            reconstructedRedundancy shouldHaveSize 2
+            mapOf(redundancy1 to reconstructedRedundancy[0],
+                redundancy2 to reconstructedRedundancy[1]).forEach { (expected, reconstructed) ->
+
+                reconstructed.hasPadding shouldBe expected.hasPadding
+                reconstructed.hasExtensions shouldBe false
+                reconstructed.csrcCount shouldBe 0
+                reconstructed.payloadType shouldBe expected.payloadType
+                reconstructed.sequenceNumber shouldBe expected.sequenceNumber
+                reconstructed.ssrc shouldBe expected.ssrc
+                reconstructed.timestamp shouldBe expected.timestamp
+
+                reconstructed should haveSamePayload(expected)
             }
         }
     }
