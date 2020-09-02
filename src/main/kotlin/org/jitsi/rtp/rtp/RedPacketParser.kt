@@ -32,7 +32,7 @@ class RedPacketParser<PacketType : RtpPacket>(
      * @param parseRedundancy whether to parse redundancy packets
      * @return The list of parsed redundancy packets.
      */
-    fun parse(
+    fun decapsulate(
         rtpPacket: RtpPacket,
         parseRedundancy: Boolean
     ): List<PacketType> = with(rtpPacket) {
@@ -202,7 +202,7 @@ internal class RtpRedPacket(buffer: ByteArray, offset: Int, length: Int) : RtpPa
         val builder = RedPacketBuilder { b, o, l -> RtpRedPacket(b, o, l) }
     }
 
-    fun parse(parseRedundancy: Boolean) = parser.parse(this, parseRedundancy)
+    fun decapsulate(parseRedundancy: Boolean) = parser.decapsulate(this, parseRedundancy)
 }
 
 class RedPacketBuilder<PacketType : RtpPacket>(val createPacket: (ByteArray, Int, Int) -> PacketType) {
