@@ -221,26 +221,30 @@ class RedPacketBuilder<PacketType : RtpPacket>(val createPacket: (ByteArray, Int
             primaryHeaderLength)
         currentOffset += primaryHeaderLength
 
-        // TODO optimize use of `payloadLength` (it is calculated on the fly)
+        var redHeaderOffset = currentOffset
+
+        // Skip the RED headers and point to the start of RED payloads
+        currentOffset += 1 + 4 * redundancy.size
+
         redundancy.forEach {
+            val payloadLength = it.payloadLength
+
             val header = RedundancyBlockHeader(
                 it.payloadType.toByte(),
                 getTimestampDiffAsInt(primary.timestamp, it.timestamp),
-                it.payloadLength)
-            currentOffset += header.write(buf, currentOffset)
-        }
+                payloadLength)
+            redHeaderOffset += header.write(buf, redHeaderOffset)
 
-        val primaryHeader = PrimaryBlockHeader(primary.payloadType.toByte())
-        currentOffset += primaryHeader.write(buf, currentOffset)
-
-        redundancy.forEach {
             System.arraycopy(
                 it.buffer, it.payloadOffset,
                 buf, currentOffset,
-                it.payloadLength
+                payloadLength
             )
-            currentOffset += it.payloadLength
+            currentOffset += payloadLength
         }
+
+        val primaryHeader = PrimaryBlockHeader(primary.payloadType.toByte())
+        redHeaderOffset += primaryHeader.write(buf, redHeaderOffset)
 
         System.arraycopy(
             primary.buffer, primary.payloadOffset,
