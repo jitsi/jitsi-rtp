@@ -91,6 +91,9 @@ class RtcpFbTccPacketBuilder(
     private var last_timestamp_us_: Long = 0
     private val packets_ = mutableListOf<PacketReport>()
 
+    var numReceived = 0
+    var numLost = 0
+
     fun SetBase(base_sequence: Int, ref_timestamp_us: Long) {
         base_seq_no_ = base_sequence.toRtpSequenceNumber()
         base_time_ticks_ = (ref_timestamp_us % kTimeWrapPeriodUs) / kBaseScaleFactor
@@ -149,6 +152,7 @@ class RtcpFbTccPacketBuilder(
             size_bytes_ += add_chunk_size
             last_chunk_.Add(deltaSize)
             ++num_seq_no_
+            if (deltaSize == 0) numLost++ else numReceived++
             return true
         }
 
@@ -159,6 +163,7 @@ class RtcpFbTccPacketBuilder(
         size_bytes_ += kChunkSizeBytes
         last_chunk_.Add(deltaSize)
         ++num_seq_no_
+        if (deltaSize == 0) numLost++ else numReceived++
         return true
     }
 
@@ -166,7 +171,7 @@ class RtcpFbTccPacketBuilder(
         val packetSize = size_bytes_ + RtpUtils.getNumPaddingBytes(size_bytes_)
         val buf = BufferPool.getArray(packetSize)
         writeTo(buf, 0)
-        return RtcpFbTccPacket(buf, 0, packetSize)
+        return RtcpFbTccPacket(buf, 0, packetSize, numReceived, numLost)
     }
 
     fun writeTo(buf: ByteArray, offset: Int) {
@@ -266,7 +271,9 @@ class RtcpFbTccPacketBuilder(
 class RtcpFbTccPacket(
     buffer: ByteArray,
     offset: Int,
-    length: Int
+    length: Int,
+    numReceived: Int? = null,
+    numLost: Int? = null
 ) : TransportLayerRtcpFbPacket(buffer, offset, length), Iterable<PacketReport> {
 
     /**
@@ -286,6 +293,14 @@ class RtcpFbTccPacket(
         var last_timestamp_us_: Long,
         val packets_: MutableList<PacketReport>
     )
+
+    val numReceived: Int by lazy {
+        numReceived ?: data.packets_.count { it is ReceivedPacketReport }
+    }
+
+    val numLost: Int by lazy {
+        numLost ?: data.packets_.count() - this.numReceived
+    }
 
     private val data: TccMemberData by lazy(LazyThreadSafetyMode.NONE) {
         val base_seq_no_ = getBaseSeqNum(buffer, offset).toRtpSequenceNumber()
