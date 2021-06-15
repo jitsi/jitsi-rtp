@@ -140,6 +140,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = rtpPacketWithExtensions.clone()
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
 
@@ -174,6 +176,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = RtpPacket(buf, 0, rtpPacketWithExtensions.length)
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
 
@@ -209,6 +213,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = RtpPacket(buf, spaceOnTheLeft, rtpPacketWithExtensions.length)
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
 
@@ -237,6 +243,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = rtpPacketNoExtensions.clone()
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         // The only difference in the fixed headers is the extension bit.
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
@@ -258,6 +266,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = RtpPacket(buf, 0, rtpPacketNoExtensions.length)
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         // The only difference in the fixed headers is the extension bit.
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
@@ -286,6 +296,8 @@ class RtpPacketTest : ShouldSpec() {
                     val rtpPacket = RtpPacket(buf, spaceOnTheLeft, rtpPacketNoExtensions.length)
                     val newExt = rtpPacket.addHeaderExtension(3, 2)
                     newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                    rtpPacket.encodeHeaderExtensions()
+
                     should("update the packet correctly") {
                         // The only difference in the fixed headers is the extension bit.
                         rtpPacket should haveSameFixedHeader(rtpPacketWithExtensions)
