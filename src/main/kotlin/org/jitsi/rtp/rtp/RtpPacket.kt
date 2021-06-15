@@ -47,7 +47,8 @@ import org.jitsi.rtp.util.isPadding
  */
 @SuppressFBWarnings(
     value = ["EI_EXPOSE_REP2"],
-    justification = "We intentionally pass a reference to our buffer when using observableWhenChanged.")
+    justification = "We intentionally pass a reference to our buffer when using observableWhenChanged."
+)
 open class RtpPacket(
     buffer: ByteArray,
     offset: Int,
@@ -221,10 +222,10 @@ open class RtpPacket(
         // the exact number, and is relatively close (it may be off by a few
         // bytes due to padding)
         val maxRequiredLength = length +
-                (if (extensionBit) 0 else RtpHeader.EXT_HEADER_SIZE_BYTES) +
-                1 /* the 1-byte header of the extension element */ +
-                extDataLength +
-                3 /* padding */
+            (if (extensionBit) 0 else RtpHeader.EXT_HEADER_SIZE_BYTES) +
+            1 /* the 1-byte header of the extension element */ +
+            extDataLength +
+            3 /* padding */
 
         val newPayloadOffset: Int
         val newBuffer = if (buffer.size >= (maxRequiredLength + BYTES_TO_LEAVE_AT_END_OF_PACKET)) {
@@ -279,7 +280,8 @@ open class RtpPacket(
             System.arraycopy(
                 buffer, offset,
                 newBuffer, 0,
-                newHeaderLength)
+                newHeaderLengt
+            )
         }
 
         if (!extensionBit) {
@@ -356,14 +358,16 @@ open class RtpPacket(
                 return 0
             }
             return HeaderExtensionHelpers.getExtensionsTotalLength(
-                buffer, offset + RtpHeader.FIXED_HEADER_SIZE_BYTES + csrcCount * 4)
+                buffer, offset + RtpHeader.FIXED_HEADER_SIZE_BYTES + csrcCount * 4
+            )
         }
 
     override fun clone(): RtpPacket =
         RtpPacket(
             cloneBuffer(BYTES_TO_LEAVE_AT_START_OF_PACKET),
             BYTES_TO_LEAVE_AT_START_OF_PACKET,
-            length)
+            length
+        )
 
     override fun toString(): String = with(StringBuilder()) {
         append("RtpPacket: ")
@@ -489,9 +493,9 @@ open class RtpPacket(
                 remainingLength = -1
             } else {
                 nextOffset = offset +
-                        RtpHeader.FIXED_HEADER_SIZE_BYTES +
-                        csrcCount * 4 +
-                        RtpHeader.EXT_HEADER_SIZE_BYTES
+                    RtpHeader.FIXED_HEADER_SIZE_BYTES +
+                    csrcCount * 4 +
+                    RtpHeader.EXT_HEADER_SIZE_BYTES
 
                 remainingLength = extLength
             }
