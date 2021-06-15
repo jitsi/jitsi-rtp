@@ -340,6 +340,7 @@ open class RtpPacket(
             // Write padding
             while (off < newOffset + newHeaderLength) {
                 newBuffer[off] = 0
+                off++
             }
         }
 
