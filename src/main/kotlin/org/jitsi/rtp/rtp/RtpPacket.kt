@@ -218,22 +218,16 @@ open class RtpPacket(
      * Removes the header extension (or all header extensions) with the given ID.
      */
     fun removeHeaderExtension(id: Int) {
-        if (pendingHeaderExtensions == null) {
-            createPendingHeaderExtensions { h -> h.id != id }
-        } else {
-            pendingHeaderExtensions!!.removeIf { h -> h.id == id }
-        }
+        pendingHeaderExtensions?.removeIf { h -> h.id == id }
+            ?: createPendingHeaderExtensions { h -> h.id != id }
     }
 
     /**
      * Removes all header extensions except those with ID values in [retain]
      */
     fun removeHeaderExtensionsExcept(retain: Set<Int>) {
-        if (pendingHeaderExtensions == null) {
-            createPendingHeaderExtensions { h -> retain.contains(h.id) }
-        } else {
-            pendingHeaderExtensions!!.removeIf { h -> !retain.contains(h.id) }
-        }
+        pendingHeaderExtensions?.removeIf { h -> !retain.contains(h.id) }
+            ?: createPendingHeaderExtensions { h -> retain.contains(h.id) }
     }
 
     /**
@@ -447,6 +441,10 @@ open class RtpPacket(
             get() = this@RtpPacket.buffer
     }
 
+    @SuppressFBWarnings(
+        value = ["EI_EXPOSE_REP"],
+        justification = "We intentionally expose the internal buffer."
+    )
     class PendingHeaderExtension(id: Int, extDataLength: Int) : HeaderExtension() {
         override val currExtBuffer = ByteArray(extDataLength + 1)
 
