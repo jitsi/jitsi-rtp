@@ -187,8 +187,23 @@ open class RtpPacket(
         return null
     }
 
-    val hasExtensions: Boolean
+    var hasExtensions: Boolean
         get() = pendingHeaderExtensions?.isNotEmpty() ?: hasEncodedExtensions
+        set(value) {
+            val p = pendingHeaderExtensions
+            if (p != null) {
+                if (value && p.isEmpty()) {
+                    throw java.lang.IllegalStateException(
+                        "Cannot set hasExtensions to true with empty pending extensions"
+                    )
+                }
+                if (!value) {
+                    p.clear()
+                }
+            } else {
+                hasEncodedExtensions = value
+            }
+        }
 
     fun getHeaderExtension(extensionId: Int): HeaderExtension? {
         val activeHeaderExtensions = pendingHeaderExtensions?.iterator() ?: encodedHeaderExtensions
