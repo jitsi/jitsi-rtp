@@ -23,6 +23,7 @@ import org.jitsi.rtp.extensions.bytearray.hashCodeOfSegment
 import org.jitsi.rtp.extensions.bytearray.putShort
 import org.jitsi.rtp.rtp.header_extensions.HeaderExtensionHelpers
 import org.jitsi.rtp.util.BufferPool
+import org.jitsi.rtp.util.RtpUtils
 import org.jitsi.rtp.util.getByteAsInt
 import org.jitsi.rtp.util.isPadding
 /**
@@ -220,7 +221,7 @@ open class RtpPacket(
         if (pendingHeaderExtensions != null) {
             return
         }
-        pendingHeaderExtensions = ArrayList<HeaderExtension>().also { l: ArrayList<HeaderExtension> ->
+        pendingHeaderExtensions = ArrayList<HeaderExtension>().also { l ->
             encodedHeaderExtensions.forEach {
                 if (removeIf == null || !removeIf(it)) {
                     l.add(PendingHeaderExtension(it))
@@ -300,8 +301,7 @@ open class RtpPacket(
         } else {
             val rawHeaderLength = RtpHeader.EXT_HEADER_SIZE_BYTES +
                 pendingHeaderExtensions.sumBy { h -> h.totalLengthBytes }
-            val paddingLength = (4 - (rawHeaderLength % 4)) % 4
-            rawHeaderLength + paddingLength
+            rawHeaderLength + RtpUtils.getNumPaddingBytes(rawHeaderLength)
         }
 
         val newHeaderLength = baseHeaderLength + newExtHeaderLength
@@ -369,19 +369,6 @@ open class RtpPacket(
         // Clear pending extensions.
         this.pendingHeaderExtensions = null
     }
-
-    /**
-     * Return the total length of the extensions in this packet, including the extension header
-     */
-    private val extensionBlockLength: Int
-        get() {
-            if (!hasEncodedExtensions) {
-                return 0
-            }
-            return HeaderExtensionHelpers.getExtensionsTotalLength(
-                buffer, offset + RtpHeader.FIXED_HEADER_SIZE_BYTES + csrcCount * 4
-            )
-        }
 
     override fun clone(): RtpPacket {
         return RtpPacket(
@@ -527,8 +514,13 @@ open class RtpPacket(
          */
         internal fun reset() {
             val extLength =
-                if (hasEncodedExtensions) extensionBlockLength - HeaderExtensionHelpers.TOP_LEVEL_EXT_HEADER_SIZE_BYTES
-                else 0
+                if (hasEncodedExtensions) {
+                    val extensionBlockLength = HeaderExtensionHelpers.getExtensionsTotalLength(
+                        buffer, offset + RtpHeader.FIXED_HEADER_SIZE_BYTES + csrcCount * 4
+                    )
+
+                    extensionBlockLength - HeaderExtensionHelpers.TOP_LEVEL_EXT_HEADER_SIZE_BYTES
+                } else 0
 
             if (extLength <= 0) {
                 // No extensions
