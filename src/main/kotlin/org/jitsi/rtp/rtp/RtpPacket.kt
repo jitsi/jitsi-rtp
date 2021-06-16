@@ -369,12 +369,11 @@ open class RtpPacket(
         }
 
     override fun clone(): RtpPacket {
-        encodeHeaderExtensions()
         return RtpPacket(
             cloneBuffer(BYTES_TO_LEAVE_AT_START_OF_PACKET),
             BYTES_TO_LEAVE_AT_START_OF_PACKET,
             length
-        )
+        ).also { if (pendingHeaderExtensions != null) it.pendingHeaderExtensions = ArrayList(pendingHeaderExtensions) }
     }
 
     override fun toString(): String = with(StringBuilder()) {
