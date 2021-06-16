@@ -201,13 +201,13 @@ open class RtpPacket(
         return null
     }
 
-    private fun createPendingHeaderExtensions(filter: ((HeaderExtension) -> Boolean)?) {
+    private fun createPendingHeaderExtensions(removeIf: ((HeaderExtension) -> Boolean)?) {
         if (pendingHeaderExtensions != null) {
             return
         }
         pendingHeaderExtensions = ArrayList<HeaderExtension>().also { l: ArrayList<HeaderExtension> ->
             encodedHeaderExtensions.forEach {
-                if (filter == null || filter(it)) {
+                if (removeIf == null || !removeIf(it)) {
                     l.add(PendingHeaderExtension(it))
                 }
             }
@@ -219,7 +219,7 @@ open class RtpPacket(
      */
     fun removeHeaderExtension(id: Int) {
         pendingHeaderExtensions?.removeIf { h -> h.id == id }
-            ?: createPendingHeaderExtensions { h -> h.id != id }
+            ?: createPendingHeaderExtensions { h -> h.id == id }
     }
 
     /**
@@ -227,7 +227,7 @@ open class RtpPacket(
      */
     fun removeHeaderExtensionsExcept(retain: Set<Int>) {
         pendingHeaderExtensions?.removeIf { h -> !retain.contains(h.id) }
-            ?: createPendingHeaderExtensions { h -> retain.contains(h.id) }
+            ?: createPendingHeaderExtensions { h -> !retain.contains(h.id) }
     }
 
     /**
