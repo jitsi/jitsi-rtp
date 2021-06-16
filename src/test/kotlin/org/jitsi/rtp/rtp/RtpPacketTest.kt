@@ -365,12 +365,12 @@ class RtpPacketTest : ShouldSpec() {
                     ext as RtpPacket.HeaderExtension
                     ext.id shouldBe 1
                     ext.dataLengthBytes shouldBe 2
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
                     ext.currExtBuffer.getShort(ext.currExtOffset + 1) shouldBe 0xFFFF.toShort()
 
                     val ext2 = rtpPacket.getHeaderExtension(2)
                     ext2 shouldBe null
 
-                    // The offset is the start of the ext, add 1 to move past the header to get the data
                     rtpPacket should haveSamePayload(rtpPacketNoExtensions)
                 }
             }
