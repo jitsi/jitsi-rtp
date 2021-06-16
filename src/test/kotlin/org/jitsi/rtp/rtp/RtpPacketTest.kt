@@ -31,6 +31,7 @@ import org.jitsi.test_helpers.matchers.getPayload
 import org.jitsi.test_helpers.matchers.haveSameContentAs
 import org.jitsi.test_helpers.matchers.haveSameFixedHeader
 import org.jitsi.test_helpers.matchers.haveSamePayload
+import java.util.Collections
 
 class RtpPacketTest : ShouldSpec() {
     override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
@@ -346,6 +347,123 @@ class RtpPacketTest : ShouldSpec() {
                     val ext = rtpPacket.getHeaderExtension(1)
                     ext shouldBe null
                     rtpPacket.hasExtensions shouldBe false
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+        }
+        context("Removing all but a given header extension") {
+            context("when a header extension remains") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtensionsExcept(Collections.singleton(1))
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketWithExtensionsWithPaddingBetween)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldNotBe null
+                    ext as RtpPacket.HeaderExtension
+                    ext.id shouldBe 1
+                    ext.dataLengthBytes shouldBe 2
+                    ext.currExtBuffer.getShort(ext.currExtOffset + 1) shouldBe 0xFFFF.toShort()
+
+                    val ext2 = rtpPacket.getHeaderExtension(2)
+                    ext2 shouldBe null
+
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+
+            context("when no header extension remains due to no match") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtensionsExcept(Collections.singleton(3))
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketNoExtensions)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldBe null
+                    rtpPacket.hasExtensions shouldBe false
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+
+            context("when no header extension remains due to empty exception set") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtensionsExcept(Collections.emptySet())
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketNoExtensions)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldBe null
+                    rtpPacket.hasExtensions shouldBe false
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+        }
+
+        context("Removing and then adding header extensions") {
+            context("when an original header extension remains") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtensionsExcept(Collections.singleton(1))
+                val newExt = rtpPacket.addHeaderExtension(3, 2)
+                newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketWithExtensionsWithPaddingBetween)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldNotBe null
+                    ext as RtpPacket.HeaderExtension
+                    ext.id shouldBe 1
+                    ext.dataLengthBytes shouldBe 2
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
+                    ext.currExtBuffer.getShort(ext.currExtOffset + 1) shouldBe 0xFFFF.toShort()
+
+                    val ext2 = rtpPacket.getHeaderExtension(2)
+                    ext2 shouldBe null
+
+                    val ext3 = rtpPacket.getHeaderExtension(3)
+                    ext3 shouldNotBe null
+                    ext3 as RtpPacket.HeaderExtension
+                    ext3.id shouldBe 3
+                    ext3.dataLengthBytes shouldBe 2
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
+                    ext3.currExtBuffer.getShort(ext3.currExtOffset + 1) shouldBe 0xDEAD.toShort()
+
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+
+            context("when all original header extensions are removed") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtensionsExcept(Collections.emptySet())
+                val newExt = rtpPacket.addHeaderExtension(3, 2)
+                newExt.currExtBuffer.putShort(newExt.currExtOffset + 1, 0xDEAD.toShort())
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketWithExtensionsWithPaddingBetween)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldBe null
+
+                    val ext2 = rtpPacket.getHeaderExtension(2)
+                    ext2 shouldBe null
+
+                    val ext3 = rtpPacket.getHeaderExtension(3)
+                    ext3 shouldNotBe null
+                    ext3 as RtpPacket.HeaderExtension
+                    ext3.id shouldBe 3
+                    ext3.dataLengthBytes shouldBe 2
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
+                    ext3.currExtBuffer.getShort(ext3.currExtOffset + 1) shouldBe 0xDEAD.toShort()
+
                     rtpPacket should haveSamePayload(rtpPacketNoExtensions)
                 }
             }
