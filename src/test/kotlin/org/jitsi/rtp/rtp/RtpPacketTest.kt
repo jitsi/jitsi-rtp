@@ -315,5 +315,40 @@ class RtpPacketTest : ShouldSpec() {
                 }
             }
         }
+        context("Removing a header extension") {
+            context("when a header extension remains") {
+                val rtpPacket = rtpPacketWithExtensionsWithPaddingBetween.clone()
+                rtpPacket.removeHeaderExtension(2)
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketWithExtensionsWithPaddingBetween)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldNotBe null
+                    ext as RtpPacket.HeaderExtension
+                    ext.id shouldBe 1
+                    ext.dataLengthBytes shouldBe 2
+                    // The offset is the start of the ext, add 1 to move past the header to get the data
+                    ext.currExtBuffer.getShort(ext.currExtOffset + 1) shouldBe 0xFFFF.toShort()
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+
+            context("when no header extension remains") {
+                val rtpPacket = rtpPacketWithExtensions.clone()
+                rtpPacket.removeHeaderExtension(1)
+                rtpPacket.encodeHeaderExtensions()
+
+                should("update the packet correctly") {
+                    rtpPacket should haveSameFixedHeader(rtpPacketNoExtensions)
+
+                    val ext = rtpPacket.getHeaderExtension(1)
+                    ext shouldBe null
+                    rtpPacket.hasExtensions shouldBe false
+                    rtpPacket should haveSamePayload(rtpPacketNoExtensions)
+                }
+            }
+        }
     }
 }
