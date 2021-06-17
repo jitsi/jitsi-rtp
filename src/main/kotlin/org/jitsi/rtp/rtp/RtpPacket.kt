@@ -294,7 +294,6 @@ open class RtpPacket(
         // We get this early, before we modify the buffer.
         val currHeaderLength = headerLength
         val currPayloadLength = payloadLength
-        val currPaddingSize = paddingSize
         val baseHeaderLength = RtpHeader.FIXED_HEADER_SIZE_BYTES + csrcCount * 4
 
         val newExtHeaderLength = if (pendingHeaderExtensions.isEmpty()) {
@@ -306,7 +305,7 @@ open class RtpPacket(
         }
 
         val newHeaderLength = baseHeaderLength + newExtHeaderLength
-        val newPacketLength = newHeaderLength + currPayloadLength + currPaddingSize
+        val newPacketLength = newHeaderLength + currPayloadLength
 
         val newPayloadOffset: Int
         val newBuffer = if (buffer.size >= (newPacketLength + BYTES_TO_LEAVE_AT_END_OF_PACKET)) {
@@ -340,7 +339,7 @@ open class RtpPacket(
             var off = newOffset + baseHeaderLength
             // Write the header extension
             newBuffer.putShort(off, 0xBEDE.toShort())
-            newBuffer.putShort(off + 2, (newExtHeaderLength / 4).toShort())
+            newBuffer.putShort(off + 2, ((newExtHeaderLength - RtpHeader.EXT_HEADER_SIZE_BYTES) / 4).toShort())
             off += 4
             // Write pending header extension elements
             pendingHeaderExtensions.forEach { h ->
