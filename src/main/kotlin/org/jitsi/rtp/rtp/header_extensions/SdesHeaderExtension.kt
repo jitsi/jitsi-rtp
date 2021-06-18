@@ -23,13 +23,13 @@ class SdesHeaderExtension {
         fun setTextValue(ext: RtpPacket.HeaderExtension, sdesValue: String) =
             setTextValue(ext.currExtBuffer, ext.currExtOffset, sdesValue)
 
-        fun getTextValue(buf: ByteArray, offset: Int): String {
+        private fun getTextValue(buf: ByteArray, offset: Int): String {
             val dataLength = getDataLengthBytes(buf, offset)
             val copy = BufferPool.getArray(dataLength)
             System.arraycopy(buf, offset + SdesHeaderExtension.DATA_OFFSET, copy, 0, dataLength)
-            return String(copy, StandardCharsets.US_ASCII)
+            return String(copy, 0, dataLength, StandardCharsets.US_ASCII)
         }
-        fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
+        private fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
             // TODO
         }
     }
