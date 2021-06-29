@@ -54,11 +54,11 @@ class RtcpFbNackPacket(
 
     val missingSeqNums: SortedSet<Int> by lazy {
         (0 until numNackBlocks)
-                .map {
-                    NackBlock.getMissingSeqNums(buffer, offset + NACK_BLOCK_OFFSET + it * NackBlock.SIZE_BYTES)
-                }
-                .flatten()
-                .toSortedSet()
+            .map {
+                NackBlock.getMissingSeqNums(buffer, offset + NACK_BLOCK_OFFSET + it * NackBlock.SIZE_BYTES)
+            }
+            .flatten()
+            .toSortedSet()
     }
 
     override fun clone(): RtcpFbNackPacket = RtcpFbNackPacket(cloneBuffer(0), 0, length)
@@ -76,9 +76,9 @@ class RtcpFbNackPacketBuilder(
 ) {
     private val nackBlocks: List<NackBlock> =
         missingSeqNums.toList().chunkMaxDifference(16)
-                .map(List<Int>::toSortedSet)
-                .map(::NackBlock)
-                .toList()
+            .map(List<Int>::toSortedSet)
+            .map(::NackBlock)
+            .toList()
 
     private val sizeBytes: Int =
         RtcpFbPacket.HEADER_SIZE + nackBlocks.size * NackBlock.SIZE_BYTES

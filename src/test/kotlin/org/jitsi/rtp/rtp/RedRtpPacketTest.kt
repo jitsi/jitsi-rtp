@@ -192,8 +192,10 @@ class RedRtpPacketTest : ShouldSpec() {
             reconstructedPrimary should haveSamePayload(primary)
 
             reconstructedRedundancy shouldHaveSize 2
-            mapOf(redundancy1 to reconstructedRedundancy[0],
-                redundancy2 to reconstructedRedundancy[1]).forEach { (expected, reconstructed) ->
+            mapOf(
+                redundancy1 to reconstructedRedundancy[0],
+                redundancy2 to reconstructedRedundancy[1]
+            ).forEach { (expected, reconstructed) ->
 
                 reconstructed.hasPadding shouldBe expected.hasPadding
                 reconstructed.hasExtensions shouldBe false

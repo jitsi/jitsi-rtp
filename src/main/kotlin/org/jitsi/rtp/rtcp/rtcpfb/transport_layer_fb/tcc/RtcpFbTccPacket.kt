@@ -66,7 +66,8 @@ class ReceivedPacketReport(seqNum: Int, val deltaTicks: Short) : PacketReport(se
  */
 @SuppressFBWarnings(
     value = ["NM_METHOD_NAMING_CONVENTION"],
-    justification = "This class is a port and use the original names.")
+    justification = "This class is a port and use the original names."
+)
 class RtcpFbTccPacketBuilder(
     val rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     var mediaSourceSsrc: Long = -1,
@@ -262,7 +263,8 @@ class RtcpFbTccPacketBuilder(
  */
 @SuppressFBWarnings(
     value = ["NM_METHOD_NAMING_CONVENTION"],
-    justification = "This class is a port and use the original names.")
+    justification = "This class is a port and use the original names."
+)
 class RtcpFbTccPacket(
     buffer: ByteArray,
     offset: Int,
