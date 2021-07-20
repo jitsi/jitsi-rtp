@@ -40,17 +40,14 @@ class SdesHeaderExtension {
 
         private fun getTextValue(buf: ByteArray, offset: Int): String {
             val dataLength = getDataLengthBytes(buf, offset)
-            val copy = BufferPool.getArray(dataLength)
-            System.arraycopy(buf, offset + SdesHeaderExtension.DATA_OFFSET, copy, 0, dataLength)
-            return String(copy, 0, dataLength, StandardCharsets.US_ASCII)
+            return String(buf, offset + SdesHeaderExtension.DATA_OFFSET, dataLength, StandardCharsets.UTF_8)
         }
 
         private fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
             val dataLength = getDataLengthBytes(buf, offset)
             assert(dataLength == sdesValue.length) { "buffer size doesn't match SDES value length" }
-            val array = sdesValue.toByteArray(StandardCharsets.US_ASCII)
             System.arraycopy(
-                array, 0, buf,
+                sdesValue.encodeToByteArray(), 0, buf,
                 offset + SdesHeaderExtension.DATA_OFFSET, sdesValue.length
             )
         }

@@ -45,14 +45,14 @@ class SdesHeaderExtensionTest : ShouldSpec() {
     private val rtpHeaderSimpleSdesExtension = byteArrayOf(
         // BEDE, length=1
         0xbe, 0xde, 0x00, 0x01,
-        // ExtId=1,Length=0(1 byte),Data=ASCII 1,Padding
+        // ExtId=1,Length=0(1 byte),Data='1',Padding
         0x10, 0x31, 0x00, 0x00
     )
 
     private val rtpHeaderMaxSdesExtension = byteArrayOf(
         // BEDE, length=5
         0xbe, 0xde, 0x00, 0x05,
-        // ExtId=1,Length=15(16 byte),Data=ASCII 'abcdefghijklmnop',Padding
+        // ExtId=15,Length=15(16 byte),Data='abcdefghijklmnop',Padding
         0xff, 0x61, 0x62, 0x63,
         0x64, 0x65, 0x66, 0x67,
         0x68, 0x69, 0x6a, 0x6b,
