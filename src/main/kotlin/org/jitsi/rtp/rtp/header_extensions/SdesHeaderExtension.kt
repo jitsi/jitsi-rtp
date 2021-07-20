@@ -29,8 +29,17 @@ class SdesHeaderExtension {
             System.arraycopy(buf, offset + SdesHeaderExtension.DATA_OFFSET, copy, 0, dataLength)
             return String(copy, 0, dataLength, StandardCharsets.US_ASCII)
         }
+
         private fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
-            // TODO
+            val dataLength = getDataLengthBytes(buf, offset)
+            if (dataLength < sdesValue.length) {
+                return
+            }
+            val array = sdesValue.toByteArray(StandardCharsets.US_ASCII)
+            System.arraycopy(
+                array, 0, buf,
+                offset + SdesHeaderExtension.DATA_OFFSET, sdesValue.length
+            )
         }
     }
 }
