@@ -32,9 +32,7 @@ class SdesHeaderExtension {
 
         private fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
             val dataLength = getDataLengthBytes(buf, offset)
-            if (dataLength < sdesValue.length) {
-                return
-            }
+            assert(dataLength == sdesValue.length) { "buffer size doesn't match SDES value length" }
             val array = sdesValue.toByteArray(StandardCharsets.US_ASCII)
             System.arraycopy(
                 array, 0, buf,
