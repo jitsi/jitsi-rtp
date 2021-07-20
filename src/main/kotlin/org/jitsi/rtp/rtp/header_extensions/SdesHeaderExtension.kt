@@ -17,7 +17,6 @@ package org.jitsi.rtp.rtp.header_extensions
 
 import org.jitsi.rtp.rtp.RtpPacket
 import org.jitsi.rtp.rtp.header_extensions.HeaderExtensionHelpers.Companion.getDataLengthBytes
-import org.jitsi.rtp.util.BufferPool
 import java.nio.charset.StandardCharsets
 
 /**
