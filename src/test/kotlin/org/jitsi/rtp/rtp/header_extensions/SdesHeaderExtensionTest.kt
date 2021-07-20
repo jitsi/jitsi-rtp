@@ -18,7 +18,6 @@ package org.jitsi.rtp.rtp.header_extensions
 import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import org.jitsi.rtp.extensions.bytearray.byteArrayOf
 import org.jitsi.rtp.rtp.RtpPacket
