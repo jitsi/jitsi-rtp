@@ -49,6 +49,14 @@ class SdesHeaderExtensionTest : ShouldSpec() {
         0x10, 0x31, 0x00, 0x00
     )
 
+    private val rtpHeaderEmojiSdesExtension = byteArrayOf(
+        // BEDE, length=2
+        0xbe, 0xde, 0x00, 0x02,
+        // ExtId=5,Length=3(4 byte),Data='Poop emoji',Padding
+        0x53, 0xf0, 0x9f, 0x92,
+        0xa9, 0x00, 0x00, 0x00
+    )
+
     private val rtpHeaderMaxSdesExtension = byteArrayOf(
         // BEDE, length=5
         0xbe, 0xde, 0x00, 0x05,
@@ -69,10 +77,16 @@ class SdesHeaderExtensionTest : ShouldSpec() {
             rtpHeaderMaxSdesExtension + dummyRtpPayload
     )
 
+    private val emojiSdesHeaderExtension = RtpPacket(
+        rtpHeaderWithEmptyExtension +
+            rtpHeaderEmojiSdesExtension + dummyRtpPayload
+    )
+
     init {
         context("RTP with simple SDES extension value 1") {
-            val rtpPacket = simpleSdesHeaderExtension
             should("simple SDES should be parsed correctly") {
+                val rtpPacket = simpleSdesHeaderExtension
+                rtpPacket shouldNotBe null
                 val sdesExt = rtpPacket.getHeaderExtension(1)
                 sdesExt shouldNotBe null
                 sdesExt as RtpPacket.HeaderExtension
@@ -82,6 +96,8 @@ class SdesHeaderExtensionTest : ShouldSpec() {
                 payload shouldBe "1"
             }
             should("allow changing the simple SDES value") {
+                val rtpPacket = simpleSdesHeaderExtension
+                rtpPacket shouldNotBe null
                 val sdesExt = rtpPacket.getHeaderExtension(1)
                 sdesExt shouldNotBe null
                 sdesExt as RtpPacket.HeaderExtension
@@ -91,8 +107,9 @@ class SdesHeaderExtensionTest : ShouldSpec() {
             }
         }
         context("RTP with max len SDES extension value abcdefghijklmop") {
-            val rtpPacket = maxLengthSdesHeaderExtension
             should("max length SDES should be parsed correctly") {
+                val rtpPacket = maxLengthSdesHeaderExtension
+                rtpPacket shouldNotBe null
                 val sdesExt = rtpPacket.getHeaderExtension(15)
                 sdesExt shouldNotBe null
                 sdesExt as RtpPacket.HeaderExtension
@@ -102,12 +119,29 @@ class SdesHeaderExtensionTest : ShouldSpec() {
                 payload shouldBe "abcdefghijklmnop"
             }
             should("allow changing the max length SDES value") {
+                val rtpPacket = maxLengthSdesHeaderExtension
+                rtpPacket shouldNotBe null
                 val sdesExt = rtpPacket.getHeaderExtension(15)
                 sdesExt shouldNotBe null
                 sdesExt as RtpPacket.HeaderExtension
                 SdesHeaderExtension.setTextValue(sdesExt, "ZYX23acj00yxzABC")
                 val payload = SdesHeaderExtension.getTextValue(sdesExt)
                 payload shouldBe "ZYX23acj00yxzABC"
+            }
+        }
+        context("RTP with emjoi SDES extension") {
+            should("emoji SDES should not be parsed") {
+                val rtpPacket = emojiSdesHeaderExtension
+                rtpPacket shouldNotBe null
+                val sdesExt = rtpPacket.getHeaderExtension(5)
+                sdesExt shouldNotBe null
+                sdesExt as RtpPacket.HeaderExtension
+                sdesExt.id shouldBe 5
+                sdesExt.dataLengthBytes shouldBe 4
+                val payload = SdesHeaderExtension.getTextValue(sdesExt)
+                /* The payload here is UTF-8, but we only parse ASCII.
+                *  Parsing doesn't fail, but the string contains garbage. */
+                payload shouldNotBe null
             }
         }
     }

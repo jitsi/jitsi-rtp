@@ -39,14 +39,17 @@ class SdesHeaderExtension {
 
         private fun getTextValue(buf: ByteArray, offset: Int): String {
             val dataLength = getDataLengthBytes(buf, offset)
-            return String(buf, offset + SdesHeaderExtension.DATA_OFFSET, dataLength, StandardCharsets.UTF_8)
+            /* RFC 7941 says the value in RTP is UTF-8. But we use this for MID and RID values
+            * which are define for SDP in RFC 5888 and RFC 4566 as ASCII only. Thus we don't
+            * support UTF-8 to keep things simpler. */
+            return String(buf, offset + SdesHeaderExtension.DATA_OFFSET, dataLength, StandardCharsets.US_ASCII)
         }
 
         private fun setTextValue(buf: ByteArray, offset: Int, sdesValue: String) {
             val dataLength = getDataLengthBytes(buf, offset)
             assert(dataLength == sdesValue.length) { "buffer size doesn't match SDES value length" }
             System.arraycopy(
-                sdesValue.encodeToByteArray(), 0, buf,
+                sdesValue.toByteArray(StandardCharsets.US_ASCII), 0, buf,
                 offset + SdesHeaderExtension.DATA_OFFSET, sdesValue.length
             )
         }
