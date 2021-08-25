@@ -198,7 +198,7 @@ class RtcpSrPacket(
 data class RtcpSrPacketBuilder(
     var rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
     var senderInfo: SenderInfoBuilder = SenderInfoBuilder(),
-    val reportBlocks: MutableList<RtcpReportBlock> = mutableListOf()
+    val reportBlocks: List<RtcpReportBlock> = listOf()
 ) {
 
     init {

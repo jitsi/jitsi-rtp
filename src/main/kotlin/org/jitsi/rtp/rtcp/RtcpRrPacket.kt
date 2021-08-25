@@ -69,7 +69,7 @@ class RtcpRrPacket(
 
 data class RtcpRrPacketBuilder(
     var rtcpHeader: RtcpHeaderBuilder = RtcpHeaderBuilder(),
-    val reportBlocks: MutableList<RtcpReportBlock> = mutableListOf()
+    val reportBlocks: List<RtcpReportBlock> = listOf()
 ) {
 
     init {
