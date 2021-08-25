@@ -201,6 +201,10 @@ data class RtcpSrPacketBuilder(
     val reportBlocks: MutableList<RtcpReportBlock> = mutableListOf()
 ) {
 
+    init {
+        require(reportBlocks.size <= 31) { "Too many report blocks ${reportBlocks.size}: SR can contain at most 31" }
+    }
+
     private val sizeBytes: Int
         get() = RtcpHeader.SIZE_BYTES + SenderInfoParser.SIZE_BYTES + reportBlocks.size * RtcpReportBlock.SIZE_BYTES
 
