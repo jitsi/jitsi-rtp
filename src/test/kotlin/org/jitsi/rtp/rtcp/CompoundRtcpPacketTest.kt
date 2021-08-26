@@ -50,7 +50,7 @@ internal class CompoundRtcpPacketTest : ShouldSpec() {
 
         context("Creating multiple compound packets by limiting to MTU") {
             val rr = RtcpRrPacketBuilder(RtcpHeaderBuilder(), mutableListOf()).build()
-            val compoundPackets = CompoundRtcpPacket.generateSplit(generateSequence { rr }.take(200).toList())
+            val compoundPackets = CompoundRtcpPacket.createWithMtu(generateSequence { rr }.take(200).toList())
             // rr without report blocks is 8 bytes, so 200 is 2000 bytes; default MTU value is 1500.
             compoundPackets.size shouldBe 2
         }

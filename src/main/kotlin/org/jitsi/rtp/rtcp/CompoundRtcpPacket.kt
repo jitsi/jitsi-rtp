@@ -59,7 +59,12 @@ class CompoundRtcpPacket(
             return CompoundRtcpPacket(buf, 0, totalLength)
         }
 
-        fun generateSplit(packets: List<RtcpPacket>, mtu: Int = 1500): List<CompoundRtcpPacket> {
+        /**
+         * Create one or more compound RTCP packets from [packets], with each compound packet being
+         * no more than [mtu] bytes in size (unless an individual packet is bigger than that, in which
+         * case it will be in a compound packet on its own).
+         */
+        fun createWithMtu(packets: List<RtcpPacket>, mtu: Int = 1500): List<CompoundRtcpPacket> {
             return packets.chunkMaxSize(mtu) { it.length }.map { CompoundRtcpPacket(it) }
         }
     }
