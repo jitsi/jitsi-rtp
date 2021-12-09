@@ -187,8 +187,7 @@ class RedundancyBlockHeader(
 ) : BlockHeader(pt) {
 
     init {
-        if (timestampOffset > MAX_TIMESTAMP_DIFF)
-            throw IllegalArgumentException("Invalid timestampOffset: $timestampOffset")
+        require(timestampOffset <= MAX_TIMESTAMP_OFFSET) { "Invalid timestampOffset: $timestampOffset" }
     }
     override val headerLength = 4
 
@@ -204,7 +203,7 @@ class RedundancyBlockHeader(
         /**
          * The maximum value of the [timestampOffset] field (a 14-bit uint).
          */
-        const val MAX_TIMESTAMP_DIFF = 0x3fff
+        const val MAX_TIMESTAMP_OFFSET = 0x3fff
     }
 }
 

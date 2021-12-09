@@ -14,7 +14,7 @@ import org.jitsi.test_helpers.matchers.haveSameFixedHeader
 import org.jitsi.test_helpers.matchers.haveSamePayload
 
 class RedRtpPacketTest : ShouldSpec() {
-    override fun isolationMode(): IsolationMode? = IsolationMode.InstancePerLeaf
+    override fun isolationMode(): IsolationMode = IsolationMode.InstancePerLeaf
 
     init {
         context("Parsing block headers") {
@@ -54,7 +54,7 @@ class RedRtpPacketTest : ShouldSpec() {
             }
             context("Redundancy with large timestamp diff") {
                 shouldThrow<IllegalArgumentException> {
-                    RedundancyBlockHeader(111, RedundancyBlockHeader.MAX_TIMESTAMP_DIFF + 1, 55)
+                    RedundancyBlockHeader(111, RedundancyBlockHeader.MAX_TIMESTAMP_OFFSET + 1, 55)
                 }
             }
         }
@@ -217,7 +217,7 @@ class RedRtpPacketTest : ShouldSpec() {
             }
             val redundancy1 = RtpPacket(redPacketBytesSingleBlock.clone(), 0, redPacketBytesSingleBlock.size).apply {
                 payloadType = 111
-                timestamp = primary.timestamp - RedundancyBlockHeader.MAX_TIMESTAMP_DIFF - 1
+                timestamp = primary.timestamp - RedundancyBlockHeader.MAX_TIMESTAMP_OFFSET - 1
                 sequenceNumber = primary.sequenceNumber - 2
             }
 
