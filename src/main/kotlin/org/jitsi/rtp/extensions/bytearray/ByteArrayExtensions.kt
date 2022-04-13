@@ -109,14 +109,18 @@ operator fun ByteArray.plus(other: ByteArray): ByteArray {
 
 private val HEX_CHARS = "0123456789ABCDEF".toCharArray()
 /**
- * Print the entire contents of the [ByteArray] as hex
- * digits
+ * Print the contents of the [ByteArray] as hex digits.
  */
-fun ByteArray.toHex(offset: Int = 0, length: Int = (size - offset)): String {
+fun ByteArray.toHex(
+    /** Offset to start at. */
+    offset: Int = 0,
+    /** Maximum number of elements to print. */
+    length: Int = (size - offset)
+): String {
     val result = StringBuffer()
     var position = 0
 
-    for (i in offset until (offset + length)) {
+    for (i in offset until (offset + length).coerceAtMost(size)) {
         val octet = get(i).toInt()
         val firstIndex = (octet and 0xF0).ushr(4)
         val secondIndex = octet and 0x0F
