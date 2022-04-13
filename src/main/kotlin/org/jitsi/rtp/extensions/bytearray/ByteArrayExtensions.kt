@@ -118,20 +118,21 @@ fun ByteArray.toHex(
     length: Int = (size - offset)
 ): String {
     val result = StringBuffer()
-    var position = 0
 
     for (i in offset until (offset + length).coerceAtMost(size)) {
-        val octet = get(i).toInt()
-        val firstIndex = (octet and 0xF0).ushr(4)
-        val secondIndex = octet and 0x0F
+        val position = i - offset
+        if (position != 0) {
+            if (position % 16 == 0) {
+                result.append("\n")
+            } else if (position % 4 == 0) {
+                result.append(" ")
+            }
+        }
+        val byte: Int = this[i].toInt()
+        val firstIndex = (byte and 0xF0) shr 4
+        val secondIndex = byte and 0x0F
         result.append(HEX_CHARS[firstIndex])
         result.append(HEX_CHARS[secondIndex])
-        if ((position + 1) % 16 == 0) {
-            result.append("\n")
-        } else if ((position + 1) % 4 == 0) {
-            result.append(" ")
-        }
-        position++
     }
 
     return result.toString()
