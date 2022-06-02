@@ -1,31 +1,7 @@
-# Jitsi RTP
-Jitsi RTP contains classes for parsing and creating RTP and RTCP packets.
+# Former home of Jitsi RTP
 
-# Code style
-We use ktlint for linting and autoformatting. The ktlint command-line utility
-can be installed by running:
-```
-curl -sSLO https://github.com/pinterest/ktlint/releases/download/0.34.2/ktlint && chmod a+x ktlint && sudo mv ktlint /usr/local/bin/
-```
+This Git repository used to contain the Jitsi RTP project.  This project has now been moved to be a
+subproject in the [Jitsi Videobridge](https://github.com/jitsi/jitsi-videobridge) repository.
 
-Or, on macOS with Homebrew:
-```
-brew install ktlint
-```
+Please submit any issues or pull requests there.
 
-To perform the checks simply run `ktlint`.
-
-You can install a pre-commit or pre-push git hook by running this in the git
-repository directory:
-```
-ktlint --install-git-pre-commit-hook
-```
-
-You can automatically update Intellij IDEA's formatting rules to to be
-compatible with ktlint. However, note that version 0.34.2 of ktlint will
-override any Java code style settings.
-```
-ktlint --apply-to-idea-project
-```
-
-Autoformatting can be run by calling `mvn antrun:run@ktlint-format`.
